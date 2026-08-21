@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  core:
+    build:
+      context: ./services/core
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - AI_PROVIDER=mock
+      - DATABASE_URL=sqlite+aiosqlite:///./friday.db
+    volumes:
+      - ./services/core/data:/app/data
+
+  desktop:
+    build:
+      context: ./apps/desktop
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - core

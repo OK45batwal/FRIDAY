@@ -1,0 +1,116 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { Conversation, Message, AssistantState, SystemTelemetry } from '../types';
+import { api } from '../services/api';
+import { socketService } from '../services/websocket';
+
+export const useFriday = () => {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [state, setState] = useState<AssistantState>('IDLE');
+  const [isConnected, setIsConnected] = useState(false);
+  const [telemetry, setTelemetry] = useState<SystemTelemetry | null>(null);
+
+  // Load conversations on mount
+  const loadConversations = useCallback(async () => {
+    try {
+      const list = await api.listConversations();
+      setConversations(list);
+      if (list.length > 0 && !activeConversationId) {
+        selectConversation(list[0].id);
+      } else if (list.length === 0) {
+        // Create initial default conversation
+        const newConv = await api.createConversation("Session Alpha");
+        setConversations([newConv]);
+        selectConversation(newConv.id);
+      }
+    } catch (err) {
+      console.error("Failed to load conversations:", err);
+    }
+  }, [activeConversationId]);
+
+  const selectConversation = useCallback(async (id: string) => {
+    setActiveConversationId(id);
+    try {
+      const data = await api.getConversationMessages(id);
+      setMessages(data.messages || []);
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    }
+  }, []);
+
+  const startNewConversation = useCallback(async () => {
+    try {
+      const conv = await api.createConversation(`Session #${conversations.length + 1}`);
+      setConversations(prev => [conv, ...prev]);
+      setActiveConversationId(conv.id);
+      setMessages([]);
+    } catch (err) {
+      console.error("Failed to create conversation:", err);
+    }
+  }, [conversations.length]);
+
+  const sendMessage = useCallback(async (content: string, inputType: 'text' | 'voice' = 'text') => {
+    if (!content.trim()) return;
+
+    let convId = activeConversationId;
+    if (!convId) {
+      const conv = await api.createConversation(content.slice(0, 30));
+      setConversations(prev => [conv, ...prev]);
+      convId = conv.id;
+      setActiveConversationId(convId);
+    }
+
+    // Optimistically add user message
+    const tempUserMsg: Message = {
+      id: String(Date.now()),
+      conversation_id: convId,
+      role: 'user',
+      content,
+      input_type: inputType,
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, tempUserMsg]);
+
+    // Send through WebSocket
+    socketService.sendChatMessage(convId, content, inputType);
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    loadConversations();
+
+    socketService.connect({
+      onStateChange: (newState) => setState(newState),
+      onTelemetry: (data) => setTelemetry(data),
+      onConnectionChange: (connected) => setIsConnected(connected),
+      onMessageResponse: (data) => {
+        const assistantMsg: Message = {
+          id: data.message_id || String(Date.now()),
+          conversation_id: data.conversation_id,
+          role: 'assistant',
+          content: data.response,
+          input_type: 'text',
+          created_at: data.created_at || new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+        loadConversations(); // refresh title/counts
+      }
+    });
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, []);
+
+  return {
+    conversations,
+    activeConversationId,
+    messages,
+    state,
+    isConnected,
+    telemetry,
+    selectConversation,
+    startNewConversation,
+    sendMessage
+  };
+};
