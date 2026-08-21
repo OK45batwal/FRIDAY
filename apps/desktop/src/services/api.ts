@@ -11,6 +11,15 @@ export const api = {
     return res.json();
   },
 
+  async updateConfig(provider: string, apiKey?: string, model?: string) {
+    const res = await fetch(`${getBaseUrl()}/api/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, api_key: apiKey, model })
+    });
+    return res.json();
+  },
+
   async listConversations(): Promise<Conversation[]> {
     const res = await fetch(`${getBaseUrl()}/api/conversations`);
     const data = await res.json();

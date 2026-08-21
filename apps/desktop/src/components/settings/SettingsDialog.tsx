@@ -1,24 +1,50 @@
-import React, { useState } from 'react';
-import { Settings, X, Check, Cpu, Key, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, X, Check, Cpu, Key, Globe, Sparkles } from 'lucide-react';
+import { api } from '../../services/api';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const OPENROUTER_POPULAR_MODELS = [
+  { id: 'meta-llama/llama-3.3-70b-instruct', label: 'Meta: Llama 3.3 70B Instruct' },
+  { id: 'deepseek/deepseek-r1', label: 'DeepSeek: R1 (Reasoning)' },
+  { id: 'anthropic/claude-3.5-sonnet', label: 'Anthropic: Claude 3.5 Sonnet' },
+  { id: 'google/gemini-2.0-flash-exp:free', label: 'Google: Gemini 2.0 Flash (Free tier)' },
+  { id: 'openai/gpt-4o-mini', label: 'OpenAI: GPT-4o Mini' },
+  { id: 'mistralai/mistral-large', label: 'Mistral: Mistral Large' }
+];
+
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
-  const [provider, setProvider] = useState('mock');
+  const [provider, setProvider] = useState('openrouter');
   const [apiKey, setApiKey] = useState('');
+  const [openrouterModel, setOpenrouterModel] = useState('meta-llama/llama-3.3-70b-instruct');
+  const [customModel, setCustomModel] = useState('');
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      api.getHealth().then(data => {
+        if (data?.ai_provider) setProvider(data.ai_provider);
+      }).catch(console.error);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const selectedModel = customModel.trim() || openrouterModel;
+    try {
+      await api.updateConfig(provider, apiKey.trim(), selectedModel);
+    } catch (err) {
+      console.error(err);
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
       onClose();
-    }, 600);
+    }, 700);
   };
 
   return (
@@ -29,8 +55,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(0, 0, 0, 0.82)',
+        backdropFilter: 'blur(16px)',
         zIndex: 1000,
         display: 'flex',
         justifyContent: 'center',
@@ -40,98 +66,155 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
       <div
         className="glass-panel"
         style={{
-          width: '480px',
-          maxWidth: '90%',
+          width: '520px',
+          maxWidth: '92%',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px'
+          gap: '18px',
+          border: '1px solid rgba(239, 68, 68, 0.45)',
+          boxShadow: '0 0 32px rgba(239, 68, 68, 0.25)'
         }}
       >
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Settings size={20} color="#00f0ff" />
-            <h3 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '15px', color: '#00f0ff' }}>
-              FRIDAY CORE SETTINGS
+            <Settings size={20} color="#ef4444" />
+            <h3 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '15px', color: '#ffffff', letterSpacing: '1px' }}>
+              AI CORE CONFIGURATION
             </h3>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+          <button onClick={onClose} className="btn-action-icon">
             <X size={20} />
           </button>
         </div>
 
-        {/* AI Provider */}
+        {/* AI Provider Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={14} color="#00f0ff" /> AI PROVIDER SELECTION
+          <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Cpu size={14} color="#ef4444" /> SELECT AI PROVIDER
           </label>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
             style={{
               padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(10, 15, 30, 0.9)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
+              borderRadius: '10px',
+              background: 'rgba(18, 12, 16, 0.9)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
               color: '#ffffff',
-              fontSize: '14px',
-              outline: 'none'
+              fontSize: '13px',
+              outline: 'none',
+              fontFamily: 'Space Grotesk, sans-serif'
             }}
           >
-            <option value="mock">Offline Smart Assistant (Built-in)</option>
-            <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-            <option value="gemini">Google Gemini 1.5 Flash</option>
-            <option value="ollama">Local Ollama (Llama 3)</option>
+            <option value="openrouter">OpenRouter (Access Claude, DeepSeek, Llama, GPT-4o)</option>
+            <option value="mock">Offline Smart Assistant (Built-in No Key Needed)</option>
+            <option value="openai">OpenAI Direct (GPT-4o / GPT-4o-mini)</option>
+            <option value="gemini">Google Gemini 1.5 Flash Direct</option>
+            <option value="ollama">Local Ollama (Llama 3 / Local Models)</option>
           </select>
         </div>
 
-        {/* API Key */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Key size={14} color="#00f0ff" /> API KEY (OPTIONAL)
-          </label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter API Key if using cloud AI..."
-            style={{
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(10, 15, 30, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              fontSize: '13px',
-              outline: 'none'
-            }}
-          />
-        </div>
+        {/* OpenRouter Model Selection */}
+        {provider === 'openrouter' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Globe size={14} color="#ff2a5f" /> OPENROUTER MODEL
+            </label>
+            <select
+              value={openrouterModel}
+              onChange={(e) => {
+                setOpenrouterModel(e.target.value);
+                setCustomModel('');
+              }}
+              style={{
+                padding: '12px',
+                borderRadius: '10px',
+                background: 'rgba(18, 12, 16, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                fontSize: '13px',
+                outline: 'none'
+              }}
+            >
+              {OPENROUTER_POPULAR_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={customModel}
+              onChange={(e) => setCustomModel(e.target.value)}
+              placeholder="Or enter any custom OpenRouter model ID..."
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                fontSize: '12px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        )}
 
-        {/* Database info */}
-        <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database size={16} color="#10b981" />
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>Database: SQLite Persistent Storage (`friday.db`)</span>
-        </div>
+        {/* API Key Input */}
+        {provider !== 'mock' && provider !== 'ollama' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Key size={14} color="#ef4444" />
+              {provider === 'openrouter' ? 'OPENROUTER API KEY' : `${provider.toUpperCase()} API KEY`}
+            </label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={provider === 'openrouter' ? 'sk-or-v1-...' : 'Enter API Key...'}
+              style={{
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'rgba(18, 12, 16, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                fontSize: '13px',
+                outline: 'none',
+                fontFamily: 'monospace'
+              }}
+            />
+            {provider === 'openrouter' && (
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                Get an OpenRouter API key at <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: '#ef4444' }}>openrouter.ai/keys</a>
+              </span>
+            )}
+          </div>
+        )}
 
+        {/* Save Button */}
         <button
           onClick={handleSave}
           style={{
+            marginTop: '6px',
             padding: '12px',
-            borderRadius: '10px',
-            background: saved ? '#10b981' : 'linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%)',
+            borderRadius: '12px',
+            background: saved ? '#10b981' : 'linear-gradient(135deg, #ef4444 0%, #ff2a5f 100%)',
             border: 'none',
-            color: '#000000',
+            color: '#ffffff',
             fontWeight: 700,
             fontFamily: 'Orbitron, sans-serif',
+            fontSize: '13px',
             cursor: 'pointer',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            boxShadow: '0 0 16px rgba(239, 68, 68, 0.4)',
+            transition: 'all 0.2s ease'
           }}
         >
-          {saved ? <Check size={18} /> : null}
-          <span>{saved ? 'SAVED' : 'SAVE CONFIGURATION'}</span>
+          {saved ? <Check size={18} /> : <Sparkles size={16} />}
+          <span>{saved ? 'SETTINGS SAVED & APPLIED' : 'SAVE CONFIGURATION'}</span>
         </button>
       </div>
     </div>

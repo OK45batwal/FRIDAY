@@ -9,10 +9,18 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     CORS_ORIGINS: list[str] = ["*"]
 
-    # AI Provider
+    # AI Provider (mock | openrouter | openai | gemini | ollama)
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock")
+    
+    # OpenRouter
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct")
+
+    # Cloud Providers
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    
+    # Local LLM (Ollama)
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3")
 
