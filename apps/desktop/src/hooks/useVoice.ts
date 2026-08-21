@@ -4,8 +4,42 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const recognitionRef = useRef<any>(null);
 
+  // Load available system voices
+  useEffect(() => {
+    const updateVoices = () => {
+      if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        setAvailableVoices(voices);
+
+        // Best Female Voices prioritized for FRIDAY (Irish, British, Sophisticated US)
+        const preferred = voices.find(v => 
+          v.name.includes('Moira') || // Marvel FRIDAY Irish voice
+          v.name.includes('Samantha') || // macOS Studio crisp female
+          v.name.includes('Sonia') || // Edge Natural British female
+          v.name.includes('Libby') || // British female
+          v.name.includes('Ava') || // Natural AI female
+          v.name.includes('Karen') || // Australian/English female
+          v.name.includes('Victoria') ||
+          (v.name.includes('Female') && v.lang.startsWith('en'))
+        );
+
+        if (preferred && !selectedVoiceName) {
+          setSelectedVoiceName(preferred.name);
+        }
+      }
+    };
+
+    updateVoices();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+  }, [selectedVoiceName]);
+
+  // Speech Recognition (Microphone)
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
@@ -53,20 +87,42 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.02;
-    utterance.pitch = 1.0;
+    // Clean text of markdown markers (*, #, `) for cleaner speech
+    const cleanText = text
+      .replace(/[*#`_~]/g, '')
+      .replace(/https?:\/\/\S+/g, 'link')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.02; // Slightly higher pitch for poised intelligence
 
     const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Google') || v.lang.startsWith('en'));
-    if (voice) utterance.voice = voice;
+    let voice = voices.find(v => v.name === selectedVoiceName);
+
+    if (!voice) {
+      // Fallback to top female voices
+      voice = voices.find(v => 
+        v.name.includes('Moira') ||
+        v.name.includes('Samantha') ||
+        v.name.includes('Sonia') ||
+        v.name.includes('Libby') ||
+        v.name.includes('Ava') ||
+        v.name.includes('Karen') ||
+        v.lang.startsWith('en')
+      );
+    }
+
+    if (voice) {
+      utterance.voice = voice;
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
-  }, []);
+  }, [selectedVoiceName]);
 
   const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {
@@ -80,6 +136,9 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     isSpeaking,
     autoSpeak,
     setAutoSpeak,
+    availableVoices,
+    selectedVoiceName,
+    setSelectedVoiceName,
     toggleListening,
     speak,
     stopSpeaking

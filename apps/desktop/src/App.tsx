@@ -36,6 +36,9 @@ export const App: React.FC = () => {
     isSpeaking,
     autoSpeak,
     setAutoSpeak,
+    availableVoices,
+    selectedVoiceName,
+    setSelectedVoiceName,
     toggleListening,
     speak,
     stopSpeaking
@@ -138,7 +141,14 @@ export const App: React.FC = () => {
         </div>
       </div>
 
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        availableVoices={availableVoices}
+        selectedVoiceName={selectedVoiceName}
+        onSelectVoice={setSelectedVoiceName}
+        onTestVoice={speak}
+      />
     </div>
   );
 };

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Check, Cpu, Key, Globe, Sparkles } from 'lucide-react';
+import { Settings, X, Check, Cpu, Key, Globe, Sparkles, Volume2 } from 'lucide-react';
 import { api } from '../../services/api';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  availableVoices?: SpeechSynthesisVoice[];
+  selectedVoiceName?: string;
+  onSelectVoice?: (voiceName: string) => void;
+  onTestVoice?: (text: string) => void;
 }
 
 const OPENROUTER_POPULAR_MODELS = [
@@ -16,7 +20,14 @@ const OPENROUTER_POPULAR_MODELS = [
   { id: 'mistralai/mistral-large', label: 'Mistral: Mistral Large' }
 ];
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
+export const SettingsDialog: React.FC<SettingsDialogProps> = ({
+  isOpen,
+  onClose,
+  availableVoices = [],
+  selectedVoiceName = '',
+  onSelectVoice,
+  onTestVoice
+}) => {
   const [provider, setProvider] = useState('openrouter');
   const [apiKey, setApiKey] = useState('');
   const [openrouterModel, setOpenrouterModel] = useState('meta-llama/llama-3.3-70b-instruct');
@@ -47,6 +58,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
     }, 700);
   };
 
+  const englishVoices = availableVoices.filter(v => v.lang.startsWith('en'));
+
   return (
     <div
       style={{
@@ -66,8 +79,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
       <div
         className="glass-panel"
         style={{
-          width: '520px',
+          width: '540px',
           maxWidth: '92%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
@@ -81,7 +96,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Settings size={20} color="#ef4444" />
             <h3 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '15px', color: '#ffffff', letterSpacing: '1px' }}>
-              AI CORE CONFIGURATION
+              FRIDAY AI CORE CONFIGURATION
             </h3>
           </div>
           <button onClick={onClose} className="btn-action-icon">
@@ -89,10 +104,71 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
           </button>
         </div>
 
+        {/* Voice Persona Selector */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Volume2 size={14} color="#ef4444" /> FRIDAY FEMALE VOICE PERSONA
+            </label>
+            {onTestVoice && (
+              <button
+                type="button"
+                onClick={() => onTestVoice("Good day, Omkar. All FRIDAY neural link and voice systems are operating at peak efficiency.")}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontFamily: 'Orbitron, sans-serif',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <Volume2 size={12} /> TEST VOICE
+              </button>
+            )}
+          </div>
+          <select
+            value={selectedVoiceName}
+            onChange={(e) => onSelectVoice?.(e.target.value)}
+            style={{
+              padding: '12px',
+              borderRadius: '10px',
+              background: 'rgba(18, 12, 16, 0.9)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#ffffff',
+              fontSize: '13px',
+              outline: 'none',
+              fontFamily: 'Space Grotesk, sans-serif'
+            }}
+          >
+            {englishVoices.length > 0 ? (
+              englishVoices.map((v) => (
+                <option key={v.name} value={v.name}>
+                  {v.name.includes('Moira') ? '🌟 Moira (Irish - F.R.I.D.A.Y. Authentic)' :
+                   v.name.includes('Samantha') ? '✨ Samantha (macOS Studio Female)' :
+                   v.name.includes('Sonia') ? '🎙️ Sonia (Natural British Female)' :
+                   v.name.includes('Ava') ? '⚡ Ava (Natural AI Female)' :
+                   v.name.includes('Karen') ? '🎙️ Karen (Refined Female)' :
+                   `${v.name} (${v.lang})`}
+                </option>
+              ))
+            ) : (
+              <option value="">Default Female Voice</option>
+            )}
+          </select>
+          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+            Recommended: <strong>Moira (Irish)</strong> for true Marvel F.R.I.D.A.Y. persona, or <strong>Samantha / Sonia</strong> for studio clarity.
+          </span>
+        </div>
+
         {/* AI Provider Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <label style={{ fontSize: '12px', fontFamily: 'Orbitron, sans-serif', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={14} color="#ef4444" /> SELECT AI PROVIDER
+            <Cpu size={14} color="#ef4444" /> SELECT AI BRAIN PROVIDER
           </label>
           <select
             value={provider}
