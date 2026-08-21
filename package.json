@@ -1,0 +1,11 @@
+{
+  "name": "friday",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix apps/desktop run dev",
+    "build": "npm --prefix apps/desktop run build",
+    "test": "npm --prefix apps/desktop test",
+    "backend": "cd services/core && PYTHONPATH=../../ ./venv/bin/uvicorn services.core.app.main:app --host 0.0.0.0 --port 8000 --reload"
+  }
+}
