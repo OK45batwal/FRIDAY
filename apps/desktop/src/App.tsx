@@ -9,6 +9,7 @@ import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
 import { Cpu, Settings } from 'lucide-react';
 
+
 export const App: React.FC = () => {
   const {
     conversations,
@@ -40,7 +41,7 @@ export const App: React.FC = () => {
     stopSpeaking
   } = useVoice(handleVoiceTranscript);
 
-  // Auto-speak latest assistant message if auto-speak is enabled
+  // Auto-speak assistant response if autoSpeak is enabled
   useEffect(() => {
     if (messages.length > 0 && autoSpeak) {
       const lastMsg = messages[messages.length - 1];
@@ -54,42 +55,51 @@ export const App: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '16px 20px', gap: '14px' }}>
-      {/* Header */}
+      {/* Header Bar */}
       <header className="glass-panel" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Cpu size={22} className="glow-text-cyan" />
-          <h1 className="font-display glow-text-cyan" style={{ fontSize: '18px', letterSpacing: '3px', fontWeight: 900 }}>
-            FRIDAY
-          </h1>
-          <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.15)', color: '#00f0ff', fontFamily: 'Orbitron, sans-serif' }}>
-            v0.1 CORE
-          </span>
+          <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Cpu size={20} color="#ef4444" />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 className="font-display glow-text-red" style={{ fontSize: '18px', letterSpacing: '3px', fontWeight: 900 }}>
+                FRIDAY
+              </h1>
+              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.2)', color: '#ffffff', border: '1px solid rgba(239, 68, 68, 0.4)', fontFamily: 'Orbitron, sans-serif', fontWeight: 700 }}>
+                ASSISTANT
+              </span>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={() => setSettingsOpen(true)}
-          style={{
-            padding: '8px 14px',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#cbd5e1',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            fontFamily: 'Orbitron, sans-serif'
-          }}
-        >
-          <Settings size={15} />
-          <span>CONFIG</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '9999px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              fontFamily: 'Orbitron, sans-serif',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Settings size={14} color="#ef4444" />
+            <span>CONFIG</span>
+          </button>
+        </div>
       </header>
 
-      {/* Main Workspace Layout */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 300px 1fr', gap: '14px', height: 'calc(100vh - 160px)' }}>
-        {/* 1. Conversations Sidebar */}
+      {/* Main Grid Workspace */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 320px 1fr', gap: '14px', height: 'calc(100vh - 160px)' }}>
+        {/* Left: Conversations Sidebar */}
         <Sidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
@@ -97,17 +107,21 @@ export const App: React.FC = () => {
           onNewConversation={startNewConversation}
         />
 
-        {/* 2. AI Core Visualizer Column */}
-        <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-          <OrbVisualizer state={effectiveState} size={280} />
+        {/* Center: Google Assistant AI Core Visualizer */}
+        <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <OrbVisualizer state={effectiveState} size={290} />
         </div>
 
-        {/* 3. Chat & Control Area */}
+        {/* Right: Chat Panel, Suggestion Chips, Voice Bar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
           <TelemetryBar telemetry={telemetry} state={effectiveState} isConnected={isConnected} />
 
           <div className="glass-panel" style={{ flex: 1, padding: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <ChatPanel messages={messages} onSpeak={speak} />
+            <ChatPanel
+              messages={messages}
+              onSpeak={speak}
+              onSelectSuggestion={(query) => sendMessage(query, 'text')}
+            />
           </div>
 
           <VoiceBar

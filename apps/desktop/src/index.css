@@ -1,19 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap');
 
 :root {
-  --bg-primary: #060913;
-  --bg-secondary: rgba(13, 19, 36, 0.7);
-  --bg-card: rgba(18, 26, 47, 0.55);
-  --border-glow: rgba(0, 240, 255, 0.25);
-  --accent-cyan: #00f0ff;
-  --accent-blue: #3b82f6;
-  --accent-purple: #a855f7;
-  --accent-pink: #ec4899;
-  --accent-green: #10b981;
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
+  --bg-primary: #07070a;
+  --bg-secondary: rgba(18, 12, 16, 0.75);
+  --bg-card: rgba(22, 14, 18, 0.65);
+  --accent-red: #ff2a5f;
+  --accent-crimson: #ef4444;
+  --accent-ruby: #dc2626;
+  --accent-white: #ffffff;
+  --text-main: #ffffff;
+  --text-muted: #cbd5e1;
+  --text-subtle: #94a3b8;
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --border-red: rgba(239, 68, 68, 0.35);
+  --glow-red: 0 0 20px rgba(239, 68, 68, 0.45);
+  --glow-white: 0 0 16px rgba(255, 255, 255, 0.35);
   --font-display: 'Orbitron', sans-serif;
-  --font-body: 'Space Grotesk', sans-serif;
+  --font-google: 'Google Sans', 'Space Grotesk', sans-serif;
   --font-tech: 'Rajdhani', sans-serif;
 }
 
@@ -26,29 +29,37 @@
 body {
   background-color: var(--bg-primary);
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(11, 15, 26, 1) 0%, rgba(6, 9, 19, 1) 100%);
+    radial-gradient(circle at 10% 15%, rgba(239, 68, 68, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(255, 42, 95, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(12, 8, 12, 1) 0%, rgba(6, 6, 9, 1) 100%);
   color: var(--text-main);
-  font-family: var(--font-body);
+  font-family: var(--font-google);
   min-height: 100vh;
   overflow: hidden;
   user-select: none;
 }
 
+/* Glassmorphism Red & White Panels */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(0, 240, 255, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(0, 240, 255, 0.12);
+  border-color: var(--border-red);
+  box-shadow: 0 8px 32px 0 rgba(239, 68, 68, 0.15);
+}
+
+.glass-card-white {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
 }
 
 .font-display {
@@ -59,25 +70,56 @@ body {
   font-family: var(--font-tech);
 }
 
-.glow-text-cyan {
-  color: var(--accent-cyan);
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+.glow-text-red {
+  color: var(--accent-crimson);
+  text-shadow: 0 0 14px rgba(239, 68, 68, 0.7);
 }
 
+.glow-text-white {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+/* Google Assistant Suggestion Chips */
+.suggestion-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.suggestion-chip:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--accent-crimson);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(10, 15, 26, 0.5);
+  background: rgba(10, 8, 12, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.2);
+  background: rgba(239, 68, 68, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.5);
+  background: rgba(239, 68, 68, 0.6);
 }

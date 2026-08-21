@@ -1,14 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 import { MessageItem } from './MessageItem';
+import { SuggestionChips } from './SuggestionChips';
 import type { Message } from '../../types';
-import { MessageSquare } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface ChatPanelProps {
   messages: Message[];
   onSpeak: (text: string) => void;
+  onSelectSuggestion: (text: string) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSpeak }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSpeak, onSelectSuggestion }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -17,13 +19,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSpeak }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '6px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
         {messages.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', gap: '8px' }}>
-            <MessageSquare size={32} color="#00f0ff" style={{ opacity: 0.4 }} />
-            <span style={{ fontSize: '14px', fontFamily: 'Space Grotesk, sans-serif' }}>
-              How can I assist you today, Omkar?
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', gap: '12px', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '16px', borderRadius: '50%', boxShadow: '0 0 24px rgba(239, 68, 68, 0.3)' }}>
+              <Sparkles size={36} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', fontFamily: 'Space Grotesk, sans-serif' }}>
+              Hi, how can I help you today?
+            </h2>
+            <p style={{ fontSize: '13px', color: '#cbd5e1', maxWidth: '420px', lineHeight: '1.5' }}>
+              Speak or type a command. You can check the weather, launch apps, inspect system diagnostics, or ask any question.
+            </p>
           </div>
         ) : (
           messages.map((m) => (
@@ -31,6 +38,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSpeak }) => {
           ))
         )}
         <div ref={bottomRef} />
+      </div>
+
+      {/* Google Assistant Suggestion Chips */}
+      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '8px' }}>
+        <SuggestionChips onSelectChip={onSelectSuggestion} />
       </div>
     </div>
   );

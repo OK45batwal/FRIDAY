@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mic, MicOff, Send, Square, Volume2, VolumeX } from 'lucide-react';
 import type { AssistantState } from '../../types';
 
+
 interface VoiceBarProps {
   state: AssistantState;
   isListening: boolean;
@@ -35,16 +36,18 @@ export const VoiceBar: React.FC<VoiceBarProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {/* Push-to-talk Button */}
+        {/* Google Assistant-style Voice Button */}
         <button
           type="button"
           onClick={onToggleVoice}
           style={{
-            padding: '14px 18px',
-            borderRadius: '12px',
-            border: isListening ? '1px solid #10b981' : '1px solid rgba(0, 240, 255, 0.4)',
-            background: isListening ? 'rgba(16, 185, 129, 0.25)' : 'rgba(0, 240, 255, 0.1)',
-            color: isListening ? '#10b981' : '#00f0ff',
+            padding: '14px 20px',
+            borderRadius: '9999px',
+            border: isListening ? '1px solid #ff2a5f' : '1px solid rgba(255, 255, 255, 0.25)',
+            background: isListening
+              ? 'linear-gradient(135deg, #ef4444 0%, #ff2a5f 100%)'
+              : 'rgba(255, 255, 255, 0.08)',
+            color: '#ffffff',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -52,43 +55,49 @@ export const VoiceBar: React.FC<VoiceBarProps> = ({
             fontWeight: 700,
             fontFamily: 'Orbitron, sans-serif',
             fontSize: '12px',
-            boxShadow: isListening ? '0 0 16px rgba(16, 185, 129, 0.4)' : 'none'
+            boxShadow: isListening ? '0 0 20px rgba(239, 68, 68, 0.6)' : '0 2px 8px rgba(0, 0, 0, 0.2)',
+            transition: 'all 0.2s ease'
           }}
-          title={isListening ? "Stop Listening" : "Push to Talk"}
+          title={isListening ? "Stop Voice Listening" : "Tap to Speak"}
         >
           {isListening ? <Mic size={18} /> : <MicOff size={18} />}
-          <span>{isListening ? 'LISTENING' : 'VOICE'}</span>
+          <span>{isListening ? 'LISTENING' : 'SPEAK'}</span>
         </button>
 
-        {/* Text Input */}
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Command FRIDAY (type or speak)..."
-          style={{
-            flex: 1,
-            padding: '14px 18px',
-            borderRadius: '12px',
-            background: 'rgba(10, 15, 30, 0.75)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
-            fontSize: '14px',
-            outline: 'none',
-            fontFamily: 'Space Grotesk, sans-serif'
-          }}
-        />
+        {/* Input Bar */}
+        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ask FRIDAY anything (e.g. 'What's the weather?', 'Open Spotify', 'System status')..."
+            style={{
+              width: '100%',
+              padding: '14px 20px',
+              borderRadius: '9999px',
+              background: 'rgba(22, 14, 18, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#ffffff',
+              fontSize: '14px',
+              outline: 'none',
+              fontFamily: 'Space Grotesk, sans-serif',
+              boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.3)'
+            }}
+          />
+        </div>
 
         {/* Send Button */}
         <button
           type="submit"
           disabled={!text.trim() || state === 'THINKING'}
           style={{
-            padding: '14px 20px',
-            borderRadius: '12px',
-            background: text.trim() ? 'linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%)' : 'rgba(255, 255, 255, 0.05)',
+            padding: '14px 22px',
+            borderRadius: '9999px',
+            background: text.trim()
+              ? 'linear-gradient(135deg, #ef4444 0%, #ff2a5f 100%)'
+              : 'rgba(255, 255, 255, 0.05)',
             border: 'none',
-            color: text.trim() ? '#000000' : 'rgba(255, 255, 255, 0.3)',
+            color: '#ffffff',
             cursor: text.trim() ? 'pointer' : 'not-allowed',
             display: 'flex',
             alignItems: 'center',
@@ -96,24 +105,25 @@ export const VoiceBar: React.FC<VoiceBarProps> = ({
             fontWeight: 700,
             fontFamily: 'Orbitron, sans-serif',
             fontSize: '12px',
-            boxShadow: text.trim() ? '0 0 16px rgba(0, 240, 255, 0.4)' : 'none'
+            boxShadow: text.trim() ? '0 0 16px rgba(239, 68, 68, 0.4)' : 'none',
+            transition: 'all 0.2s ease'
           }}
         >
           <span>SEND</span>
-          <Send size={16} />
+          <Send size={15} />
         </button>
 
-        {/* Stop Speaking button if active */}
+        {/* Stop Speaking button */}
         {isSpeaking && (
           <button
             type="button"
             onClick={onStopSpeaking}
             style={{
               padding: '14px',
-              borderRadius: '12px',
-              background: 'rgba(239, 68, 68, 0.2)',
+              borderRadius: '9999px',
+              background: 'rgba(239, 68, 68, 0.3)',
               border: '1px solid #ef4444',
-              color: '#ef4444',
+              color: '#ffffff',
               cursor: 'pointer'
             }}
             title="Stop Assistant Voice"
@@ -128,13 +138,13 @@ export const VoiceBar: React.FC<VoiceBarProps> = ({
           onClick={onToggleAutoSpeak}
           style={{
             padding: '14px',
-            borderRadius: '12px',
-            background: autoSpeak ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-            border: autoSpeak ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-            color: autoSpeak ? '#00f0ff' : '#64748b',
+            borderRadius: '9999px',
+            background: autoSpeak ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+            border: autoSpeak ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+            color: autoSpeak ? '#ffffff' : '#64748b',
             cursor: 'pointer'
           }}
-          title={autoSpeak ? "Auto-Speak Voice Enabled" : "Auto-Speak Voice Muted"}
+          title={autoSpeak ? "Spoken Voice Responses Enabled" : "Voice Responses Muted"}
         >
           {autoSpeak ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </button>
