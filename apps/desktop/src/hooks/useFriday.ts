@@ -85,9 +85,32 @@ export const useFriday = () => {
       created_at: new Date().toISOString()
     };
     setMessages(prev => [...prev, tempUserMsg]);
+    setState('THINKING');
 
-    socketService.sendChatMessage(convId, content, inputType);
-  }, [activeConversationId]);
+    // Try WebSocket first
+    const sentViaWs = socketService.sendChatMessage(convId, content, inputType);
+    
+    // Automatic REST fallback if WebSocket is offline or not yet connected
+    if (!sentViaWs) {
+      try {
+        const res = await api.sendMessage(convId, content, inputType);
+        const assistantMsg: Message = {
+          id: res.message_id || String(Date.now()),
+          conversation_id: res.conversation_id,
+          role: 'assistant',
+          content: res.response,
+          input_type: 'text',
+          created_at: res.created_at || new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+        setState('IDLE');
+        loadConversations();
+      } catch (err) {
+        console.error("REST fallback error:", err);
+        setState('ERROR');
+      }
+    }
+  }, [activeConversationId, loadConversations]);
 
   useEffect(() => {
     loadConversations();
@@ -106,6 +129,7 @@ export const useFriday = () => {
           created_at: data.created_at || new Date().toISOString()
         };
         setMessages(prev => [...prev, assistantMsg]);
+        setState('IDLE');
         loadConversations();
       }
     });

@@ -25,9 +25,7 @@ class ConversationManager:
             msg_stmt = select(Message).where(Message.conversation_id == c.id)
             msg_res = await db.execute(msg_stmt)
             count = len(list(msg_res.scalars().all()))
-            c_dict = c.to_dict()
-            c_dict["message_count"] = count
-            output.append(c_dict)
+            output.append(c.to_dict(count=count))
         return output
 
     async def rename_conversation(self, db: AsyncSession, conversation_id: str, new_title: str) -> Optional[Conversation]:
@@ -43,7 +41,6 @@ class ConversationManager:
         conv = await self.get_conversation(db, conversation_id)
         if not conv:
             return False
-        # Delete associated messages
         msg_stmt = select(Message).where(Message.conversation_id == conversation_id)
         msg_res = await db.execute(msg_stmt)
         for msg in msg_res.scalars().all():

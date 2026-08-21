@@ -1,73 +1,117 @@
 import type { AssistantState, SystemTelemetry } from '../types';
 
-export class FridaySocketService {
-  private ws: WebSocket | null = null;
-  private pingTimer: any = null;
+type MessageHandler = (data: any) => void;
+type StateHandler = (state: AssistantState) => void;
+type TelemetryHandler = (data: SystemTelemetry) => void;
+type ConnectionHandler = (connected: boolean) => void;
 
-  connect(callbacks: {
-    onStateChange: (state: AssistantState) => void;
-    onTelemetry: (telemetry: SystemTelemetry) => void;
-    onMessageResponse: (data: any) => void;
-    onConnectionChange: (connected: boolean) => void;
+export class WebSocketService {
+  private socket: WebSocket | null = null;
+  private isConnecting: boolean = false;
+  private onMessageResponse: MessageHandler | null = null;
+  private onStateChange: StateHandler | null = null;
+  private onTelemetry: TelemetryHandler | null = null;
+  private onConnectionChange: ConnectionHandler | null = null;
+  private reconnectInterval: number = 3000;
+  private reconnectTimeout: any = null;
+
+  connect(handlers: {
+    onMessageResponse?: MessageHandler;
+    onStateChange?: StateHandler;
+    onTelemetry?: TelemetryHandler;
+    onConnectionChange?: ConnectionHandler;
   }) {
+    if (this.socket?.readyState === WebSocket.OPEN || this.isConnecting) return;
+
+    this.onMessageResponse = handlers.onMessageResponse || null;
+    this.onStateChange = handlers.onStateChange || null;
+    this.onTelemetry = handlers.onTelemetry || null;
+    this.onConnectionChange = handlers.onConnectionChange || null;
+
+    this.isConnecting = true;
     const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const wsUrl = `ws://${host || 'localhost'}:8000/ws`;
 
-    this.ws = new WebSocket(wsUrl);
+    try {
+      this.socket = new WebSocket(wsUrl);
 
-    this.ws.onopen = () => {
-      callbacks.onConnectionChange(true);
-      this.pingTimer = setInterval(() => {
-        if (this.ws?.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ type: 'ping' }));
+      this.socket.onopen = () => {
+        this.isConnecting = false;
+        this.onConnectionChange?.(true);
+        if (this.reconnectTimeout) {
+          clearTimeout(this.reconnectTimeout);
+          this.reconnectTimeout = null;
         }
-      }, 4000);
-    };
+      };
 
-    this.ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        if (payload.type === 'state_change') {
-          callbacks.onStateChange(payload.state);
-        } else if (payload.type === 'telemetry') {
-          callbacks.onTelemetry(payload.data);
-        } else if (payload.type === 'connection_established') {
-          if (payload.data?.telemetry) {
-            callbacks.onTelemetry(payload.data.telemetry);
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'assistant_response') {
+            this.onMessageResponse?.(data);
+          } else if (data.type === 'state_change') {
+            this.onStateChange?.(data.state);
+          } else if (data.type === 'system_telemetry') {
+            this.onTelemetry?.(data.data);
           }
-        } else if (payload.type === 'chat_response') {
-          callbacks.onMessageResponse(payload.data);
+        } catch (e) {
+          console.error("Error parsing WebSocket message:", e);
         }
-      } catch (err) {
-        console.error('WS parse error:', err);
-      }
-    };
+      };
 
-    this.ws.onclose = () => {
-      callbacks.onConnectionChange(false);
-      clearInterval(this.pingTimer);
-    };
+      this.socket.onclose = () => {
+        this.isConnecting = false;
+        this.onConnectionChange?.(false);
+        this.scheduleReconnect();
+      };
 
-    this.ws.onerror = () => {
-      callbacks.onConnectionChange(false);
-    };
+      this.socket.onerror = () => {
+        this.isConnecting = false;
+        this.onConnectionChange?.(false);
+      };
+    } catch (err) {
+      this.isConnecting = false;
+      this.scheduleReconnect();
+    }
   }
 
-  sendChatMessage(conversationId: string, message: string, inputType: string = 'text') {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
+  private scheduleReconnect() {
+    if (!this.reconnectTimeout) {
+      this.reconnectTimeout = setTimeout(() => {
+        this.reconnectTimeout = null;
+        this.connect({
+          onMessageResponse: this.onMessageResponse || undefined,
+          onStateChange: this.onStateChange || undefined,
+          onTelemetry: this.onTelemetry || undefined,
+          onConnectionChange: this.onConnectionChange || undefined
+        });
+      }, this.reconnectInterval);
+    }
+  }
+
+  sendChatMessage(conversationId: string, message: string, inputType: string = 'text'): boolean {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
         type: 'chat_message',
         conversation_id: conversationId,
         message,
         input_type: inputType
       }));
+      return true;
     }
+    return false;
   }
 
   disconnect() {
-    clearInterval(this.pingTimer);
-    this.ws?.close();
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.isConnecting = false;
   }
 }
 
-export const socketService = new FridaySocketService();
+export const socketService = new WebSocketService();

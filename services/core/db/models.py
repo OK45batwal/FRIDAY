@@ -15,15 +15,15 @@ class Conversation(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", order_by="Message.created_at")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", lazy="selectin")
 
-    def to_dict(self):
+    def to_dict(self, count: int = 0):
         return {
             "id": self.id,
             "title": self.title,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "message_count": len(self.messages) if self.messages else 0
+            "message_count": count
         }
 
 class Message(Base):
