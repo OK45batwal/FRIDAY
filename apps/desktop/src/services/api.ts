@@ -26,6 +26,22 @@ export const api = {
     return res.json();
   },
 
+  async renameConversation(id: string, title: string): Promise<Conversation> {
+    const res = await fetch(`${getBaseUrl()}/api/conversations/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    return res.json();
+  },
+
+  async deleteConversation(id: string): Promise<boolean> {
+    const res = await fetch(`${getBaseUrl()}/api/conversations/${id}`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  },
+
   async getConversationMessages(conversationId: string): Promise<{ conversation: Conversation; messages: Message[] }> {
     const res = await fetch(`${getBaseUrl()}/api/conversations/${conversationId}/messages`);
     return res.json();

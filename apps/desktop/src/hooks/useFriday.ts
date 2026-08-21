@@ -11,24 +11,6 @@ export const useFriday = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [telemetry, setTelemetry] = useState<SystemTelemetry | null>(null);
 
-  // Load conversations on mount
-  const loadConversations = useCallback(async () => {
-    try {
-      const list = await api.listConversations();
-      setConversations(list);
-      if (list.length > 0 && !activeConversationId) {
-        selectConversation(list[0].id);
-      } else if (list.length === 0) {
-        // Create initial default conversation
-        const newConv = await api.createConversation("Session Alpha");
-        setConversations([newConv]);
-        selectConversation(newConv.id);
-      }
-    } catch (err) {
-      console.error("Failed to load conversations:", err);
-    }
-  }, [activeConversationId]);
-
   const selectConversation = useCallback(async (id: string) => {
     setActiveConversationId(id);
     try {
@@ -38,6 +20,22 @@ export const useFriday = () => {
       console.error("Failed to load messages:", err);
     }
   }, []);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const list = await api.listConversations();
+      setConversations(list);
+      if (list.length > 0 && !activeConversationId) {
+        selectConversation(list[0].id);
+      } else if (list.length === 0) {
+        const newConv = await api.createConversation("Session Alpha");
+        setConversations([newConv]);
+        selectConversation(newConv.id);
+      }
+    } catch (err) {
+      console.error("Failed to load conversations:", err);
+    }
+  }, [activeConversationId, selectConversation]);
 
   const startNewConversation = useCallback(async () => {
     try {
@@ -50,6 +48,23 @@ export const useFriday = () => {
     }
   }, [conversations.length]);
 
+  const deleteConversation = useCallback(async (id: string) => {
+    try {
+      await api.deleteConversation(id);
+      const remaining = conversations.filter(c => c.id !== id);
+      setConversations(remaining);
+      if (activeConversationId === id) {
+        if (remaining.length > 0) {
+          selectConversation(remaining[0].id);
+        } else {
+          startNewConversation();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+    }
+  }, [conversations, activeConversationId, selectConversation, startNewConversation]);
+
   const sendMessage = useCallback(async (content: string, inputType: 'text' | 'voice' = 'text') => {
     if (!content.trim()) return;
 
@@ -61,7 +76,6 @@ export const useFriday = () => {
       setActiveConversationId(convId);
     }
 
-    // Optimistically add user message
     const tempUserMsg: Message = {
       id: String(Date.now()),
       conversation_id: convId,
@@ -72,7 +86,6 @@ export const useFriday = () => {
     };
     setMessages(prev => [...prev, tempUserMsg]);
 
-    // Send through WebSocket
     socketService.sendChatMessage(convId, content, inputType);
   }, [activeConversationId]);
 
@@ -93,7 +106,7 @@ export const useFriday = () => {
           created_at: data.created_at || new Date().toISOString()
         };
         setMessages(prev => [...prev, assistantMsg]);
-        loadConversations(); // refresh title/counts
+        loadConversations();
       }
     });
 
@@ -111,6 +124,7 @@ export const useFriday = () => {
     telemetry,
     selectConversation,
     startNewConversation,
+    deleteConversation,
     sendMessage
   };
 };

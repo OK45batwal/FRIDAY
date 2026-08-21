@@ -22,7 +22,6 @@ class ConversationManager:
         convs = list(result.scalars().all())
         output = []
         for c in convs:
-            # Count messages
             msg_stmt = select(Message).where(Message.conversation_id == c.id)
             msg_res = await db.execute(msg_stmt)
             count = len(list(msg_res.scalars().all()))
@@ -30,6 +29,28 @@ class ConversationManager:
             c_dict["message_count"] = count
             output.append(c_dict)
         return output
+
+    async def rename_conversation(self, db: AsyncSession, conversation_id: str, new_title: str) -> Optional[Conversation]:
+        conv = await self.get_conversation(db, conversation_id)
+        if not conv:
+            return None
+        conv.title = new_title.strip()
+        await db.commit()
+        await db.refresh(conv)
+        return conv
+
+    async def delete_conversation(self, db: AsyncSession, conversation_id: str) -> bool:
+        conv = await self.get_conversation(db, conversation_id)
+        if not conv:
+            return False
+        # Delete associated messages
+        msg_stmt = select(Message).where(Message.conversation_id == conversation_id)
+        msg_res = await db.execute(msg_stmt)
+        for msg in msg_res.scalars().all():
+            await db.delete(msg)
+        await db.delete(conv)
+        await db.commit()
+        return True
 
     async def add_message(
         self,
@@ -45,7 +66,6 @@ class ConversationManager:
             conv = await self.create_conversation(db, title=content[:30] if content else "Conversation")
             conversation_id = conv.id
 
-        # Update title if it was default
         if conv.title == "New Conversation" and role == "user":
             conv.title = content[:35] + ("..." if len(content) > 35 else "")
 

@@ -9,7 +9,6 @@ import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
 import { Cpu, Settings } from 'lucide-react';
 
-
 export const App: React.FC = () => {
   const {
     conversations,
@@ -20,6 +19,7 @@ export const App: React.FC = () => {
     telemetry,
     selectConversation,
     startNewConversation,
+    deleteConversation,
     sendMessage
   } = useFriday();
 
@@ -58,7 +58,7 @@ export const App: React.FC = () => {
       {/* Header Bar */}
       <header className="glass-panel" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'rgba(239, 68, 68, 0.22)', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
             <Cpu size={20} color="#ef4444" />
           </div>
           <div>
@@ -66,7 +66,7 @@ export const App: React.FC = () => {
               <h1 className="font-display glow-text-red" style={{ fontSize: '18px', letterSpacing: '3px', fontWeight: 900 }}>
                 FRIDAY
               </h1>
-              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.2)', color: '#ffffff', border: '1px solid rgba(239, 68, 68, 0.4)', fontFamily: 'Orbitron, sans-serif', fontWeight: 700 }}>
+              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '9999px', background: 'rgba(239, 68, 68, 0.2)', color: '#ffffff', border: '1px solid rgba(239, 68, 68, 0.45)', fontFamily: 'Orbitron, sans-serif', fontWeight: 700 }}>
                 ASSISTANT
               </span>
             </div>
@@ -98,13 +98,14 @@ export const App: React.FC = () => {
       </header>
 
       {/* Main Grid Workspace */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 320px 1fr', gap: '14px', height: 'calc(100vh - 160px)' }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '270px 320px 1fr', gap: '14px', height: 'calc(100vh - 160px)' }}>
         {/* Left: Conversations Sidebar */}
         <Sidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
           onSelectConversation={selectConversation}
           onNewConversation={startNewConversation}
+          onDeleteConversation={deleteConversation}
         />
 
         {/* Center: Google Assistant AI Core Visualizer */}
