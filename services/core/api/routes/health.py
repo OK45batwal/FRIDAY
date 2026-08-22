@@ -13,7 +13,8 @@ MANIFEST_FILE = MODELS_DIR / "model_manifest.json"
 
 class UpdateConfigRequest(BaseModel):
     provider: Optional[str] = "local_llm"
-    model: Optional[str] = "friday-1.0"
+    api_key: Optional[str] = None
+    model: Optional[str] = None
 
 @router.get("/health")
 async def health_check():
@@ -21,15 +22,15 @@ async def health_check():
         "status": "online",
         "service": "friday-core",
         "version": "1.0.0",
-        "ai_provider": "friday-1.0",
-        "model_name": settings.MODEL_NAME,
-        "parameters": settings.MODEL_PARAMETERS,
-        "active_model": "FRIDAY 1.0 (1.1B Parameters)"
+        "ai_provider": settings.AI_PROVIDER,
+        "model_name": settings.OPENROUTER_MODEL if settings.AI_PROVIDER == "openrouter" else settings.MODEL_NAME,
+        "parameters": "Frontier Cloud" if settings.AI_PROVIDER != "local_llm" else settings.MODEL_PARAMETERS,
+        "active_model": settings.OPENROUTER_MODEL if settings.AI_PROVIDER == "openrouter" else "FRIDAY 1.0 (1.1B Parameters)"
     }
 
 @router.get("/api/models")
 async def get_available_models():
-    """Returns the dedicated FRIDAY 1.0 SLM details."""
+    """Returns available local and cloud frontier models."""
     custom_slm_info = {
         "model_id": "friday-1.0",
         "name": "FRIDAY 1.0",
@@ -37,7 +38,7 @@ async def get_available_models():
         "quantization": "Q4_K_M (4-bit)",
         "ram_required_mb": 780,
         "format": "GGUF",
-        "status": "active_primary"
+        "status": "active"
     }
 
     if MANIFEST_FILE.exists():
@@ -48,22 +49,29 @@ async def get_available_models():
             pass
 
     return {
-        "active_provider": "friday-1.0",
-        "active_model": "FRIDAY 1.0",
-        "parameters": "1.1B Parameters",
+        "active_provider": settings.AI_PROVIDER,
+        "active_model": settings.OPENROUTER_MODEL if settings.AI_PROVIDER == "openrouter" else settings.MODEL_NAME,
         "custom_slm": custom_slm_info,
-        "supported_local_presets": [
-            {"id": "friday-1.0", "name": "⭐ FRIDAY 1.0 (1.1B Parameters - Custom SLM)", "size": "780 MB"}
+        "has_openrouter_key": bool(settings.OPENROUTER_API_KEY),
+        "has_gemini_key": bool(settings.GEMINI_API_KEY),
+        "cloud_models": [
+            {"id": "google/gemini-2.0-flash-001", "name": "⚡ Google: Gemini 2.0 Flash (Fast & Smart)"},
+            {"id": "anthropic/claude-3.5-sonnet", "name": "🧠 Anthropic: Claude 3.5 Sonnet (State-of-the-Art Reasoning)"},
+            {"id": "openai/gpt-4o-mini", "name": "🔥 OpenAI: GPT-4o Mini (ChatGPT Intelligence)"},
+            {"id": "meta-llama/llama-3.3-70b-instruct", "name": "🦙 Meta: Llama 3.3 (70B Instruct)"}
         ],
-        "providers": ["friday_1_0"]
+        "providers": ["local_llm", "openrouter", "gemini"]
     }
 
 @router.post("/api/config")
 async def update_config(payload: UpdateConfigRequest):
-    ai_manager.update_config()
+    ai_manager.update_config(
+        provider=payload.provider or "local_llm",
+        api_key=payload.api_key,
+        model=payload.model
+    )
     return {
         "status": "success",
-        "active_provider": "friday-1.0",
-        "model": "FRIDAY 1.0",
-        "parameters": "1.1B"
+        "active_provider": settings.AI_PROVIDER,
+        "model": settings.OPENROUTER_MODEL if settings.AI_PROVIDER == "openrouter" else settings.MODEL_NAME
     }
