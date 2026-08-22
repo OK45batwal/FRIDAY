@@ -12,11 +12,11 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "output" / "friday_1_0_finetuned"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Select open-source base model
-BASE_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"  # Ultra-fast, high-intelligence 0.5B base model for on-device Mac & Android
+BASE_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
 def run_fine_tuning():
     print("=" * 70)
-    print(f"🚀 Fine-Tuning Open-Source Base Model: {BASE_MODEL_NAME}")
+    print(f"🚀 Fine-Tuning Base Model on Basic QA & Knowledge: {BASE_MODEL_NAME}")
     print("=" * 70)
 
     try:
@@ -25,22 +25,21 @@ def run_fine_tuning():
         from datasets import Dataset
     except ImportError as e:
         print(f"Missing required packages: {e}")
-        print("Please install via: pip install transformers peft datasets accelerate")
         return
 
     # 1. Detect Hardware Acceleration (Apple Silicon Metal GPU or CUDA)
     if torch.backends.mps.is_available():
         device = "mps"
-        print("✓ Acceleration: Apple Silicon Metal GPU (MPS) active")
+        print("✓ Hardware Acceleration: Apple Silicon Metal GPU (MPS) active")
     elif torch.cuda.is_available():
         device = "cuda"
-        print("✓ Acceleration: NVIDIA CUDA GPU active")
+        print("✓ Hardware Acceleration: NVIDIA CUDA GPU active")
     else:
         device = "cpu"
         print("✓ Acceleration: CPU Mode")
 
     # 2. Load Base Tokenizer & Model
-    print(f"\n1. Downloading/Loading Base Model '{BASE_MODEL_NAME}' from Hugging Face...")
+    print(f"\n1. Loading Base Model '{BASE_MODEL_NAME}' from Hugging Face...")
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -51,14 +50,15 @@ def run_fine_tuning():
         trust_remote_code=True
     )
     model.to(device)
-    print(f"✓ Base model loaded ({sum(p.numel() for p in model.parameters()):,} parameters)")
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"✓ Base model loaded ({total_params:,} parameters)")
 
-    # 3. Configure LoRA (Low-Rank Adaptation)
-    print("\n2. Applying Parameter-Efficient LoRA Adapters (r=16, alpha=32)...")
+    # 3. Configure LoRA (High-Capacity Adaptation: r=32, alpha=64)
+    print("\n2. Applying High-Capacity LoRA Adapters (r=32, alpha=64)...")
     peft_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
-        r=16,
-        lora_alpha=32,
+        r=32,
+        lora_alpha=64,
         lora_dropout=0.05,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     )
@@ -66,8 +66,8 @@ def run_fine_tuning():
     trainable_params, all_params = model.get_nb_trainable_parameters()
     print(f"✓ Trainable parameters: {trainable_params:,} / {all_params:,} ({100 * trainable_params / all_params:.2f}%)")
 
-    # 4. Load & Preprocess Custom FRIDAY Dataset
-    print(f"\n3. Loading Custom Instruction Dataset from {DATA_PATH}...")
+    # 4. Load & Preprocess Custom Basic QA Dataset
+    print(f"\n3. Loading Basic QA Instruction Dataset from {DATA_PATH}...")
     formatted_data = []
     if DATA_PATH.exists():
         with open(DATA_PATH, "r", encoding="utf-8") as f:
@@ -75,13 +75,14 @@ def run_fine_tuning():
                 if line.strip():
                     item = json.loads(line)
                     messages = item.get("messages", [])
-                    # Apply ChatML template
                     chat_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
                     formatted_data.append({"text": chat_text})
 
-    print(f"✓ Formatted {len(formatted_data)} ChatML instruction samples.")
+    print(f"✓ Formatted {len(formatted_data):,} ChatML basic QA instruction samples.")
 
-    dataset = Dataset.from_list(formatted_data[:100])  # Fine-tune on high-quality sample batch
+    # Train on rich high-quality training subset
+    train_subset = formatted_data[:200]
+    dataset = Dataset.from_list(train_subset)
 
     def tokenize_fn(examples):
         tokens = tokenizer(examples["text"], truncation=True, max_length=512, padding="max_length")
@@ -96,7 +97,7 @@ def run_fine_tuning():
         output_dir=str(OUTPUT_DIR / "checkpoints"),
         per_device_train_batch_size=2,
         gradient_accumulation_steps=2,
-        learning_rate=2e-4,
+        learning_rate=3e-4,
         num_train_epochs=3,
         logging_steps=5,
         save_strategy="no",
@@ -111,7 +112,7 @@ def run_fine_tuning():
         data_collator=DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8, return_tensors="pt")
     )
 
-    print("\n5. Starting Training Execution...")
+    print("\n5. Starting SFT Fine-Tuning Execution on Metal GPU...")
     start_time = time.time()
     trainer.train()
     elapsed = round(time.time() - start_time, 2)
@@ -123,17 +124,19 @@ def run_fine_tuning():
 
     # Create manifest
     manifest = {
-        "model_id": "friday-1.0-finetuned",
+        "model_id": "friday-1.0-basic-qa-finetuned",
         "base_model": BASE_MODEL_NAME,
-        "name": "FRIDAY 1.0 (Fine-Tuned from Qwen 2.5 Base)",
+        "name": "FRIDAY 1.0 (Fine-Tuned on Science, Anatomy & Basic QA)",
         "parameters": "0.5 Billion Parameters (500M)",
-        "adapter": "LoRA (r=16, alpha=32)",
-        "quantization": "Q4_K_M GGUF Ready",
+        "adapter": "LoRA (r=32, alpha=64)",
         "target_hardware": ["Apple Silicon Mac (Metal GPU)", "Android Phone (ARM64)"],
-        "domains": [
-            "Desktop OS Automation (Spotify, VS Code, Terminal, Mac Telemetry)",
-            "Full-Stack Software Architecture (Python, FastAPI, React, TypeScript, SQL)",
-            "Indian Conversational Cadence (Tara / 185 WPM)"
+        "knowledge_domains": [
+            "Human Biology & Anatomy (206 bones, organs, cells, DNA)",
+            "Physical & Natural Sciences (Photosynthesis, Newton's Laws, Solar System, Light Speed)",
+            "World Geography & History (Capitals, Turing, Einstein)",
+            "Core Mathematics & Logic (Pythagorean Theorem, boiling/freezing points)",
+            "Software & Python Foundations (Functions, dicts, async/await, Git)",
+            "OS Automation & System Telemetry"
         ],
         "status": "trained_and_deployed",
         "training_time_seconds": elapsed
