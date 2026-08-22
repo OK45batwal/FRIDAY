@@ -9,8 +9,8 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     CORS_ORIGINS: list[str] = ["*"]
 
-    # AI Provider (mock | openrouter | openai | gemini | ollama)
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock")
+    # AI Provider (embedded | openrouter | openai | gemini | ollama)
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "embedded")
     
     # OpenRouter
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
@@ -22,7 +22,7 @@ class Settings:
     
     # Local LLM (Ollama)
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR}/friday.db")

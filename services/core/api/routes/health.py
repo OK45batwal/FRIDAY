@@ -35,7 +35,7 @@ async def get_available_models():
         "active_provider": ai_manager.get_active_provider().name,
         "local_models": local_models,
         "supported_local_presets": [
-            {"id": "llama3.2:3b", "name": "Meta: Llama 3.2 (3B - Recommended for Mac & Android)", "size": "1.8 GB"},
+            {"id": "llama3.2:3b", "name": "Meta: Llama 3.2 (3B - Recommended)", "size": "1.8 GB"},
             {"id": "llama3.2:1b", "name": "Meta: Llama 3.2 (1B - Ultra-Lightweight)", "size": "0.8 GB"},
             {"id": "qwen2.5:3b", "name": "Alibaba: Qwen 2.5 (3B - Code & Math)", "size": "1.9 GB"},
             {"id": "deepseek-r1:1.5b", "name": "DeepSeek: R1 Distill (1.5B - Reasoning)", "size": "1.1 GB"},

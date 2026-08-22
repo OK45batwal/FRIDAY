@@ -1,5 +1,6 @@
 from typing import Dict, List, Any, Optional
 from services.core.core.ai.provider import BaseAIProvider
+from services.core.core.ai.providers.embedded_provider import EmbeddedLocalAIProvider
 from services.core.core.ai.providers.mock_provider import MockAIProvider
 from services.core.core.ai.providers.openrouter_provider import OpenRouterProvider
 from services.core.core.ai.providers.openai_provider import OpenAIProvider
@@ -9,25 +10,29 @@ from services.core.app.config import settings
 
 class AIManager:
     """
-    Manages active AI providers and dynamic model switching (OpenRouter, OpenAI, Gemini, Ollama, Mock).
+    Manages active AI providers and dynamic model switching (Embedded, OpenRouter, OpenAI, Gemini, Ollama).
     """
     def __init__(self):
         self._providers: Dict[str, BaseAIProvider] = {}
-        self._active_provider_name: str = settings.AI_PROVIDER.lower()
         
         # Register standard providers
+        self.register_provider(EmbeddedLocalAIProvider())
         self.register_provider(MockAIProvider())
         self.register_provider(OpenRouterProvider())
         self.register_provider(OpenAIProvider())
         self.register_provider(GeminiProvider())
         self.register_provider(OllamaProvider())
 
+        # Set default active provider
+        default_name = settings.AI_PROVIDER.lower() if settings.AI_PROVIDER in self._providers else "embedded"
+        self._active_provider_name: str = default_name
+
     def register_provider(self, provider: BaseAIProvider):
         self._providers[provider.name] = provider
 
     def set_provider(self, name: str):
         if name.lower() not in self._providers:
-            raise ValueError(f"Unknown AI provider: {name}. Available: {list(self._providers.keys())}")
+            name = "embedded"
         self._active_provider_name = name.lower()
         settings.AI_PROVIDER = name.lower()
 
@@ -46,8 +51,7 @@ class AIManager:
             settings.OLLAMA_MODEL = model
 
     def get_active_provider(self) -> BaseAIProvider:
-        return self._providers.get(self._active_provider_name, self._providers["mock"])
-
+        return self._providers.get(self._active_provider_name, self._providers["embedded"])
 
     def list_providers(self) -> List[str]:
         return list(self._providers.keys())
@@ -58,12 +62,12 @@ class AIManager:
         system_prompt: str,
         history: List[Dict[str, Any]]
     ) -> str:
-        provider = self._providers.get(self._active_provider_name, self._providers["mock"])
+        provider = self._providers.get(self._active_provider_name, self._providers["embedded"])
         try:
             return await provider.generate_response(prompt, system_prompt, history)
-        except Exception as e:
-            # Fallback to Mock provider if external API fails
-            fallback = self._providers["mock"]
+        except Exception:
+            # Fallback seamlessly to embedded engine without throwing errors
+            fallback = self._providers["embedded"]
             return await fallback.generate_response(prompt, system_prompt, history)
 
 ai_manager = AIManager()
