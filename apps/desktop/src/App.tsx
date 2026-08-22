@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from './components/header/Navbar';
 import { Sidebar } from './components/chat/Sidebar';
 import { ChatPanel } from './components/chat/ChatPanel';
@@ -7,6 +7,7 @@ import { SettingsDialog } from './components/settings/SettingsDialog';
 import { ToolsModal } from './components/library/ToolsModal';
 import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
+import { useWakeWord } from './hooks/useWakeWord';
 
 export const App: React.FC = () => {
   const {
@@ -15,21 +16,21 @@ export const App: React.FC = () => {
     messages,
     selectConversation,
     startNewConversation,
-
     deleteConversation,
     sendMessage
   } = useFriday();
 
   const [selectedAgent, setSelectedAgent] = useState('programming');
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleVoiceTranscript = (transcript: string) => {
+  const handleVoiceTranscript = useCallback((transcript: string) => {
     if (transcript) {
       sendMessage(transcript, 'voice');
     }
-  };
+  }, [sendMessage]);
 
   const {
     isListening,
@@ -40,6 +41,26 @@ export const App: React.FC = () => {
     toggleListening,
     speak
   } = useVoice(handleVoiceTranscript);
+
+  // Wake Word Engine
+  const handleWakeWordDetected = useCallback(() => {
+    // If not already listening, trigger microphone listening
+    if (!isListening) {
+      toggleListening();
+    }
+  }, [isListening, toggleListening]);
+
+  const handleWakeCommand = useCallback((command: string) => {
+    if (command.trim()) {
+      sendMessage(command.trim(), 'voice');
+    }
+  }, [sendMessage]);
+
+  useWakeWord({
+    enabled: wakeWordEnabled,
+    onWake: handleWakeWordDetected,
+    onCommand: handleWakeCommand
+  });
 
   // Auto-speak assistant response if autoSpeak is enabled
   useEffect(() => {
@@ -60,6 +81,8 @@ export const App: React.FC = () => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', position: 'relative' }}>
       {/* Top Navbar */}
       <Navbar
+        wakeWordEnabled={wakeWordEnabled}
+        onToggleWakeWord={() => setWakeWordEnabled(!wakeWordEnabled)}
         onNewChat={startNewConversation}
         onOpenConfig={() => setSettingsOpen(true)}
         onOpenLibrary={() => setToolsOpen(true)}

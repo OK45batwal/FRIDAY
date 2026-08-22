@@ -1,7 +1,9 @@
 import React from 'react';
-import { Plus, Search, BookOpen, Settings, Sparkles } from 'lucide-react';
+import { Plus, Search, BookOpen, Settings, Sparkles, Mic, MicOff } from 'lucide-react';
 
 interface NavbarProps {
+  wakeWordEnabled: boolean;
+  onToggleWakeWord: () => void;
   onNewChat: () => void;
   onOpenConfig: () => void;
   onOpenLibrary: () => void;
@@ -9,6 +11,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  wakeWordEnabled,
+  onToggleWakeWord,
   onNewChat,
   onOpenConfig,
   onOpenLibrary,
@@ -22,7 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         alignItems: 'center',
         padding: '12px 24px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        background: 'rgba(12, 13, 18, 0.8)',
+        background: 'rgba(12, 13, 18, 0.85)',
         backdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
@@ -53,6 +57,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Hands-Free Wake Word Toggle Pill */}
+        <button
+          onClick={onToggleWakeWord}
+          className="nav-pill"
+          style={{
+            borderColor: wakeWordEnabled ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.08)',
+            background: wakeWordEnabled ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+            color: wakeWordEnabled ? '#ffffff' : '#9ca3af'
+          }}
+          title={wakeWordEnabled ? "Always-On Wake Word Enabled (Say 'Hey FRIDAY')" : "Wake Word Inactive (Click to Enable)"}
+        >
+          {wakeWordEnabled ? <Mic size={14} color="#ef4444" /> : <MicOff size={14} color="#6b7280" />}
+          <span>{wakeWordEnabled ? 'Hey FRIDAY' : 'Wake Word Off'}</span>
+        </button>
+
         <button onClick={onNewChat} className="nav-pill">
           <Plus size={14} color="#ef4444" />
           <span>New chat</span>
