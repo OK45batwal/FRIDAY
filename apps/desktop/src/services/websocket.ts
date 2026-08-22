@@ -12,7 +12,7 @@ export class WebSocketService {
   private onStateChange: StateHandler | null = null;
   private onTelemetry: TelemetryHandler | null = null;
   private onConnectionChange: ConnectionHandler | null = null;
-  private reconnectInterval: number = 3000;
+  private reconnectInterval: number = 2500;
   private reconnectTimeout: any = null;
 
   connect(handlers: {
@@ -47,11 +47,13 @@ export class WebSocketService {
       this.socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'assistant_response') {
-            this.onMessageResponse?.(data);
+          
+          if (data.type === 'assistant_response' || data.type === 'chat_response') {
+            const payload = data.data ? { ...data.data, ...data } : data;
+            this.onMessageResponse?.(payload);
           } else if (data.type === 'state_change') {
             this.onStateChange?.(data.state);
-          } else if (data.type === 'system_telemetry') {
+          } else if (data.type === 'system_telemetry' || data.type === 'telemetry') {
             this.onTelemetry?.(data.data);
           }
         } catch (e) {
@@ -89,13 +91,14 @@ export class WebSocketService {
     }
   }
 
-  sendChatMessage(conversationId: string, message: string, inputType: string = 'text'): boolean {
+  sendChatMessage(conversationId: string, message: string, inputType: string = 'text', agentMode: string = 'general'): boolean {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         type: 'chat_message',
         conversation_id: conversationId,
         message,
-        input_type: inputType
+        input_type: inputType,
+        agent_mode: agentMode
       }));
       return true;
     }

@@ -65,7 +65,7 @@ export const useFriday = () => {
     }
   }, [conversations, activeConversationId, selectConversation, startNewConversation]);
 
-  const sendMessage = useCallback(async (content: string, inputType: 'text' | 'voice' = 'text') => {
+  const sendMessage = useCallback(async (content: string, inputType: 'text' | 'voice' = 'text', agentMode: string = 'general') => {
     if (!content.trim()) return;
 
     let convId = activeConversationId;
@@ -88,7 +88,7 @@ export const useFriday = () => {
     setState('THINKING');
 
     // Try WebSocket first
-    const sentViaWs = socketService.sendChatMessage(convId, content, inputType);
+    const sentViaWs = socketService.sendChatMessage(convId, content, inputType, agentMode);
     
     // Automatic REST fallback if WebSocket is offline or not yet connected
     if (!sentViaWs) {

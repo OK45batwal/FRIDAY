@@ -76,6 +76,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 conv_id = payload.get("conversation_id", "default")
                 text = payload.get("message", "").strip()
                 input_type = payload.get("input_type", "text")
+                agent_mode = payload.get("agent_mode", "general")
 
                 if not text:
                     continue
@@ -89,16 +90,21 @@ async def websocket_endpoint(websocket: WebSocket):
                         db=db,
                         conversation_id=conv_id,
                         message=text,
-                        input_type=input_type
+                        input_type=input_type,
+                        agent_mode=agent_mode
                     )
 
                 # 3. State: SPEAKING
                 await manager.send_json(websocket, {"type": "state_change", "state": "SPEAKING"})
 
-                # 4. Return response
+                # 4. Return formatted response (matches frontend listener exactly)
                 await manager.send_json(websocket, {
-                    "type": "chat_response",
-                    "data": result
+                    "type": "assistant_response",
+                    "conversation_id": result["conversation_id"],
+                    "message_id": result["message_id"],
+                    "response": result["response"],
+                    "created_at": result["created_at"],
+                    "executed_tool": result.get("executed_tool")
                 })
 
                 # 5. State: IDLE
@@ -106,7 +112,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif msg_type == "ping":
                 await manager.send_json(websocket, {
-                    "type": "telemetry",
+                    "type": "system_telemetry",
                     "data": get_system_telemetry()
                 })
 
