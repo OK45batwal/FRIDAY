@@ -3,7 +3,7 @@ import type { Conversation, Message, AssistantState, SystemTelemetry } from '../
 import { api, getBaseUrl } from '../services/api';
 import { socketService } from '../services/websocket';
 
-export const useFriday = () => {
+export const useFriday = (onMessageComplete?: (content: string) => void) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -141,13 +141,17 @@ export const useFriday = () => {
                       )
                     );
                   } else if (event.type === 'done') {
+                    const finalReply = event.full_response || accumulatedText;
                     setMessages(prev =>
                       prev.map(m =>
                         m.id === tempAssistantMsgId
-                          ? { ...m, content: event.full_response || accumulatedText, id: event.message_id || tempAssistantMsgId }
+                          ? { ...m, content: finalReply, id: event.message_id || tempAssistantMsgId }
                           : m
                       )
                     );
+                    if (finalReply) {
+                      onMessageComplete?.(finalReply);
+                    }
                   }
                 } catch {
                   // Non-JSON line
@@ -163,19 +167,21 @@ export const useFriday = () => {
     } catch (err) {
       console.warn("SSE Stream fallback, invoking standard REST:", err);
       try {
-        const fallbackRes = await api.sendMessage(convId, content, inputType);
+        const res = await api.sendMessage(convId, content, inputType, agentMode);
         setMessages(prev =>
           prev.map(m =>
             m.id === tempAssistantMsgId
-              ? { ...m, content: fallbackRes.response, id: fallbackRes.message_id }
+              ? { ...m, content: res.response, id: res.message_id }
               : m
           )
         );
         setState('IDLE');
-        loadConversations();
+        if (res.response) {
+          onMessageComplete?.(res.response);
+        }
       } catch (restErr) {
-        console.error("REST fallback error:", restErr);
-        setState('ERROR');
+        console.error("REST fallback also failed:", restErr);
+        setState('IDLE');
       }
     }
   }, [activeConversationId, loadConversations]);

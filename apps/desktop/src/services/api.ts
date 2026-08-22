@@ -75,14 +75,15 @@ export const api = {
     return res.json();
   },
 
-  async sendMessage(conversationId: string, message: string, inputType: string = 'text') {
+  async sendMessage(conversationId: string, message: string, inputType: string = 'text', agentMode: string = 'general') {
     const res = await fetch(`${getBaseUrl()}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         conversation_id: conversationId,
         message,
-        input_type: inputType
+        input_type: inputType,
+        agent_mode: agentMode
       })
     });
     return res.json();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Navbar } from './components/header/Navbar';
 import { Sidebar } from './components/chat/Sidebar';
 import { ChatPanel } from './components/chat/ChatPanel';
@@ -9,6 +9,29 @@ import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
 
 export const App: React.FC = () => {
+  const [selectedAgent, setSelectedAgent] = useState('general');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const {
+    isListening,
+    autoSpeak,
+    setAutoSpeak,
+    toggleListening,
+    speak
+  } = useVoice((transcript) => {
+    if (transcript.trim()) {
+      sendMessage(transcript.trim(), 'voice', selectedAgent);
+    }
+  });
+
+  const handleMessageComplete = useCallback((content: string) => {
+    if (autoSpeak && content) {
+      speak(content);
+    }
+  }, [autoSpeak, speak]);
+
   const {
     conversations,
     activeConversationId,
@@ -17,36 +40,7 @@ export const App: React.FC = () => {
     startNewConversation,
     deleteConversation,
     sendMessage
-  } = useFriday();
-
-  const [selectedAgent, setSelectedAgent] = useState('programming');
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const handleVoiceTranscript = useCallback((transcript: string) => {
-    if (transcript.trim()) {
-      sendMessage(transcript.trim(), 'voice', selectedAgent);
-    }
-  }, [sendMessage, selectedAgent]);
-
-  const {
-    isListening,
-    autoSpeak,
-    setAutoSpeak,
-    toggleListening,
-    speak
-  } = useVoice(handleVoiceTranscript);
-
-  // Auto-speak assistant response if autoSpeak is enabled
-  useEffect(() => {
-    if (messages.length > 0 && autoSpeak) {
-      const lastMsg = messages[messages.length - 1];
-      if (lastMsg.role === 'assistant') {
-        speak(lastMsg.content);
-      }
-    }
-  }, [messages, autoSpeak, speak]);
+  } = useFriday(handleMessageComplete);
 
   const handleSendMessage = (text: string, inputType: 'text' | 'voice' = 'text', agentMode?: string) => {
     sendMessage(text, inputType, agentMode || selectedAgent);
