@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.core.core.ai.manager import ai_manager
 from services.core.core.conversation.manager import conversation_manager
-from services.core.core.assistant.tools import system_tools
+from services.core.core.agent.tools import agent_tools
 
 SYSTEM_PROMPT = """You are FRIDAY, an elite Indian AI operating assistant, senior software architect, and computer control companion for Omkar.
 You speak clearly, concisely, and articulately with a natural, respectful Indian English conversational cadence.
@@ -33,13 +33,13 @@ class AssistantOrchestrator:
         executed_tool = None
 
         if "open spotify" in msg_lower or "launch spotify" in msg_lower:
-            tool_res = system_tools.launch_app("Spotify")
+            tool_res = agent_tools.launch_desktop_app("Spotify")
             executed_tool = {"tool": "launch_app", "target": "Spotify", "result": tool_res}
         elif "open vscode" in msg_lower or "open code" in msg_lower:
-            tool_res = system_tools.launch_app("Visual Studio Code")
+            tool_res = agent_tools.launch_desktop_app("Visual Studio Code")
             executed_tool = {"tool": "launch_app", "target": "VS Code", "result": tool_res}
         elif "open terminal" in msg_lower:
-            tool_res = system_tools.launch_app("Terminal")
+            tool_res = agent_tools.launch_desktop_app("Terminal")
             executed_tool = {"tool": "launch_app", "target": "Terminal", "result": tool_res}
 
         # 3. Retrieve recent history for context
