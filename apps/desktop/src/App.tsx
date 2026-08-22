@@ -7,7 +7,6 @@ import { SettingsDialog } from './components/settings/SettingsDialog';
 import { ToolsModal } from './components/library/ToolsModal';
 import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
-import { useWakeWord } from './hooks/useWakeWord';
 
 export const App: React.FC = () => {
   const {
@@ -27,10 +26,10 @@ export const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleVoiceTranscript = useCallback((transcript: string) => {
-    if (transcript) {
-      sendMessage(transcript, 'voice');
+    if (transcript.trim()) {
+      sendMessage(transcript.trim(), 'voice', selectedAgent);
     }
-  }, [sendMessage]);
+  }, [sendMessage, selectedAgent]);
 
   const {
     isListening,
@@ -40,27 +39,7 @@ export const App: React.FC = () => {
     setSelectedVoiceName,
     toggleListening,
     speak
-  } = useVoice(handleVoiceTranscript);
-
-  // Wake Word Engine
-  const handleWakeWordDetected = useCallback(() => {
-    // If not already listening, trigger microphone listening
-    if (!isListening) {
-      toggleListening();
-    }
-  }, [isListening, toggleListening]);
-
-  const handleWakeCommand = useCallback((command: string) => {
-    if (command.trim()) {
-      sendMessage(command.trim(), 'voice');
-    }
-  }, [sendMessage]);
-
-  useWakeWord({
-    enabled: wakeWordEnabled,
-    onWake: handleWakeWordDetected,
-    onCommand: handleWakeCommand
-  });
+  } = useVoice(handleVoiceTranscript, wakeWordEnabled);
 
   // Auto-speak assistant response if autoSpeak is enabled
   useEffect(() => {
@@ -73,7 +52,7 @@ export const App: React.FC = () => {
   }, [messages, autoSpeak, speak]);
 
   const handleSendMessage = (text: string, inputType: 'text' | 'voice' = 'text', agentMode?: string) => {
-    sendMessage(text, inputType);
+    sendMessage(text, inputType, agentMode || selectedAgent);
     if (agentMode) setSelectedAgent(agentMode);
   };
 
