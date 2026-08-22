@@ -20,7 +20,6 @@ export const App: React.FC = () => {
   } = useFriday();
 
   const [selectedAgent, setSelectedAgent] = useState('programming');
-  const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,12 +33,12 @@ export const App: React.FC = () => {
   const {
     isListening,
     autoSpeak,
-    availableVoices,
+    setAutoSpeak,
     selectedVoiceName,
     setSelectedVoiceName,
     toggleListening,
     speak
-  } = useVoice(handleVoiceTranscript, wakeWordEnabled);
+  } = useVoice(handleVoiceTranscript);
 
   // Auto-speak assistant response if autoSpeak is enabled
   useEffect(() => {
@@ -60,8 +59,8 @@ export const App: React.FC = () => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', position: 'relative' }}>
       {/* Top Navbar */}
       <Navbar
-        wakeWordEnabled={wakeWordEnabled}
-        onToggleWakeWord={() => setWakeWordEnabled(!wakeWordEnabled)}
+        autoSpeak={autoSpeak}
+        onToggleAutoSpeak={() => setAutoSpeak(!autoSpeak)}
         onNewChat={startNewConversation}
         onOpenConfig={() => setSettingsOpen(true)}
         onOpenLibrary={() => setToolsOpen(true)}
@@ -114,7 +113,6 @@ export const App: React.FC = () => {
       <SettingsDialog
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        availableVoices={availableVoices}
         selectedVoiceName={selectedVoiceName}
         onSelectVoice={setSelectedVoiceName}
         onTestVoice={speak}

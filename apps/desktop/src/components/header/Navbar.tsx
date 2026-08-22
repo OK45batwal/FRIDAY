@@ -1,10 +1,10 @@
 import React from 'react';
-import { Plus, Search, BookOpen, Settings, Mic, MicOff } from 'lucide-react';
+import { Plus, Search, BookOpen, Settings, Volume2, VolumeX } from 'lucide-react';
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
-  wakeWordEnabled: boolean;
-  onToggleWakeWord: () => void;
+  autoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
   onNewChat: () => void;
   onOpenConfig: () => void;
   onOpenLibrary: () => void;
@@ -12,8 +12,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  wakeWordEnabled,
-  onToggleWakeWord,
+  autoSpeak,
+  onToggleAutoSpeak,
   onNewChat,
   onOpenConfig,
   onOpenLibrary,
@@ -34,24 +34,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         zIndex: 50
       }}
     >
-      {/* Geometric Clean Logo & Brand */}
+      {/* Brand & Logo */}
       <FridayLogo size={32} fontSize={17} showText={true} />
 
       {/* Action Navigation Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Hands-Free Wake Word Toggle Pill */}
+        {/* Voice Auto-Speak Toggle */}
         <button
-          onClick={onToggleWakeWord}
+          onClick={onToggleAutoSpeak}
           className="nav-pill"
           style={{
-            borderColor: wakeWordEnabled ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.08)',
-            background: wakeWordEnabled ? 'rgba(244, 63, 94, 0.1)' : 'rgba(255, 255, 255, 0.04)',
-            color: wakeWordEnabled ? '#ffffff' : '#94a3b8'
+            borderColor: autoSpeak ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.08)',
+            background: autoSpeak ? 'rgba(244, 63, 94, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+            color: autoSpeak ? '#ffffff' : '#94a3b8'
           }}
-          title={wakeWordEnabled ? "Always-On Wake Word Enabled (Say 'Hey FRIDAY')" : "Wake Word Inactive (Click to Enable)"}
+          title={autoSpeak ? "Spoken Voice Audio Enabled" : "Voice Audio Muted"}
         >
-          {wakeWordEnabled ? <Mic size={14} color="#f43f5e" /> : <MicOff size={14} color="#64748b" />}
-          <span>{wakeWordEnabled ? 'Hey FRIDAY' : 'Wake Word Off'}</span>
+          {autoSpeak ? <Volume2 size={14} color="#f43f5e" /> : <VolumeX size={14} color="#64748b" />}
+          <span>{autoSpeak ? 'Voice On' : 'Muted'}</span>
         </button>
 
         <button onClick={onNewChat} className="nav-pill">
@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Config</span>
         </button>
 
-        {/* User Profile Avatar */}
+        {/* User Avatar */}
         <div
           style={{
             width: '32px',

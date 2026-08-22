@@ -76,7 +76,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     }, 700);
   };
 
-  const englishVoices = availableVoices.filter(v => v.lang.startsWith('en'));
+  const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+  const englishVoices = (availableVoices && availableVoices.length > 0 ? availableVoices : voices).filter(v => v.lang.startsWith('en'));
+
 
   return (
     <div

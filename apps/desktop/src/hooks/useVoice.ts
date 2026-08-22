@@ -1,40 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { playWakeChime } from '../utils/audioChime';
 
-export const useVoice = (
-  onTranscript: (transcript: string) => void,
-  wakeWordEnabled: boolean = true
-) => {
+export const useVoice = (onTranscript: (transcript: string) => void) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
-  
   const recognitionRef = useRef<any>(null);
-  const isListeningRef = useRef(false);
-  const wakeWordEnabledRef = useRef(wakeWordEnabled);
-  wakeWordEnabledRef.current = wakeWordEnabled;
 
-  // Load available system voices
+  // Initialize Speech Synthesis Voices
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
         const voices = window.speechSynthesis.getVoices();
-        setAvailableVoices(voices);
-
-        // Best Female Voices prioritized for FRIDAY (Irish, British, Studio US)
-        const preferred = voices.find(v => 
-          v.name.includes('Moira') || // Marvel FRIDAY Irish voice
-          v.name.includes('Samantha') || // macOS Studio female
-          v.name.includes('Sonia') || // Edge Natural British female
-          v.name.includes('Libby') ||
-          v.name.includes('Ava') ||
+        const preferred = voices.find(v =>
+          v.name.includes('Samantha') ||
+          v.name.includes('Moira') ||
           v.name.includes('Karen') ||
           v.name.includes('Victoria') ||
-          (v.name.includes('Female') && v.lang.startsWith('en'))
+          v.name.includes('Zira') ||
+          (v.name.includes('Female') && v.lang.startsWith('en')) ||
+          v.lang.startsWith('en')
         );
-
         if (preferred && !selectedVoiceName) {
           setSelectedVoiceName(preferred.name);
         }
@@ -47,159 +33,114 @@ export const useVoice = (
     }
   }, [selectedVoiceName]);
 
-  // Unified High-Speed Speech Recognition & Wake Word Engine
-  const startRecognition = useCallback(() => {
+  // Clean, Simple Speech Recognition
+  const startListening = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch (e) {
-        // Ignore abort errors
-      }
+    if (!SpeechRecognition) {
+      alert("Microphone recognition is not supported in this browser. Please use Google Chrome or Safari.");
+      return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      // Background listener active
-    };
-
-    recognition.onresult = (event: any) => {
-      const results = event.results;
-      for (let i = event.resultIndex; i < results.length; i++) {
-        const item = results[i];
-        const transcript = item[0].transcript.toLowerCase().trim();
-        const isFinal = item.isFinal;
-
-        // 1. Instant Wake Word Detection ("hey friday", "friday", "hi friday")
-        if (
-          wakeWordEnabledRef.current &&
-          (transcript.includes('hey friday') ||
-           transcript.includes('hi friday') ||
-           transcript.includes('ok friday') ||
-           transcript.includes('hello friday') ||
-           transcript.startsWith('friday'))
-        ) {
-          if (!isListeningRef.current) {
-            playWakeChime();
-            setIsListening(true);
-            isListeningRef.current = true;
-          }
-
-          // Extract follow-up command in the same utterance
-          const cleanedCommand = transcript
-            .replace(/hey friday/g, '')
-            .replace(/hi friday/g, '')
-            .replace(/ok friday/g, '')
-            .replace(/hello friday/g, '')
-            .replace(/^friday/g, '')
-            .trim();
-
-          if (isFinal && cleanedCommand.length > 1) {
-            onTranscript(cleanedCommand);
-            setIsListening(false);
-            isListeningRef.current = false;
-          }
-          return;
-        }
-
-        // 2. Direct Manual Voice Command (if user clicked Talk / Mic)
-        if (isListeningRef.current && isFinal && transcript.length > 0) {
-          onTranscript(transcript);
-          setIsListening(false);
-          isListeningRef.current = false;
-        }
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
-        console.warn("Speech recognition error:", event.error);
-      }
-    };
-
-    recognition.onend = () => {
-      // Auto-restart continuously for zero-latency wake word listening
-      setTimeout(() => {
-        try {
-          recognition.start();
-        } catch (e) {
-          // Ignore restart collisions
-        }
-      }, 200);
-    };
-
     try {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript && transcript.trim()) {
+          onTranscript(transcript.trim());
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
       recognition.start();
       recognitionRef.current = recognition;
     } catch (err) {
-      console.error("Failed to start voice recognition:", err);
+      console.error("Failed to start speech recognition:", err);
+      setIsListening(false);
     }
   }, [onTranscript]);
 
-  useEffect(() => {
-    startRecognition();
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-        recognitionRef.current = null;
-      }
-    };
-  }, [startRecognition]);
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  }, []);
 
   const toggleListening = useCallback(() => {
-    if (!isListening) {
-      playWakeChime();
-      setIsListening(true);
-      isListeningRef.current = true;
+    if (isListening) {
+      stopListening();
     } else {
-      setIsListening(false);
-      isListeningRef.current = false;
+      startListening();
     }
-  }, [isListening]);
+  }, [isListening, startListening, stopListening]);
 
+  // Clean, Simple Speech Synthesis
   const speak = useCallback((text: string) => {
     if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
 
-    // Clean text of markdown markers (*, #, `) for cleaner speech
-    const cleanText = text
-      .replace(/[*#`_~]/g, '')
-      .replace(/```[\s\S]*?```/g, 'Code block output.')
-      .replace(/https?:\/\/\S+/g, 'link')
-      .trim();
+    try {
+      window.speechSynthesis.cancel(); // Clear any queued speech
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.05; // Fast, snappy response rate
-    utterance.pitch = 1.0;
+      // Strip markdown code blocks & special characters for clean speech
+      const cleanText = text
+        .replace(/```[\s\S]*?```/g, 'Code block.')
+        .replace(/[*#`_~]/g, '')
+        .replace(/https?:\/\/\S+/g, 'link')
+        .trim();
 
-    const voices = window.speechSynthesis.getVoices();
-    let voice = voices.find(v => v.name === selectedVoiceName);
+      if (!cleanText) return;
 
-    if (!voice) {
-      voice = voices.find(v => 
-        v.name.includes('Moira') ||
-        v.name.includes('Samantha') ||
-        v.name.includes('Sonia') ||
-        v.name.includes('Ava') ||
-        v.lang.startsWith('en')
-      );
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      let voice = voices.find(v => v.name === selectedVoiceName);
+
+      if (!voice) {
+        voice = voices.find(v =>
+          v.name.includes('Samantha') ||
+          v.name.includes('Moira') ||
+          v.name.includes('Karen') ||
+          v.lang.startsWith('en')
+        );
+      }
+
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error("Speech synthesis failed:", e);
+      setIsSpeaking(false);
     }
-
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
   }, [selectedVoiceName]);
 
   const stopSpeaking = useCallback(() => {
@@ -214,7 +155,6 @@ export const useVoice = (
     isSpeaking,
     autoSpeak,
     setAutoSpeak,
-    availableVoices,
     selectedVoiceName,
     setSelectedVoiceName,
     toggleListening,
