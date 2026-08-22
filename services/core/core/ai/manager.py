@@ -18,7 +18,7 @@ class AIManager:
             "openrouter": self.openrouter_provider
         }
 
-    def get_active_provider() -> BaseAIProvider:
+    def get_active_provider(self) -> BaseAIProvider:
         provider_name = settings.AI_PROVIDER
         if provider_name == "openrouter" and settings.OPENROUTER_API_KEY.strip():
             return self.openrouter_provider

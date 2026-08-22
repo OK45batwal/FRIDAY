@@ -2,14 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const getBaseUrl = () => {
   const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `http://${host || 'localhost'}:8000`;
+  return (import.meta as any).env?.VITE_API_URL || `http://${host || 'localhost'}:8000`;
 };
 
 export const useVoice = (onTranscript: (transcript: string) => void) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
-  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('en-IE-EmilyNeural');
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('Tara');
   
   const recognitionRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
@@ -22,7 +22,6 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     audio.onerror = () => setIsSpeaking(false);
     audioPlayerRef.current = audio;
 
-    // Unlock browser audio context on first interaction
     const unlockAudio = () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.resume();
@@ -56,7 +55,7 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
 
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onstart = () => {
@@ -64,11 +63,14 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
       };
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript && transcript.trim()) {
-          onTranscript(transcript.trim());
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
         }
-        setIsListening(false);
+        if (event.results[0].isFinal && currentTranscript.trim()) {
+          onTranscript(currentTranscript.trim());
+          setIsListening(false);
+        }
       };
 
       recognition.onerror = (event: any) => {
@@ -104,13 +106,13 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     }
   }, [isListening, startListening, stopListening]);
 
-  // High-Definition Neural Audio Speech Synthesis
-  const speak = useCallback((text: string) => {
+  // Multi-Tier Resilient Speech Synthesis
+  const speak = useCallback(async (text: string) => {
     if (!text || !text.trim()) return;
 
-    // Clean text of markdown, code blocks, URLs for crystal-clear natural speech
+    // Clean text into short summary for voice
     const cleanText = text
-      .replace(/```[\s\S]*?```/g, 'Here is the code block.')
+      .replace(/```[\s\S]*?```/g, '')
       .replace(/`([^`]+)`/g, '$1')
       .replace(/[*#_~]/g, '')
       .replace(/https?:\/\/\S+/g, 'link')
@@ -118,40 +120,53 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
 
     if (!cleanText) return;
 
-    // 1. Try High-Definition Neural Audio Stream from Backend
+    // Pick first 2 sentences for fast audio delivery
+    const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 3);
+    const spokenText = sentences.slice(0, 2).join(' ').trim() || cleanText.slice(0, 150);
+
+    // 1. Try Backend Audio Synthesis via POST with Blob playback
     try {
-      const audioUrl = `${getBaseUrl()}/api/voice/speak?text=${encodeURIComponent(cleanText)}&voice=${encodeURIComponent(selectedVoiceName)}`;
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current.src = audioUrl;
-        audioPlayerRef.current.play().catch((err) => {
-          console.warn("Neural audio stream failed, falling back to Web Speech:", err);
-          // Fallback to Web Speech API
-          fallbackWebSpeech(cleanText);
-        });
-        return;
+      const response = await fetch(`${getBaseUrl()}/api/voice/speak`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: spokenText, voice: selectedVoiceName })
+      });
+
+      if (response.ok && response.status === 200) {
+        const blob = await response.blob();
+        if (blob.size > 200) {
+          const blobUrl = URL.createObjectURL(blob);
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+            audioPlayerRef.current.src = blobUrl;
+            await audioPlayerRef.current.play();
+            return;
+          }
+        }
       }
-    } catch (e) {
-      // Fallback
+    } catch (err) {
+      console.warn("Backend audio synthesis fetch failed, using browser Web Speech:", err);
     }
 
-    fallbackWebSpeech(cleanText);
+    // 2. Instant Zero-Failure Browser Speech Synthesis Fallback
+    fallbackWebSpeech(spokenText);
   }, [selectedVoiceName]);
 
-  const fallbackWebSpeech = (cleanText: string) => {
+  const fallbackWebSpeech = (text: string) => {
     if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.0;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.05;
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();
       const voice = voices.find(v =>
+        v.name.includes('Tara') ||
         v.name.includes('Samantha') ||
-        v.name.includes('Moira') ||
+        v.name.includes('Rishi') ||
         v.name.includes('Karen') ||
         v.lang.startsWith('en')
       );
@@ -164,7 +179,7 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
 
       window.speechSynthesis.speak(utterance);
     } catch (err) {
-      console.error(err);
+      console.error("Web Speech error:", err);
       setIsSpeaking(false);
     }
   };
