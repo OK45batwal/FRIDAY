@@ -1,8 +1,8 @@
 {
-  "model_id": "friday-1b-custom-slm",
-  "name": "FRIDAY-1B (Custom SLM - Trained for Mac & Android)",
-  "quantization": "Q4_K_M (4-bit)",
-  "parameters": "1.1B",
+  "model_id": "friday-1.0",
+  "name": "FRIDAY 1.0",
+  "parameters": "1.1 Billion Parameters (1.1B)",
+  "quantization": "Q4_K_M (4-bit Linear Quantization)",
   "ram_required_mb": 780,
   "format": "GGUF",
   "target_platforms": [
@@ -14,6 +14,7 @@
     "Full-Stack Software Architecture (Python, FastAPI, React, TypeScript, SQL)",
     "Indian English Conversational Cadence (Tara / Neerja)"
   ],
-  "created_at": "2026-08-22 13:30:08",
-  "status": "ready_for_inference"
+  "context_length": "4,096 tokens",
+  "created_at": "2026-08-22 13:33:00",
+  "status": "active_primary"
 }

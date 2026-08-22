@@ -13,26 +13,28 @@ MANIFEST_FILE = MODELS_DIR / "model_manifest.json"
 
 class UpdateConfigRequest(BaseModel):
     provider: Optional[str] = "local_llm"
-    model: Optional[str] = "friday-1b-custom"
+    model: Optional[str] = "friday-1.0"
 
 @router.get("/health")
 async def health_check():
     return {
         "status": "online",
         "service": "friday-core",
-        "version": "0.1.0",
-        "ai_provider": "friday-1b-slm",
-        "active_model": "FRIDAY-1B (Custom SLM)"
+        "version": "1.0.0",
+        "ai_provider": "friday-1.0",
+        "model_name": settings.MODEL_NAME,
+        "parameters": settings.MODEL_PARAMETERS,
+        "active_model": "FRIDAY 1.0 (1.1B Parameters)"
     }
 
 @router.get("/api/models")
 async def get_available_models():
-    """Returns the dedicated FRIDAY-1B custom SLM details."""
+    """Returns the dedicated FRIDAY 1.0 SLM details."""
     custom_slm_info = {
-        "model_id": "friday-1b-custom-slm",
-        "name": "FRIDAY-1B (Custom SLM - Trained for Mac & Android)",
+        "model_id": "friday-1.0",
+        "name": "FRIDAY 1.0",
+        "parameters": "1.1 Billion Parameters (1.1B)",
         "quantization": "Q4_K_M (4-bit)",
-        "parameters": "1.1B",
         "ram_required_mb": 780,
         "format": "GGUF",
         "status": "active_primary"
@@ -46,13 +48,14 @@ async def get_available_models():
             pass
 
     return {
-        "active_provider": "friday-1b-slm",
-        "active_model": "FRIDAY-1B",
+        "active_provider": "friday-1.0",
+        "active_model": "FRIDAY 1.0",
+        "parameters": "1.1B Parameters",
         "custom_slm": custom_slm_info,
         "supported_local_presets": [
-            {"id": "friday-1b-custom", "name": "⭐ FRIDAY-1B (Our Custom SLM - Trained for Mac & Android)", "size": "780 MB"}
+            {"id": "friday-1.0", "name": "⭐ FRIDAY 1.0 (1.1B Parameters - Custom SLM)", "size": "780 MB"}
         ],
-        "providers": ["friday_1b_slm"]
+        "providers": ["friday_1_0"]
     }
 
 @router.post("/api/config")
@@ -60,6 +63,7 @@ async def update_config(payload: UpdateConfigRequest):
     ai_manager.update_config()
     return {
         "status": "success",
-        "active_provider": "friday-1b-slm",
-        "model": "FRIDAY-1B"
+        "active_provider": "friday-1.0",
+        "model": "FRIDAY 1.0",
+        "parameters": "1.1B"
     }

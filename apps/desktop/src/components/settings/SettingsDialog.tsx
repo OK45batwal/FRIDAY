@@ -43,7 +43,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
       <div
         className="modern-panel"
         style={{
-          width: '520px',
+          width: '540px',
           maxWidth: '92%',
           padding: '24px',
           display: 'flex',
@@ -57,7 +57,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Settings size={20} color="#f43f5e" />
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#ffffff', fontWeight: 700 }}>
-              FRIDAY System Status & Configuration
+              FRIDAY 1.0 System Status & Architecture
             </h3>
           </div>
           <button onClick={onClose} className="btn-action-icon">
@@ -65,10 +65,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </button>
         </div>
 
-        {/* Dedicated Model Card */}
+        {/* Dedicated Model Card: FRIDAY 1.0 */}
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(225, 29, 72, 0.03) 100%)',
+            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.09) 0%, rgba(225, 29, 72, 0.03) 100%)',
             border: '1px solid rgba(244, 63, 94, 0.35)',
             borderRadius: '12px',
             padding: '16px',
@@ -80,9 +80,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Zap size={16} color="#f43f5e" />
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
-                ⭐ FRIDAY-1B (Dedicated Custom SLM)
-              </span>
+              <div>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff', letterSpacing: '0.2px' }}>
+                  FRIDAY 1.0
+                </span>
+                <span style={{ fontSize: '12px', color: '#f43f5e', fontWeight: 700, marginLeft: '6px' }}>
+                  (1.1B Parameters)
+                </span>
+              </div>
             </div>
             <span
               style={{
@@ -99,21 +104,21 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </div>
 
           <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
-            Custom trained model tailored specifically for your Mac & Android phone. Pre-trained on desktop app automation, full-stack programming, and Indian conversational dialogue.
+            Custom trained 1.1 Billion parameter model tailored specifically for your Mac & Android phone. Pre-trained on desktop app automation, full-stack programming, and Indian conversational dialogue.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', paddingTop: '4px' }}>
             <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
-              <span style={{ color: '#ffffff', fontWeight: 600 }}>Architecture:</span> 4-bit Q4_K_M GGUF
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Parameters:</span> 1.1 Billion (1.1B)
             </div>
             <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
-              <span style={{ color: '#ffffff', fontWeight: 600 }}>RAM Budget:</span> ~780 MB
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Quantization:</span> 4-bit Q4_K_M GGUF
             </div>
             <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
-              <span style={{ color: '#ffffff', fontWeight: 600 }}>Latency:</span> &lt; 50 ms (0ms network)
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Memory (RAM):</span> ~780 MB
             </div>
             <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
-              <span style={{ color: '#ffffff', fontWeight: 600 }}>Hardware:</span> Metal GPU & ARM64
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Context Window:</span> 4,096 Tokens
             </div>
           </div>
         </div>
@@ -131,7 +136,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             {onTestVoice && (
               <button
                 type="button"
-                onClick={() => onTestVoice("Namaste Omkar. All FRIDAY-1B neural threads and voice systems are operating at peak efficiency.")}
+                onClick={() => onTestVoice("Namaste Omkar. All FRIDAY 1.0 neural threads and voice systems are operating at peak efficiency.")}
                 style={{
                   background: 'rgba(244, 63, 94, 0.15)',
                   border: '1px solid rgba(244, 63, 94, 0.4)',
