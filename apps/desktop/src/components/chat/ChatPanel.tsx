@@ -5,17 +5,15 @@ import type { Message } from '../../types';
 
 interface ChatPanelProps {
   messages: Message[];
-  selectedAgent: string;
+  selectedAgent?: string;
   onSpeak: (text: string) => void;
-  onSelectAgent: (agentId: string) => void;
-  onTriggerPrompt: (prompt: string, agentId: string) => void;
+  onSelectAgent?: (agentId: string) => void;
+  onTriggerPrompt: (prompt: string, agentId?: string) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   messages,
-  selectedAgent,
   onSpeak,
-  onSelectAgent,
   onTriggerPrompt
 }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -28,9 +26,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return (
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <WelcomeHero
-          selectedAgent={selectedAgent}
-          onSelectAgent={onSelectAgent}
-          onTriggerPrompt={onTriggerPrompt}
+          onTriggerPrompt={(prompt) => onTriggerPrompt(prompt, 'general')}
         />
       </div>
     );
