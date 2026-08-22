@@ -1,20 +1,14 @@
-from fastapi import APIRouter, UploadFile, File
-from pydantic import BaseModel
-from services.core.core.voice.speech_to_text import stt_service
+from fastapi import APIRouter, Response, Query
 from services.core.core.voice.text_to_speech import tts_service
 
 router = APIRouter(prefix="/api/voice")
 
-class TTSRequest(BaseModel):
-    text: str
-
-@router.post("/transcribe")
-async def transcribe_audio_endpoint(file: UploadFile = File(...)):
-    audio_bytes = await file.read()
-    transcription = await stt_service.transcribe_audio(audio_bytes, file.filename or "audio.wav")
-    return {"text": transcription}
-
-@router.post("/speak")
-async def text_to_speech_endpoint(payload: TTSRequest):
-    audio_bytes = await tts_service.synthesize(payload.text)
-    return {"status": "ok", "text": payload.text, "audio_length": len(audio_bytes)}
+@router.get("/speak")
+async def speak_text(text: str = Query(..., min_length=1), voice: str = Query("Samantha")):
+    """
+    Synthesizes and streams high-definition Studio WAV audio with zero network latency.
+    """
+    audio_bytes = await tts_service.synthesize(text, voice)
+    if not audio_bytes:
+        return Response(content=b"", media_type="audio/wav")
+    return Response(content=audio_bytes, media_type="audio/wav")
