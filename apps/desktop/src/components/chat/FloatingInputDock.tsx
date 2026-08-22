@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Mic, Send, AudioWaveform, Sparkles, FileText, Code, Globe } from 'lucide-react';
+import { Mic, Send, FileText, Code, Zap, Radio, Sparkles } from 'lucide-react';
 import { AGENT_MODES } from '../home/WelcomeHero';
 
 interface FloatingInputDockProps {
@@ -11,10 +11,10 @@ interface FloatingInputDockProps {
 }
 
 const QUICK_PROMPTS = [
-  { id: 'spec', label: 'Help me write a project spec', icon: <FileText size={13} />, agent: 'writing' },
-  { id: 'code', label: 'Generate full-stack code solution', icon: <Code size={13} />, agent: 'programming' },
-  { id: 'research', label: 'Research latest AI frameworks', icon: <Globe size={13} />, agent: 'research' },
-  { id: 'sys', label: 'Analyze system architecture & logs', icon: <Sparkles size={13} />, agent: 'system' }
+  { id: 'spec', label: 'Draft complete project architecture spec', icon: <FileText size={13} />, agent: 'writing' },
+  { id: 'code', label: 'Write full-stack async Python & React service', icon: <Code size={13} />, agent: 'programming' },
+  { id: 'sys', label: 'Show system hardware telemetry & diagnostics', icon: <Sparkles size={13} />, agent: 'system' },
+  { id: 'math', label: 'Calculate 10+50+90 and convert 100 C to F', icon: <Zap size={13} />, agent: 'education' }
 ];
 
 export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
@@ -33,44 +33,36 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
     setText('');
   };
 
-  const activeAgent = AGENT_MODES.find(a => a.id === selectedAgent) || AGENT_MODES[1];
+  const activeAgent = AGENT_MODES.find(a => a.id === selectedAgent) || AGENT_MODES[0];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: '820px', margin: '0 auto' }}>
-      {/* Floating Input Dock Box */}
-      <div className="input-dock">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '840px', margin: '0 auto' }}>
+      
+      {/* Tesla Floating Cyber Command Dock */}
+      <div className="input-dock" style={{ border: isListening ? '1px solid #f43f5e' : '1px solid rgba(255, 255, 255, 0.08)' }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Main Input Text Area */}
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="How can I help you today?"
+            placeholder="Ask FRIDAY anything, execute code, or control your Mac..."
             style={{
               width: '100%',
               background: 'transparent',
               border: 'none',
               color: '#ffffff',
-              fontSize: '15px',
+              fontSize: '14px',
               outline: 'none',
-              padding: '4px 0',
+              padding: '6px 0',
               fontFamily: 'inherit'
             }}
           />
 
-          {/* Action Row */}
+          {/* Action Controls Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
             {/* Left Controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn-action-icon"
-                style={{ background: 'rgba(255, 255, 255, 0.06)', borderRadius: '50%', width: '32px', height: '32px' }}
-                title="Attach context or file"
-              >
-                <Plus size={16} color="#9ca3af" />
-              </button>
-
               {/* Mode Selector Pill */}
               <div
                 style={{
@@ -78,27 +70,28 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                   alignItems: 'center',
                   gap: '6px',
                   background: `${activeAgent.color}15`,
-                  border: `1px solid ${activeAgent.color}40`,
-                  padding: '4px 10px',
+                  border: `1px solid ${activeAgent.color}45`,
+                  padding: '5px 12px',
                   borderRadius: '9999px',
                   fontSize: '11px',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: '#ffffff',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
                 onClick={() => {
                   const currentIndex = AGENT_MODES.findIndex(a => a.id === selectedAgent);
                   const nextIndex = (currentIndex + 1) % AGENT_MODES.length;
                   onSelectAgent(AGENT_MODES[nextIndex].id);
                 }}
-                title="Click to switch active agent mode"
+                title="Click to cycle active AI mode"
               >
                 <span style={{ color: activeAgent.color }}>{activeAgent.icon}</span>
                 <span>{activeAgent.title}</span>
               </div>
             </div>
 
-            {/* Right Controls */}
+            {/* Right Controls: Tesla Voice & Send */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {/* Mic Icon */}
               <button
@@ -106,41 +99,50 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                 onClick={onToggleVoice}
                 className="btn-action-icon"
                 style={{
-                  color: isListening ? '#ef4444' : '#9ca3af',
-                  background: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                  color: isListening ? '#f43f5e' : '#94a3b8',
+                  background: isListening ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '50%',
-                  width: '32px',
-                  height: '32px'
+                  width: '34px',
+                  height: '34px'
                 }}
-                title={isListening ? "Listening..." : "Toggle Microphone"}
+                title={isListening ? "Listening..." : "Toggle Indian Voice Input"}
               >
-                <Mic size={18} />
+                <Mic size={17} />
               </button>
 
-              {/* Inspiration Talk Pill */}
+              {/* Tesla Talk Pill */}
               <button
                 type="button"
                 onClick={onToggleVoice}
                 className={`btn-talk ${isListening ? 'listening' : ''}`}
               >
-                <AudioWaveform size={16} />
-                <span>{isListening ? 'Listening' : 'Talk'}</span>
+                {isListening ? (
+                  <div className="audio-wave-container">
+                    <div className="audio-bar" style={{ background: '#ffffff' }} />
+                    <div className="audio-bar" style={{ background: '#ffffff' }} />
+                    <div className="audio-bar" style={{ background: '#ffffff' }} />
+                  </div>
+                ) : (
+                  <Radio size={14} />
+                )}
+                <span>{isListening ? 'LISTENING...' : 'TALK'}</span>
               </button>
 
               {text.trim() && (
                 <button
                   type="submit"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
+                    background: 'var(--accent-talk)',
                     border: 'none',
                     borderRadius: '50%',
-                    width: '34px',
-                    height: '34px',
+                    width: '36px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#ffffff',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)'
                   }}
                 >
                   <Send size={15} />
@@ -151,7 +153,7 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
         </form>
       </div>
 
-      {/* Contextual Quick Suggestion Cards */}
+      {/* Quick Suggestion Chips */}
       <div
         style={{
           display: 'grid',
@@ -169,8 +171,8 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
             }}
             className="prompt-card"
           >
-            <span style={{ color: '#9ca3af' }}>{prompt.icon}</span>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ color: '#f43f5e' }}>{prompt.icon}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }}>
               {prompt.label}
             </span>
           </div>

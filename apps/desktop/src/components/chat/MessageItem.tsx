@@ -12,6 +12,7 @@ interface MessageItemProps {
 
 export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserMessage, onSpeak }) => {
   const [copied, setCopied] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(null);
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
 
@@ -24,6 +25,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleSpeak = () => {
+    setIsPlayingAudio(true);
+    onSpeak(message.content);
+    setTimeout(() => setIsPlayingAudio(false), 4500);
+  };
+
   const handleFeedback = async (type: 'like' | 'dislike') => {
     if (feedbackState === type) return;
     setFeedbackState(type);
@@ -32,7 +39,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
     try {
       await api.sendFeedback(promptText, message.content, type);
       if (type === 'like') {
-        setFeedbackNotice("Reward saved! FRIDAY 1.0 learned this.");
+        setFeedbackNotice("Reward registered! FRIDAY learned this.");
       } else {
         setFeedbackNotice("Loss noted. Policy updated to improve.");
       }
@@ -47,61 +54,74 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
       style={{
         display: 'flex',
         flexDirection: isUser ? 'row-reverse' : 'row',
-        gap: '12px',
-        margin: '14px 0',
+        gap: '14px',
+        margin: '16px 0',
         alignItems: 'flex-start'
       }}
     >
-      {/* Avatar Icon */}
+      {/* Tesla Avatar Icon */}
       <div
         style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '10px',
-          background: isUser ? 'rgba(255, 255, 255, 0.12)' : 'linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(225, 29, 72, 0.15) 100%)',
-          border: isUser ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid rgba(244, 63, 94, 0.45)',
+          width: '38px',
+          height: '38px',
+          borderRadius: '12px',
+          background: isUser ? 'rgba(255, 255, 255, 0.12)' : 'linear-gradient(135deg, rgba(244, 63, 94, 0.3) 0%, rgba(225, 29, 72, 0.18) 100%)',
+          border: isUser ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid rgba(244, 63, 94, 0.55)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           color: isUser ? '#ffffff' : '#f43f5e',
-          boxShadow: isUser ? '0 0 14px rgba(255, 255, 255, 0.1)' : '0 0 14px rgba(244, 63, 94, 0.25)',
+          boxShadow: isUser ? '0 0 16px rgba(255, 255, 255, 0.12)' : '0 0 18px rgba(244, 63, 94, 0.3)',
           flexShrink: 0
         }}
       >
-        {isUser ? <User size={16} /> : <Sparkles size={16} />}
+        {isUser ? <User size={18} /> : <Sparkles size={18} />}
       </div>
 
-      {/* Bubble Container */}
+      {/* Tesla Glass Bubble Container */}
       <div
         style={{
-          maxWidth: '82%',
-          background: isUser ? 'rgba(255, 255, 255, 0.07)' : 'rgba(20, 21, 29, 0.9)',
-          border: isUser ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 255, 255, 0.09)',
-          borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-          padding: '14px 18px',
+          maxWidth: '84%',
+          background: isUser ? 'rgba(255, 255, 255, 0.06)' : 'rgba(14, 16, 23, 0.95)',
+          border: isUser ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(244, 63, 94, 0.2)',
+          borderRadius: isUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
+          padding: '16px 20px',
           color: '#ffffff',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+          boxShadow: isUser ? '0 6px 24px rgba(0, 0, 0, 0.4)' : '0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
         }}
       >
         {/* Bubble Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-display)', color: isUser ? '#ffffff' : '#f43f5e', letterSpacing: '0.4px' }}>
-            {isUser ? 'YOU' : 'FRIDAY 1.0'}
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'var(--font-display)', color: isUser ? '#ffffff' : '#f43f5e', letterSpacing: '0.6px' }}>
+              {isUser ? 'YOU' : 'FRIDAY ASSISTANT'}
+            </span>
+            {isPlayingAudio && (
+              <div className="audio-wave-container" title="Audio streaming active">
+                <div className="audio-bar" />
+                <div className="audio-bar" />
+                <div className="audio-bar" />
+                <div className="audio-bar" />
+                <div className="audio-bar" />
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {isVoice && (
-              <span style={{ fontSize: '10px', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+              <span style={{ fontSize: '10px', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700, background: 'rgba(244, 63, 94, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
                 <Mic size={11} /> Voice
               </span>
             )}
-            <span style={{ fontSize: '10px', color: '#64748b' }}>
+            <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
               {message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
             </span>
           </div>
         </div>
 
         {/* Message Content */}
-        <div style={{ fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap', color: '#f8fafc' }}>
+        <div style={{ fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap', color: '#f8fafc' }}>
           {message.content}
         </div>
 
@@ -109,16 +129,24 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
         {!isUser && <SmartCard content={message.content} />}
 
         {/* Footer Actions & Continuous Learning Reinforcement Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '10px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {!isUser && (
               <button
-                onClick={() => onSpeak(message.content)}
+                onClick={handleSpeak}
                 className="btn-action-icon"
-                style={{ fontSize: '11px', fontWeight: 600, color: '#f43f5e', gap: '4px' }}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: isPlayingAudio ? '#10b981' : '#f43f5e',
+                  gap: '5px',
+                  background: isPlayingAudio ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.1)',
+                  padding: '5px 10px',
+                  borderRadius: '6px'
+                }}
               >
                 <Volume2 size={13} />
-                <span>SPEAK</span>
+                <span>{isPlayingAudio ? 'PLAYING...' : 'SPEAK VOICE'}</span>
               </button>
             )}
 
@@ -145,27 +173,27 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
                 onClick={() => handleFeedback('like')}
                 className="btn-action-icon"
                 style={{
-                  padding: '4px 6px',
+                  padding: '5px 8px',
                   borderRadius: '6px',
                   background: feedbackState === 'like' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
                   color: feedbackState === 'like' ? '#10b981' : '#64748b'
                 }}
-                title="Reward FRIDAY 1.0 (Learns this answer style)"
+                title="Reward FRIDAY (Learns this answer style)"
               >
-                <ThumbsUp size={12} />
+                <ThumbsUp size={13} />
               </button>
               <button
                 onClick={() => handleFeedback('dislike')}
                 className="btn-action-icon"
                 style={{
-                  padding: '4px 6px',
+                  padding: '5px 8px',
                   borderRadius: '6px',
                   background: feedbackState === 'dislike' ? 'rgba(244, 63, 94, 0.2)' : 'transparent',
                   color: feedbackState === 'dislike' ? '#f43f5e' : '#64748b'
                 }}
                 title="Penalize (Improves policy for next time)"
               >
-                <ThumbsDown size={12} />
+                <ThumbsDown size={13} />
               </button>
             </div>
           )}
