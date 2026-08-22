@@ -77,10 +77,10 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       {/* Personalized Greeting */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px' }}>
-          Good to see you, <span style={{ color: '#ffffff' }}>Omkar</span>
+          Namaste, <span style={{ color: '#ffffff' }}>Omkar</span>
         </h1>
         <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '520px', lineHeight: '1.5' }}>
-          FRIDAY, your personal and expert AI assistant for any tasks you can imagine.
+          FRIDAY, your dedicated Indian AI operating assistant ready to assist at any moment.
         </p>
       </div>
 

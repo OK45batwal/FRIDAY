@@ -1,7 +1,6 @@
 import os
 import re
 import asyncio
-import subprocess
 import platform
 import tempfile
 from typing import Optional
@@ -33,8 +32,8 @@ def normalize_text_for_speech(text: str) -> str:
 
 class TextToSpeechService:
     """
-    Instant Studio-Grade Text-To-Speech engine for FRIDAY.
-    Generates standard 16-bit Linear PCM WAV audio with zero network latency.
+    Single Dedicated Indian English Voice Engine for FRIDAY (Tara / Neerja).
+    Generates standard 16-bit Studio WAV audio with zero network latency.
     """
 
     async def synthesize(self, text: str, voice: Optional[str] = None) -> bytes:
@@ -42,26 +41,20 @@ class TextToSpeechService:
         if not clean_text:
             return b""
 
-        # Voice selection (Samantha, Moira, Karen, Ava)
-        voice_name = "Samantha"
-        if voice and ("Moira" in voice or "Irish" in voice):
-            voice_name = "Moira"
-        elif voice and "Karen" in voice:
-            voice_name = "Karen"
-
+        # Primary Single Voice: Indian English (Tara on macOS, en-IN-NeerjaNeural on Linux/Windows)
         if platform.system() == "Darwin":
             try:
                 with tempfile.NamedTemporaryFile(suffix=".aiff", delete=False) as f_aiff:
                     aiff_path = f_aiff.name
                 wav_path = aiff_path.replace(".aiff", ".wav")
 
-                # 1. Synthesize audio on macOS native engine
+                # Synthesize with Indian English voice 'Tara'
                 proc1 = await asyncio.create_subprocess_exec(
-                    "say", "-v", voice_name, "-o", aiff_path, clean_text
+                    "say", "-v", "Tara", "-o", aiff_path, clean_text
                 )
                 await proc1.wait()
 
-                # 2. Convert to standard universally playable WAV
+                # Convert to standard WAV
                 proc2 = await asyncio.create_subprocess_exec(
                     "afconvert", "-f", "WAVE", "-d", "LEI16", aiff_path, wav_path
                 )
@@ -75,12 +68,12 @@ class TextToSpeechService:
                         os.remove(aiff_path)
                     return wav_bytes
             except Exception as e:
-                print("Native TTS error:", e)
+                print("Native Indian TTS error:", e)
 
-        # Fallback to Edge-TTS if on Linux / Windows
+        # Fallback to Edge-TTS Indian Neural voice
         try:
             import edge_tts
-            communicate = edge_tts.Communicate(clean_text, "en-IE-EmilyNeural")
+            communicate = edge_tts.Communicate(clean_text, "en-IN-NeerjaNeural")
             audio_data = b""
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":

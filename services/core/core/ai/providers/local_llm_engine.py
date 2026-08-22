@@ -159,11 +159,11 @@ export const ActionButton: React.FC<{ label: string; onClick: () => void }> = ({
 3. **Voice & Wake Word Pipeline**: Low-latency browser acoustic classifier, Web Audio synthesizer chime, and Speech synthesis.
 4. **Autonomous Agent Swarm**: Dedicated coding, web research, and OS automation agents."""
 
-        elif any(k in p_lower for k in ["hello", "hi", "hey", "hey friday", "good morning"]):
-            return "Good day, Omkar! I'm online and listening. How can I assist you with your computer or code right now?"
+        elif any(k in p_lower for k in ["hello", "hi", "hey", "hey friday", "good morning", "namaste"]):
+            return "Namaste Omkar! I'm online and listening. How can I assist you with your computer or code right now?"
 
         elif "who are you" in p_lower:
-            return "I am FRIDAY — your voice-enabled AI Operating Assistant. I can write full-stack code, manage system telemetry, control desktop apps, and execute voice commands with zero delay."
+            return "I am FRIDAY — your AI Operating Assistant. I can write full-stack code, manage system telemetry, launch apps, and respond instantly with high-speed voice and local intelligence."
 
         else:
             return f"Understood. I have processed \"{prompt}\" with the local AI engine. All neural threads stand ready for your next instruction."

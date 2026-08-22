@@ -5,9 +5,6 @@ import { api } from '../../services/api';
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  availableVoices?: SpeechSynthesisVoice[];
-  selectedVoiceName?: string;
-  onSelectVoice?: (voiceName: string) => void;
   onTestVoice?: (text: string) => void;
 }
 
@@ -31,9 +28,6 @@ const LOCAL_MODELS_PRESETS = [
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
   onClose,
-  availableVoices = [],
-  selectedVoiceName = '',
-  onSelectVoice,
   onTestVoice
 }) => {
   const [provider, setProvider] = useState('openrouter');
@@ -75,10 +69,6 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
       onClose();
     }, 700);
   };
-
-  const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
-  const englishVoices = (availableVoices && availableVoices.length > 0 ? availableVoices : voices).filter(v => v.lang.startsWith('en'));
-
 
   return (
     <div
@@ -285,20 +275,26 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </div>
         )}
 
-        {/* Voice Persona Selector */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Single Dedicated Indian English Voice */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255, 255, 255, 0.03)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Volume2 size={14} color="#f43f5e" /> FEMALE VOICE PERSONA
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Volume2 size={15} color="#f43f5e" />
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>Tara (Indian English Female)</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8' }}>Studio Linear PCM WAV • 0ms Latency</div>
+              </div>
+            </div>
             {onTestVoice && (
               <button
                 type="button"
-                onClick={() => onTestVoice("Good day, Omkar. All FRIDAY neural link and voice systems are operating at peak efficiency.")}
+                onClick={() => onTestVoice("Namaste Omkar. All FRIDAY systems and voice neural links are operating at peak efficiency.")}
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#f43f5e',
+                  background: 'rgba(244, 63, 94, 0.15)',
+                  border: '1px solid rgba(244, 63, 94, 0.4)',
+                  color: '#ffffff',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
                   cursor: 'pointer',
                   fontSize: '11px',
                   fontWeight: 600,
@@ -311,36 +307,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               </button>
             )}
           </div>
-          <select
-            value={selectedVoiceName}
-            onChange={(e) => onSelectVoice?.(e.target.value)}
-            style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: 'rgba(18, 19, 26, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#ffffff',
-              fontSize: '13px',
-              outline: 'none',
-              fontFamily: 'inherit'
-            }}
-          >
-            {englishVoices.length > 0 ? (
-              englishVoices.map((v) => (
-                <option key={v.name} value={v.name}>
-                  {v.name.includes('Moira') ? '🌟 Moira (Irish - F.R.I.D.A.Y. Authentic)' :
-                   v.name.includes('Samantha') ? '✨ Samantha (macOS Studio Female)' :
-                   v.name.includes('Sonia') ? '🎙️ Sonia (Natural British Female)' :
-                   v.name.includes('Ava') ? '⚡ Ava (Natural AI Female)' :
-                   v.name.includes('Karen') ? '🎙️ Karen (Refined Female)' :
-                   `${v.name} (${v.lang})`}
-                </option>
-              ))
-            ) : (
-              <option value="">Default Female Voice</option>
-            )}
-          </select>
         </div>
+
 
         {/* Save Button */}
         <button

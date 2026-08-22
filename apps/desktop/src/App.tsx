@@ -34,8 +34,6 @@ export const App: React.FC = () => {
     isListening,
     autoSpeak,
     setAutoSpeak,
-    selectedVoiceName,
-    setSelectedVoiceName,
     toggleListening,
     speak
   } = useVoice(handleVoiceTranscript);
@@ -113,8 +111,6 @@ export const App: React.FC = () => {
       <SettingsDialog
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        selectedVoiceName={selectedVoiceName}
-        onSelectVoice={setSelectedVoiceName}
         onTestVoice={speak}
       />
 
