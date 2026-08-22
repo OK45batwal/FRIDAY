@@ -15,25 +15,19 @@ class UserIntent(str, Enum):
 
 class AICoreRules:
     """
-    FRIDAY AI Core Rules & Behavior Specification.
-    Implements the 10 Golden Rules of AI Chatbots:
-    1. Define Purpose & Personality
-    2. Input Validation & Normalization
-    3. Intent Routing (Tools vs LLM vs RAG vs Math vs Files vs Reminders)
-    4. Context & Memory Management
-    5. Anti-Hallucination & Truthfulness
-    6. Destructive Action & Safety Boundaries
-    7. Output Validation & Adaptation
+    FRIDAY AI Core Rules & Deep Reasoning Cognitive Specification.
+    Implements:
+    1. Multi-Turn Semantic Context Resolution & Pronoun Disambiguation
+    2. Deep 4-Stage Reasoning Blueprint (Executive Summary, Mechanics & Math, Production Code, Edge Cases)
+    3. Input Validation & Safety Guardrails
+    4. Anti-Hallucination & Concrete Grounding
     """
 
     MAX_INPUT_LENGTH = 32000
 
     @staticmethod
     def validate_and_sanitize_input(text: str) -> Tuple[bool, str, Optional[str]]:
-        """
-        Rule 3: Always Validate User Input.
-        Returns: (is_valid, sanitized_text, error_message)
-        """
+        """Validates and sanitizes user input."""
         if not text or not text.strip():
             return False, "", "Message cannot be empty."
 
@@ -41,16 +35,12 @@ class AICoreRules:
         if len(clean) > AICoreRules.MAX_INPUT_LENGTH:
             clean = clean[:AICoreRules.MAX_INPUT_LENGTH]
 
-        # Strip null bytes and non-printable control characters
         clean = "".join(ch for ch in clean if ch.isprintable() or ch in ('\n', '\r', '\t'))
         return True, clean, None
 
     @staticmethod
     def classify_intent(text: str) -> UserIntent:
-        """
-        Rule 2 & 8: Intent Detection & Routing.
-        Directs query to the specialized subsystem rather than treating LLM as source of truth.
-        """
+        """Directs query to specialized tool or reasoning engine."""
         t_lower = text.lower().strip()
 
         # 1. Destructive Actions Safety Boundary
@@ -73,7 +63,6 @@ class AICoreRules:
         if any(k in t_lower for k in ["calculate", "solve", "what is", "convert"]) and any(c in t_lower for c in ["+", "-", "*", "/", "%", "c to f", "f to c", "celsius", "fahrenheit"]):
             return UserIntent.MATH_CALCULATOR
 
-        # Check pure arithmetic expressions (e.g. "10+50+90")
         if re.match(r'^[\d\.\s\+\-\*\/\(\)\^x÷]+$', t_lower) and any(op in t_lower for op in ['+', '-', '*', '/', 'x', '÷']):
             return UserIntent.MATH_CALCULATOR
 
@@ -82,53 +71,82 @@ class AICoreRules:
             return UserIntent.OS_TOOL
 
         # 7. Code & Architecture
-        if any(k in t_lower for k in ["write code", "python script", "typescript function", "react component", "fastapi route", "implement"]):
+        if any(k in t_lower for k in ["write code", "python script", "typescript function", "react component", "fastapi route", "implement", "refactor", "debug"]):
             return UserIntent.CODE_SYNTHESIS
 
         # 8. RAG & Document Knowledge
-        if any(k in t_lower for k in ["documentation", "spec", "architecture", "dataset", "milestone"]):
+        if any(k in t_lower for k in ["documentation", "spec", "architecture", "dataset", "milestone", "how does friday work"]):
             return UserIntent.RAG_KNOWLEDGE
 
         return UserIntent.GENERAL_REASONING
 
     @staticmethod
     def check_safety_boundary(intent: UserIntent, text: str) -> Optional[str]:
-        """
-        Rule 9 & 10: Give Model Clear Boundaries & Verify High-Impact Actions.
-        """
+        """Prevents destructive OS actions without explicit user confirmation."""
         if intent == UserIntent.DESTRUCTIVE_ACTION:
             return "⚠️ **Security Guardrail Active**: The requested operation requires explicit confirmation because it could modify or delete critical system files. Please confirm explicitly before proceeding."
         return None
 
     @staticmethod
-    def build_system_instruction(agent_mode: Optional[str] = "general") -> str:
+    def enrich_context_with_intent(
+        current_message: str,
+        history: List[Dict[str, Any]],
+        user_facts: Optional[Dict[str, Any]] = None
+    ) -> Tuple[str, Optional[str]]:
         """
-        Rule 6: Stable, Concise System Instruction.
+        Pillar 1: Multi-Turn Entity & Goal Disambiguation.
+        Detects pronouns ('it', 'this', 'that', 'there') and resolves context from prior turns.
+        Returns: (enriched_prompt, context_summary)
         """
-        base = """You are FRIDAY — an elite AI Operating Assistant, senior software architect, and computational brain for Omkar.
-Rules:
-- Understand the user's intent directly and provide structured, authoritative answers.
-- For code: write clean, production-grade, typed implementations with zero fluff.
-- For math & science: give precise calculations and verifiable step-by-step formulas.
-- If information is unavailable or uncertain, state your boundaries clearly rather than inventing facts."""
+        msg_lower = current_message.lower().strip()
+        pronoun_triggers = ["it", "this", "that", "there", "the error", "the function", "the code", "why", "how to fix", "optimize it"]
+        has_pronoun = any(re.search(rf'\b{re.escape(trigger)}\b', msg_lower) for trigger in pronoun_triggers)
+
+        context_summary = None
+        if has_pronoun and history:
+            # Find the most recent meaningful user and assistant messages
+            recent_turns = [h["content"] for h in history[-3:] if h.get("content")]
+            if recent_turns:
+                context_summary = f"[Active Context: User is referencing prior topic: '{recent_turns[-1][:120]}...']"
+
+        return current_message, context_summary
+
+    @staticmethod
+    def build_system_instruction(
+        agent_mode: Optional[str] = "general",
+        user_context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Pillar 2: 4-Stage Deep Reasoning Cognitive Blueprint.
+        Instructs the model to provide deep, exhaustive, structured answers with zero fluff.
+        """
+        user_name = user_context.get("user_name", "Omkar") if user_context else "Omkar"
+        hardware = user_context.get("hardware", "Apple Silicon Mac (macOS)") if user_context else "Apple Silicon Mac"
+
+        base = f"""You are FRIDAY — an elite, high-intelligence AI Operating Assistant and Senior Software Architect built for {user_name} on {hardware}.
+
+### Core Cognitive Rules for Deep Answering:
+1. **Understand Intent Deeply**: Unpack the user's underlying goal, constraints, and implicit technical requirements.
+2. **4-Stage Structured Response**:
+   - **🎯 Core Takeaway & Direct Answer**: State the fundamental answer or diagnostic conclusion directly and authoritatively in the first 2 sentences.
+   - **🔬 Technical Mechanics & First Principles**: Explain *how* and *why* it works under the hood (memory layout, algorithmic complexity $O(N)$, math formulas, attention mechanisms, or OS kernel execution).
+   - **💻 Production Implementation**: When providing code, write complete, production-grade, typed solutions (FastAPI, React, TypeScript, Python 3.12+). **Never use placeholders, ellipsis (`...`), or truncated examples.**
+   - **⚠️ Edge Cases & Optimizations**: Highlight concurrency bottlenecks, race conditions, memory pitfalls, and security guardrails.
+3. **LaTeX Math & Exact Formulas**: Always use LaTeX notation ($$ ... $$ and $ ... $) for math, physics, neural network architectures, and algorithms.
+4. **Honesty & Boundaries**: If a fact is unverified or unavailable, state your technical boundaries clearly rather than hallucinating."""
 
         if agent_mode == "programming":
-            base += "\n- [MODE: SENIOR SOFTWARE ARCHITECT] Focus on algorithms, clean code patterns, async I/O, and type safety."
-        elif agent_mode == "writing":
-            base += "\n- [MODE: STRATEGIC WRITER] Focus on crisp technical specifications, clear roadmaps, and executive tone."
+            base += "\n\n[PRIMARY FOCUS: SENIOR SOFTWARE ARCHITECT] Provide type-safe, async-first, highly scalable implementations with comprehensive docstrings and test cases."
         elif agent_mode == "system":
-            base += "\n- [MODE: OS & COMPUTER CONTROLLER] Focus on macOS automation, shell tools, and hardware telemetry."
+            base += "\n\n[PRIMARY FOCUS: OS & COMPUTER CONTROLLER] Focus on macOS Darwin automation, shell commands, hardware telemetry, and process lifecycle."
         elif agent_mode == "education":
-            base += "\n- [MODE: REASONING & SCIENCE] Focus on intuitive explanations, step-by-step problem solving, and math."
+            base += "\n\n[PRIMARY FOCUS: DEEP REASONING & SCIENCE] Provide rigorous first-principles explanations, mathematical derivations, and intuitive analogies."
 
         return base
 
     @staticmethod
-    def manage_context_window(history: List[Dict[str, Any]], max_turns: int = 8) -> List[Dict[str, Any]]:
-        """
-        Rule 4 & 11: Manage Conversation Context & Selective Memory.
-        Keeps sliding window of recent messages to preserve active context without unbounded token growth.
-        """
+    def manage_context_window(history: List[Dict[str, Any]], max_turns: int = 10) -> List[Dict[str, Any]]:
+        """Keeps sliding window of recent conversation turns."""
         if not history:
             return []
         return history[-max_turns:]

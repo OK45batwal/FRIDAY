@@ -7,19 +7,22 @@ from services.core.app.config import settings
 class AIManager:
     """
     Unified AI Engine Manager.
-    Allows seamless switching between Cloud Frontier LLMs (ChatGPT, Claude, Gemini) and Local FRIDAY 1.0 SLM.
+    Intelligently routes between Cloud Frontier LLMs (DeepSeek R1, Llama 3.3 70B, Claude, ChatGPT)
+    and Local Neural FRIDAY 1.0 SLM with automatic fallback.
     """
     def __init__(self):
+        self.local_provider = LocalLLMEngine()
+        self.openrouter_provider = OpenRouterProvider()
         self.providers: Dict[str, BaseAIProvider] = {
-            "local_llm": LocalLLMEngine(),
-            "openrouter": OpenRouterProvider()
+            "local_llm": self.local_provider,
+            "openrouter": self.openrouter_provider
         }
 
-    def get_active_provider(self) -> BaseAIProvider:
+    def get_active_provider() -> BaseAIProvider:
         provider_name = settings.AI_PROVIDER
-        if provider_name == "openrouter" and settings.OPENROUTER_API_KEY:
-            return self.providers["openrouter"]
-        return self.providers["local_llm"]
+        if provider_name == "openrouter" and settings.OPENROUTER_API_KEY.strip():
+            return self.openrouter_provider
+        return self.local_provider
 
     def list_providers(self) -> List[str]:
         return ["local_llm", "openrouter"]
@@ -46,7 +49,19 @@ class AIManager:
         system_prompt: str,
         history: List[Dict[str, Any]]
     ) -> str:
-        provider = self.get_active_provider()
-        return await provider.generate_response(prompt, system_prompt, history)
+        """Generates response using active provider with graceful fallback to local neural engine."""
+        provider_name = settings.AI_PROVIDER
+        
+        # If openrouter is selected and key is present, try frontier cloud reasoning first
+        if provider_name == "openrouter" and settings.OPENROUTER_API_KEY.strip():
+            try:
+                res = await self.openrouter_provider.generate_response(prompt, system_prompt, history)
+                if res and not res.startswith("Error from Cloud Provider"):
+                    return res
+            except Exception:
+                pass
+
+        # Fallback to local neural inference engine
+        return await self.local_provider.generate_response(prompt, system_prompt, history)
 
 ai_manager = AIManager()

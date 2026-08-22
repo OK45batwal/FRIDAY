@@ -133,7 +133,9 @@ class FridayNeuralInference:
             self.load_failed = True
 
     def generate(self, prompt: str, system_prompt: str, history: List[Dict[str, Any]]) -> Optional[str]:
-        """Generates dynamic, authentic response using the neural language model."""
+        """
+        Pillar 2: Deep Token Generation with Expanded Budget (1024 tokens) & Sampling Tuning.
+        """
         self.lazy_load()
         if not self.is_loaded or self.model is None or self.tokenizer is None:
             return None
@@ -143,7 +145,7 @@ class FridayNeuralInference:
 
             # Prepare ChatML conversation history
             messages = [{"role": "system", "content": system_prompt}]
-            for h in history[-6:]:
+            for h in history[-8:]:
                 messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
             messages.append({"role": "user", "content": prompt})
 
@@ -156,14 +158,14 @@ class FridayNeuralInference:
 
             input_ids = self.tokenizer(formatted_input, return_tensors="pt").input_ids.to(self.device)
 
-            # Generate tokens
+            # Generate tokens with expanded 1024 token budget for deep multi-paragraph reasoning
             with torch.no_grad():
                 output_ids = self.model.generate(
                     input_ids,
-                    max_new_tokens=400,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repetition_penalty=1.1,
+                    max_new_tokens=1024,
+                    temperature=0.65,
+                    top_p=0.92,
+                    repetition_penalty=1.12,
                     do_sample=True,
                     pad_token_id=self.tokenizer.eos_token_id
                 )
@@ -188,9 +190,9 @@ class LocalLLMEngine(BaseAIProvider):
     """
     FRIDAY 1.0 Advanced Cognitive Agent Engine (ChatGPT / Gemini Architecture).
     Rules:
+    - Deep, structured 4-stage reasoning (Summary, Mechanics, Code, Edge cases).
     - Real neural language model inference (Qwen 2.5 0.5B + FRIDAY fine-tuned LoRA).
     - Safe AST-based arithmetic and dynamic multi-unit conversions.
-    - Clean markdown formatting with code blocks, bullet points, and bold takeaways.
     - Native hardware telemetry tools and RAG memory integration.
     """
 
@@ -298,14 +300,20 @@ class LocalLLMEngine(BaseAIProvider):
         if tool_result:
             return tool_result
 
-        # 4. RAG Semantic Document Context Search
-        rag_context = rag_memory.search_relevant_context(p)
+        # 4. RAG Semantic Document Context Search & User Profile Grounding
+        rag_context = rag_memory.search_relevant_context(p, top_k=3)
+        user_facts = rag_memory.get_user_context()
         enriched_system_prompt = system_prompt
-        if rag_context:
-            context_blocks = "\n".join([f"- {item.get('text', '')}" for item in rag_context[:3]])
-            enriched_system_prompt += f"\n\n[RELEVANT LOCAL KNOWLEDGE BASE]:\n{context_blocks}"
 
-        # 5. REAL NEURAL INFERENCE: Local Fine-Tuned FRIDAY 1.0 Model (Qwen 2.5 0.5B + LoRA)
+        if user_facts:
+            facts_str = f"[User Profile Context: User={user_facts.get('user_name', 'Omkar')}, Persona={user_facts.get('persona', 'System Architect')}, Platform={user_facts.get('hardware', 'Apple Silicon')}]"
+            enriched_system_prompt += f"\n\n{facts_str}"
+
+        if rag_context:
+            context_blocks = "\n".join([f"- **{item.get('title', 'Doc')}**: {item.get('content', '')}" for item in rag_context])
+            enriched_system_prompt += f"\n\n[RELEVANT WORKSPACE DOCUMENTATION CONTEXT]:\n{context_blocks}"
+
+        # 5. REAL NEURAL INFERENCE: Local Fine-Tuned FRIDAY 1.0 Model (Qwen 2.5 0.5B + LoRA) with 1024 token budget
         neural_response = neural_engine.generate(p, enriched_system_prompt, history)
         if neural_response:
             return neural_response
@@ -314,7 +322,7 @@ class LocalLLMEngine(BaseAIProvider):
         base_url = settings.OLLAMA_BASE_URL.rstrip('/')
         model = settings.OLLAMA_MODEL or "friday-1.0"
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=20.0) as client:
                 messages = [{"role": "system", "content": enriched_system_prompt}]
                 for h in history[-8:]:
                     messages.append({"role": h["role"], "content": h["content"]})
@@ -322,7 +330,7 @@ class LocalLLMEngine(BaseAIProvider):
 
                 res = await client.post(
                     f"{base_url}/api/chat",
-                    json={"model": model, "messages": messages, "stream": False, "options": {"temperature": 0.7}}
+                    json={"model": model, "messages": messages, "stream": False, "options": {"temperature": 0.65, "num_predict": 1024}}
                 )
                 if res.status_code == 200:
                     content = res.json().get("message", {}).get("content", "").strip()
@@ -331,9 +339,9 @@ class LocalLLMEngine(BaseAIProvider):
         except Exception:
             pass
 
-        # 7. Conversational Rule-Based Fallback (if neural model is completely unavailable)
+        # 7. Conversational Rule-Based Fallback
         p_lower = p.lower()
         if any(k in p_lower for k in ["namaste", "hello", "hi", "hey", "good morning", "good evening"]):
             return "Namaste Omkar! I am online and standing ready. How can I assist you with your code, computer, or projects today?"
 
-        return f"I understand your query regarding **{p}**. Please connect a local LLM runner or ensure model weights are loaded to generate extended multi-paragraph reasoning."
+        return f"I understand your query regarding **{p}**. Connect your OpenRouter API key in Settings or run a local Ollama daemon for extended multi-step reasoning."

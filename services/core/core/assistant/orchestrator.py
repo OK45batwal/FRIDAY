@@ -4,18 +4,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.core.core.ai.manager import ai_manager
 from services.core.core.conversation.manager import conversation_manager
 from services.core.core.agent.tools import agent_tools
+from services.core.core.memory.rag_memory import rag_memory
 from services.core.core.assistant.rules import core_rules, UserIntent
 
 class AssistantOrchestrator:
     """
     FRIDAY AI Assistant Orchestrator.
-    Implements the 6-stage request processing pipeline:
+    Implements the 6-stage deep reasoning request pipeline:
     1. Input Validation & Sanitization
     2. Intent Classification & Safety Boundary Check
-    3. Tool Execution (Web, OS, Files, Reminders) & RAG Context Retrieval
-    4. Context Window & Sliding Memory Management
-    5. AI Generation (Cloud Frontier or Local Neural SLM)
-    6. Output Verification & Response Packaging
+    3. Tool Execution (Web, OS, Files, Reminders)
+    4. Multi-Turn Pronoun & Entity Disambiguation (Pillar 1)
+    5. Deep 4-Stage Cognitive Reasoning Blueprint (Pillar 2)
+    6. Response Storage & Output Packaging
     """
 
     async def process_request(
@@ -131,16 +132,28 @@ class AssistantOrchestrator:
         if direct_tool_response:
             ai_response = direct_tool_response
         else:
-            # 5. Retrieve & Manage Context Window (Rules 4 & 11)
+            # 5. Retrieve Recent History & Apply Multi-Turn Context Disambiguation (Pillar 1)
             raw_history = await conversation_manager.get_recent_history(db, conversation_id, limit=12)
             managed_history = core_rules.manage_context_window(raw_history, max_turns=8)
+            user_context = rag_memory.get_user_context()
 
-            # 6. Build Concise System Instruction (Rule 6)
-            system_instruction = core_rules.build_system_instruction(agent_mode)
+            enriched_prompt, context_summary = core_rules.enrich_context_with_intent(
+                current_message=clean_message,
+                history=managed_history,
+                user_facts=user_context
+            )
 
-            # 7. Generate AI Response via AI Manager (Neural Model Inference)
+            # 6. Build Deep Cognitive System Blueprint (Pillar 2)
+            system_instruction = core_rules.build_system_instruction(
+                agent_mode=agent_mode,
+                user_context=user_context
+            )
+            if context_summary:
+                system_instruction += f"\n\n{context_summary}"
+
+            # 7. Generate Deep AI Response (Hybrid Cloud 70B or Local Neural Model)
             ai_response = await ai_manager.generate(
-                prompt=clean_message,
+                prompt=enriched_prompt,
                 system_prompt=system_instruction,
                 history=managed_history
             )

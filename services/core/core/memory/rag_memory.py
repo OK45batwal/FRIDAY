@@ -2,6 +2,7 @@ import os
 import json
 import math
 import time
+import glob
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -9,6 +10,7 @@ MEMORY_DIR = Path(__file__).resolve().parent.parent.parent / "memory_data"
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 DOCS_STORE = MEMORY_DIR / "documents.json"
 USER_FACTS_STORE = MEMORY_DIR / "user_memory.json"
+WORKSPACE_DIR = Path("/Users/omkar/FRIDAY").resolve()
 
 class SimpleVectorMemory:
     """
@@ -20,6 +22,7 @@ class SimpleVectorMemory:
         self.documents: List[Dict[str, Any]] = []
         self.user_facts: Dict[str, Any] = {}
         self._load_memory()
+        self.auto_index_workspace_docs()
 
     def _load_memory(self):
         if DOCS_STORE.exists():
@@ -38,8 +41,8 @@ class SimpleVectorMemory:
                     "user_name": "Omkar",
                     "persona": "Lead Developer & System Architect",
                     "preferred_voice": "Tara (Indian English)",
-                    "active_model": "FRIDAY 1.0 (1.1B Parameters)",
-                    "hardware": "Apple Silicon Mac & Android Phone"
+                    "active_model": "FRIDAY 1.0 (Qwen 2.5 + LoRA Neural Engine)",
+                    "hardware": "Apple Silicon Mac (Metal GPU) & Android Phone"
                 }
                 self._save_user_facts()
 
@@ -71,6 +74,14 @@ class SimpleVectorMemory:
 
     def add_document(self, title: str, content: str, category: str = "general") -> Dict[str, Any]:
         """Indexes a document or code snippet into the vector store."""
+        # Avoid duplicate documents
+        for doc in self.documents:
+            if doc.get("title") == title:
+                doc["content"] = content
+                doc["vector"] = self._compute_simple_embedding(f"{title} {content}")
+                self._save_documents()
+                return {"status": "updated", "id": doc["id"], "title": title}
+
         doc_id = f"doc_{int(time.time()*1000)}"
         doc_entry = {
             "id": doc_id,
@@ -84,6 +95,24 @@ class SimpleVectorMemory:
         self._save_documents()
         return {"status": "indexed", "id": doc_id, "title": title}
 
+    def auto_index_workspace_docs(self):
+        """Pillar 4: Automatically indexes key project documentation and specs for RAG grounding."""
+        try:
+            docs_pattern = str(WORKSPACE_DIR / "docs" / "*.md")
+            doc_files = glob.glob(docs_pattern)
+            readme_file = WORKSPACE_DIR / "README.md"
+            if readme_file.exists():
+                doc_files.append(str(readme_file))
+
+            for fpath in doc_files:
+                p = Path(fpath)
+                if p.exists() and p.is_file():
+                    with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                        text = f.read(3000)  # Index first 3000 chars per doc
+                    self.add_document(title=p.name, content=text, category="project_docs")
+        except Exception as e:
+            print("Auto-indexing workspace docs error:", e)
+
     def search_relevant_context(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         """Finds top-k most semantically relevant documents using cosine similarity."""
         query_vec = self._compute_simple_embedding(query)
@@ -93,9 +122,8 @@ class SimpleVectorMemory:
         scored_docs = []
         for doc in self.documents:
             doc_vec = doc.get("vector", {})
-            # Dot product for cosine similarity
             score = sum(query_vec.get(w, 0.0) * doc_vec.get(w, 0.0) for w in query_vec)
-            if score > 0.15:
+            if score > 0.12:
                 scored_docs.append((score, doc))
 
         scored_docs.sort(key=lambda x: x[0], reverse=True)
