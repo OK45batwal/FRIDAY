@@ -38,9 +38,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', maxWidth: '860px', margin: '0 auto', width: '100%' }}>
-      {messages.map((m) => (
-        <MessageItem key={m.id} message={m} onSpeak={onSpeak} />
-      ))}
+      {messages.map((m, index) => {
+        let previousUserPrompt: string | undefined = undefined;
+        if (m.role === 'assistant' && index > 0) {
+          const prevMsg = messages[index - 1];
+          if (prevMsg.role === 'user') {
+            previousUserPrompt = prevMsg.content;
+          }
+        }
+        return (
+          <MessageItem
+            key={m.id}
+            message={m}
+            previousUserMessage={previousUserPrompt}
+            onSpeak={onSpeak}
+          />
+        );
+      })}
       <div ref={bottomRef} />
     </div>
   );

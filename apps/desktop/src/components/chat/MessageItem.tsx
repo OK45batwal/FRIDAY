@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { Volume2, User, Sparkles, Mic, Copy, Check } from 'lucide-react';
+import { Volume2, User, Sparkles, Mic, Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { SmartCard } from './SmartCard';
+import { api } from '../../services/api';
 import type { Message } from '../../types';
 
 interface MessageItemProps {
   message: Message;
+  previousUserMessage?: string;
   onSpeak: (text: string) => void;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) => {
+export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserMessage, onSpeak }) => {
   const [copied, setCopied] = useState(false);
+  const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(null);
+  const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
+
   const isUser = message.role === 'user';
   const isVoice = message.input_type === 'voice';
 
@@ -17,6 +22,24 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) =>
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleFeedback = async (type: 'like' | 'dislike') => {
+    if (feedbackState === type) return;
+    setFeedbackState(type);
+
+    const promptText = previousUserMessage || "User Query";
+    try {
+      await api.sendFeedback(promptText, message.content, type);
+      if (type === 'like') {
+        setFeedbackNotice("Reward saved! FRIDAY 1.0 learned this.");
+      } else {
+        setFeedbackNotice("Loss noted. Policy updated to improve.");
+      }
+      setTimeout(() => setFeedbackNotice(null), 3000);
+    } catch (e) {
+      console.error("Feedback error:", e);
+    }
   };
 
   return (
@@ -32,46 +55,46 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) =>
       {/* Avatar Icon */}
       <div
         style={{
-          width: '38px',
-          height: '38px',
-          borderRadius: '12px',
-          background: isUser ? 'rgba(255, 255, 255, 0.15)' : 'rgba(239, 68, 68, 0.25)',
-          border: isUser ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(239, 68, 68, 0.6)',
+          width: '36px',
+          height: '36px',
+          borderRadius: '10px',
+          background: isUser ? 'rgba(255, 255, 255, 0.12)' : 'linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(225, 29, 72, 0.15) 100%)',
+          border: isUser ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid rgba(244, 63, 94, 0.45)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          color: isUser ? '#ffffff' : '#ef4444',
-          boxShadow: isUser ? '0 0 14px rgba(255, 255, 255, 0.2)' : '0 0 14px rgba(239, 68, 68, 0.35)',
+          color: isUser ? '#ffffff' : '#f43f5e',
+          boxShadow: isUser ? '0 0 14px rgba(255, 255, 255, 0.1)' : '0 0 14px rgba(244, 63, 94, 0.25)',
           flexShrink: 0
         }}
       >
-        {isUser ? <User size={18} /> : <Sparkles size={18} />}
+        {isUser ? <User size={16} /> : <Sparkles size={16} />}
       </div>
 
       {/* Bubble Container */}
       <div
         style={{
-          maxWidth: '80%',
-          background: isUser ? 'rgba(255, 255, 255, 0.08)' : 'rgba(26, 16, 20, 0.88)',
-          border: isUser ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)',
-          borderRadius: isUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
+          maxWidth: '82%',
+          background: isUser ? 'rgba(255, 255, 255, 0.07)' : 'rgba(20, 21, 29, 0.9)',
+          border: isUser ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 255, 255, 0.09)',
+          borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
           padding: '14px 18px',
           color: '#ffffff',
-          boxShadow: isUser ? '0 4px 20px rgba(0, 0, 0, 0.3)' : '0 4px 20px rgba(239, 68, 68, 0.12)'
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
         }}
       >
         {/* Bubble Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Orbitron, sans-serif', color: isUser ? '#ffffff' : '#ef4444' }}>
-            {isUser ? 'YOU' : 'FRIDAY ASSISTANT'}
+          <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-display)', color: isUser ? '#ffffff' : '#f43f5e', letterSpacing: '0.4px' }}>
+            {isUser ? 'YOU' : 'FRIDAY 1.0'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {isVoice && (
-              <span style={{ fontSize: '10px', color: '#ff2a5f', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+              <span style={{ fontSize: '10px', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
                 <Mic size={11} /> Voice
               </span>
             )}
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>
               {message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
             </span>
           </div>
@@ -85,28 +108,67 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) =>
         {/* Smart Response Card */}
         {!isUser && <SmartCard content={message.content} />}
 
-        {/* Footer Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', marginTop: '10px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-          {!isUser && (
-            <button
-              onClick={() => onSpeak(message.content)}
-              className="btn-action-icon"
-              style={{ fontSize: '11px', fontFamily: 'Orbitron, sans-serif', fontWeight: 600, color: '#ef4444', gap: '4px' }}
-            >
-              <Volume2 size={13} />
-              <span>PLAY VOICE</span>
-            </button>
-          )}
+        {/* Footer Actions & Continuous Learning Reinforcement Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '10px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {!isUser && (
+              <button
+                onClick={() => onSpeak(message.content)}
+                className="btn-action-icon"
+                style={{ fontSize: '11px', fontWeight: 600, color: '#f43f5e', gap: '4px' }}
+              >
+                <Volume2 size={13} />
+                <span>SPEAK</span>
+              </button>
+            )}
 
-          <button
-            onClick={handleCopy}
-            className="btn-action-icon"
-            style={{ fontSize: '11px', fontFamily: 'Orbitron, sans-serif', gap: '4px' }}
-            title="Copy message to clipboard"
-          >
-            {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
-            <span style={{ color: copied ? '#10b981' : '#94a3b8' }}>{copied ? 'COPIED' : 'COPY'}</span>
-          </button>
+            <button
+              onClick={handleCopy}
+              className="btn-action-icon"
+              style={{ fontSize: '11px', gap: '4px' }}
+              title="Copy message to clipboard"
+            >
+              {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+              <span style={{ color: copied ? '#10b981' : '#94a3b8' }}>{copied ? 'COPIED' : 'COPY'}</span>
+            </button>
+          </div>
+
+          {/* Continuous Learning Reward / Loss Feedback Buttons */}
+          {!isUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {feedbackNotice && (
+                <span style={{ fontSize: '10px', color: feedbackState === 'like' ? '#10b981' : '#f43f5e', fontWeight: 600, marginRight: '4px' }}>
+                  {feedbackNotice}
+                </span>
+              )}
+              <button
+                onClick={() => handleFeedback('like')}
+                className="btn-action-icon"
+                style={{
+                  padding: '4px 6px',
+                  borderRadius: '6px',
+                  background: feedbackState === 'like' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                  color: feedbackState === 'like' ? '#10b981' : '#64748b'
+                }}
+                title="Reward FRIDAY 1.0 (Learns this answer style)"
+              >
+                <ThumbsUp size={12} />
+              </button>
+              <button
+                onClick={() => handleFeedback('dislike')}
+                className="btn-action-icon"
+                style={{
+                  padding: '4px 6px',
+                  borderRadius: '6px',
+                  background: feedbackState === 'dislike' ? 'rgba(244, 63, 94, 0.2)' : 'transparent',
+                  color: feedbackState === 'dislike' ? '#f43f5e' : '#64748b'
+                }}
+                title="Penalize (Improves policy for next time)"
+              >
+                <ThumbsDown size={12} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

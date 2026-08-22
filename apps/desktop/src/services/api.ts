@@ -16,6 +16,20 @@ export const api = {
     return res.json();
   },
 
+  async getLearningStats() {
+    const res = await fetch(`${getBaseUrl()}/api/learning/stats`);
+    return res.json();
+  },
+
+  async sendFeedback(prompt: string, response: string, feedback: 'like' | 'dislike', correction?: string) {
+    const res = await fetch(`${getBaseUrl()}/api/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, response, feedback, correction })
+    });
+    return res.json();
+  },
+
   async updateConfig(provider: string, apiKey?: string, model?: string, baseUrl?: string) {
     const res = await fetch(`${getBaseUrl()}/api/config`, {
       method: 'POST',
