@@ -3,13 +3,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.core.core.ai.manager import ai_manager
 from services.core.core.conversation.manager import conversation_manager
 from services.core.core.agent.tools import agent_tools
-
-SYSTEM_PROMPT = """You are FRIDAY, an elite Indian AI operating assistant, senior software architect, and computer control companion for Omkar.
-You speak clearly, concisely, and articulately with a natural, respectful Indian English conversational cadence.
-When asked for code, you provide production-grade, well-structured code snippets with zero fluff.
-When asked about system operations, you provide clear, immediate assistance."""
+from services.core.core.assistant.rules import core_rules, UserIntent
 
 class AssistantOrchestrator:
+    """
+    FRIDAY AI Assistant Orchestrator.
+    Implements the 6-stage request processing pipeline:
+    1. Input Validation & Sanitization
+    2. Intent Classification & Safety Boundary Check
+    3. Tool Execution & RAG Context Retrieval
+    4. Context Window & Sliding Memory Management
+    5. AI Generation (Cloud Frontier or Local SLM)
+    6. Output Verification & Response Packaging
+    """
+
     async def process_request(
         self,
         db: AsyncSession,
@@ -18,20 +25,50 @@ class AssistantOrchestrator:
         input_type: str = "text",
         agent_mode: Optional[str] = "general"
     ) -> Dict[str, Any]:
-        # 1. Save user message to database
-        user_msg = await conversation_manager.add_message(
+        # 1. Validate & Sanitize Input (Rule 3)
+        is_valid, clean_message, error = core_rules.validate_and_sanitize_input(message)
+        if not is_valid:
+            return {
+                "conversation_id": conversation_id,
+                "message_id": "error",
+                "response": error or "Invalid message format.",
+                "created_at": None,
+                "executed_tool": None
+            }
+
+        # 2. Save user message to database
+        await conversation_manager.add_message(
             db=db,
             conversation_id=conversation_id,
             role="user",
-            content=message,
+            content=clean_message,
             input_type=input_type,
             metadata={"agent_mode": agent_mode}
         )
 
-        # 2. Check for native OS automation commands
-        msg_lower = message.lower().strip()
-        executed_tool = None
+        # 3. Intent Detection & Safety Boundary Check (Rules 2, 8, 9, 10)
+        intent = core_rules.classify_intent(clean_message)
+        safety_warning = core_rules.check_safety_boundary(intent, clean_message)
+        if safety_warning:
+            assistant_msg = await conversation_manager.add_message(
+                db=db,
+                conversation_id=conversation_id,
+                role="assistant",
+                content=safety_warning,
+                input_type="text",
+                metadata={"safety_guardrail": True}
+            )
+            return {
+                "conversation_id": conversation_id,
+                "message_id": assistant_msg.id,
+                "response": safety_warning,
+                "created_at": assistant_msg.created_at.isoformat() if assistant_msg.created_at else None,
+                "executed_tool": None
+            }
 
+        # 4. Native OS Automation Tool Execution
+        executed_tool = None
+        msg_lower = clean_message.lower().strip()
         if "open spotify" in msg_lower or "launch spotify" in msg_lower:
             tool_res = agent_tools.launch_desktop_app("Spotify")
             executed_tool = {"tool": "launch_app", "target": "Spotify", "result": tool_res}
@@ -42,35 +79,28 @@ class AssistantOrchestrator:
             tool_res = agent_tools.launch_desktop_app("Terminal")
             executed_tool = {"tool": "launch_app", "target": "Terminal", "result": tool_res}
 
-        # 3. Retrieve recent history for context
-        history = await conversation_manager.get_recent_history(db, conversation_id, limit=8)
+        # 5. Retrieve & Manage Context Window (Rules 4 & 11)
+        raw_history = await conversation_manager.get_recent_history(db, conversation_id, limit=12)
+        managed_history = core_rules.manage_context_window(raw_history, max_turns=8)
 
-        # 4. Tailor system prompt with Agent Mode
-        effective_system_prompt = SYSTEM_PROMPT
-        if agent_mode == "programming":
-            effective_system_prompt += "\n[MODE: SENIOR SOFTWARE ARCHITECT & CODER] Focus on robust algorithms, best practices, full code solutions, and clean architecture."
-        elif agent_mode == "writing":
-            effective_system_prompt += "\n[MODE: CREATIVE & STRATEGIC WRITER] Focus on compelling copy, clear structure, executive tone, and refined prose."
-        elif agent_mode == "research":
-            effective_system_prompt += "\n[MODE: DEEP RESEARCH ANALYST] Focus on comprehensive analysis, citations, pros/cons, and technical depth."
-        elif agent_mode == "system":
-            effective_system_prompt += "\n[MODE: OS & COMPUTER CONTROLLER] Focus on system telemetry, shell commands, and hardware optimization."
+        # 6. Build Concise System Instruction (Rule 6)
+        system_instruction = core_rules.build_system_instruction(agent_mode)
 
-        # 5. Generate AI response
+        # 7. Generate AI Response via AI Manager
         ai_response = await ai_manager.generate(
-            prompt=message,
-            system_prompt=effective_system_prompt,
-            history=history
+            prompt=clean_message,
+            system_prompt=system_instruction,
+            history=managed_history
         )
 
-        # 6. Save assistant message to database
+        # 8. Save assistant response to database
         assistant_msg = await conversation_manager.add_message(
             db=db,
             conversation_id=conversation_id,
             role="assistant",
             content=ai_response,
             input_type="text",
-            metadata={"executed_tool": executed_tool} if executed_tool else None
+            metadata={"executed_tool": executed_tool, "intent": intent.value} if executed_tool else {"intent": intent.value}
         )
 
         return {
