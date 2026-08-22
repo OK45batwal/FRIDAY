@@ -1,8 +1,8 @@
 import type { Conversation, Message } from '../types';
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
   const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `http://${host || 'localhost'}:8000`;
+  return (import.meta as any).env?.VITE_API_URL || `http://${host || 'localhost'}:8000`;
 };
 
 export const api = {

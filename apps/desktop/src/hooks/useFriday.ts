@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Conversation, Message, AssistantState, SystemTelemetry } from '../types';
-import { api } from '../services/api';
+import { api, getBaseUrl } from '../services/api';
 import { socketService } from '../services/websocket';
 
 export const useFriday = () => {
@@ -100,8 +100,7 @@ export const useFriday = () => {
 
     try {
       // ChatGPT / Gemini style Token Streaming
-      const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-      const res = await fetch(`http://${host}:8000/api/chat/stream`, {
+      const res = await fetch(`${getBaseUrl()}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

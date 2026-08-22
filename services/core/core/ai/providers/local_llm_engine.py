@@ -1,76 +1,140 @@
-import os
 import re
 import math
+import ast
+import operator
 import httpx
-import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from services.core.core.ai.provider import BaseAIProvider
 from services.core.core.learning.feedback_engine import learning_engine
 from services.core.core.memory.rag_memory import rag_memory
 from services.core.core.agent.tools import agent_tools
 from services.core.app.config import settings
 
+# Whitelisted AST math operators for 100% safe arithmetic evaluation (Fix for C-1)
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+def safe_eval_ast(node: ast.AST) -> Union[int, float]:
+    """Recursively evaluate an AST expression safely with zero arbitrary code execution risk."""
+    if isinstance(node, ast.Expression):
+        return safe_eval_ast(node.body)
+    elif isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return node.value
+        raise ValueError("Non-numeric constant detected.")
+    elif isinstance(node, ast.BinOp):
+        left = safe_eval_ast(node.left)
+        right = safe_eval_ast(node.right)
+        op_type = type(node.op)
+        if op_type in SAFE_OPERATORS:
+            return SAFE_OPERATORS[op_type](left, right)
+        raise ValueError(f"Unsupported binary operator: {op_type}")
+    elif isinstance(node, ast.UnaryOp):
+        operand = safe_eval_ast(node.operand)
+        op_type = type(node.op)
+        if op_type in SAFE_OPERATORS:
+            return SAFE_OPERATORS[op_type](operand)
+        raise ValueError(f"Unsupported unary operator: {op_type}")
+    elif isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name) and node.func.id == "sqrt" and len(node.args) == 1:
+            arg = safe_eval_ast(node.args[0])
+            return math.sqrt(arg)
+        raise ValueError("Unsupported function call.")
+    else:
+        raise ValueError(f"Unsupported AST node: {type(node)}")
+
 class LocalLLMEngine(BaseAIProvider):
     """
     FRIDAY 1.0 Advanced Cognitive Agent Engine (ChatGPT / Gemini Architecture).
     Rules:
-    - Direct, authoritative, intelligent responses with zero generic fluff.
-    - Accurate arithmetic & multi-unit physical conversions.
+    - Safe AST-based arithmetic and dynamic multi-unit conversions (C-1, W-3, W-4).
     - Clean markdown formatting with code blocks, bullet points, and bold takeaways.
-    - Native OS automation and hardware telemetry tools.
+    - Native hardware telemetry tools and RAG memory integration.
     """
 
     @property
     def name(self) -> str:
         return "local_llm"
 
-    def _solve_math_and_conversions(self, text: str) -> Optional[str]:
-        """Calculates arithmetic expressions and unit conversions dynamically, including composite queries."""
-        p_lower = text.lower().strip().rstrip('?= .')
+    def _solve_single_math_or_conversion(self, text: str) -> Optional[str]:
+        """Solves a single arithmetic expression or unit conversion safely."""
+        cleaned = text.strip()
+        cleaned_no_prefix = re.sub(
+            r'^(what\'s|whats|what is|calculate|solve|how much is|tell me|convert)\s*(the)?\s*',
+            '',
+            cleaned,
+            flags=re.I
+        ).strip()
 
-        # Composite prompt (e.g. "Calculate 10+50+90 and convert 100 C to F")
-        if "10+50+90" in p_lower and "100" in p_lower and "c to f" in p_lower:
-            return """Here are your calculations:
-
-1. **Arithmetic Calculation**:
-   $$10 + 50 + 90 = \\mathbf{150}$$
-
-2. **Temperature Conversion**:
-   $$100^\\circ\\text{C} = (100 \\times \\frac{9}{5}) + 32 = \\mathbf{212^\\circ\\text{F}}$$ *(Boiling point of water)*"""
-
-        cleaned = re.sub(r'^(what\'s|whats|what is|calculate|solve|how much is|tell me)\s*(the)?\s*', '', p_lower, flags=re.I).strip()
-
-        # Temperature conversions
-        c_to_f = re.match(r'^(\d+\.?\d*)\s*(?:c|celsius)\s*(?:to|in)\s*(?:f|fahrenheit)$', cleaned, re.I)
+        # Temperature conversion: Celsius to Fahrenheit
+        c_to_f = re.match(r'^(\d+\.?\d*)\s*(?:c|celsius)\s*(?:to|in)\s*(?:f|fahrenheit)$', cleaned_no_prefix, re.I)
         if c_to_f:
             c = float(c_to_f.group(1))
             f = round((c * 9/5) + 32, 2)
-            return f"**{c}°C** is equal to **{f}°F**.\n\n*Formula:* $({c} \\times 9/5) + 32 = {f}$"
+            return f"**{c}°C** = **{f}°F** *(Formula: $({c} \\times 9/5) + 32$)*"
 
-        f_to_c = re.match(r'^(\d+\.?\d*)\s*(?:f|fahrenheit)\s*(?:to|in)\s*(?:c|celsius)$', cleaned, re.I)
+        # Temperature conversion: Fahrenheit to Celsius
+        f_to_c = re.match(r'^(\d+\.?\d*)\s*(?:f|fahrenheit)\s*(?:to|in)\s*(?:c|celsius)$', cleaned_no_prefix, re.I)
         if f_to_c:
             f = float(f_to_c.group(1))
             c = round((f - 32) * 5/9, 2)
-            return f"**{f}°F** is equal to **{c}°C**.\n\n*Formula:* $({f} - 32) \\times 5/9 = {c}$"
+            return f"**{f}°F** = **{c}°C** *(Formula: $({f} - 32) \\times 5/9$)*"
 
-        # Math expressions (e.g. 10+50+90, 20*5, 100/4 + 25)
-        expr = cleaned.replace('^', '**').replace('x', '*').replace('÷', '/')
-        if "sqrt" in expr:
-            expr = re.sub(r'sqrt\(?(\d+\.?\d*)\)?', r'math.sqrt(\1)', expr)
+        # Safe AST Arithmetic Evaluation (Fix for W-4 and C-1)
+        expr_str = cleaned_no_prefix.replace('^', '**').replace('÷', '/')
+        # Only replace 'x' when it acts as multiplication between digits/parentheses
+        expr_str = re.sub(r'(?<=\d)\s*x\s*(?=\d)', '*', expr_str, flags=re.I)
+        expr_str = re.sub(r'(?<=\))\s*x\s*(?=\d|\()', '*', expr_str, flags=re.I)
 
-        if re.match(r'^[\d\.\s\+\-\*\/\(\)]+$', expr) and any(op in expr for op in ['+', '-', '*', '/', '%']):
+        # Check if the string consists of numeric mathematical tokens
+        if re.search(r'[\d]', expr_str) and any(op in expr_str for op in ['+', '-', '*', '/', '%', 'sqrt']):
             try:
-                res = eval(expr, {"__builtins__": None, "math": math}, {})
+                parsed_ast = ast.parse(expr_str.strip(), mode='eval')
+                res = safe_eval_ast(parsed_ast)
                 if isinstance(res, float) and res.is_integer():
                     res = int(res)
                 elif isinstance(res, float):
                     res = round(res, 4)
-                return f"**{cleaned} = {res}**"
+                return f"**{cleaned_no_prefix}** = **{res}**"
             except Exception:
                 pass
         return None
 
+    def _solve_math_and_conversions(self, text: str) -> Optional[str]:
+        """
+        Dynamically handles both single and composite multi-part math/conversion queries (Fix for W-3).
+        """
+        p_clean = text.strip().rstrip('?= .')
+
+        # Check if query contains composite parts joined by " and " or " then "
+        parts = re.split(r'\s+(?:and|then|\&)\s+', p_clean, flags=re.I)
+        if len(parts) > 1:
+            solved_parts = []
+            for idx, part in enumerate(parts, 1):
+                ans = self._solve_single_math_or_conversion(part)
+                if ans:
+                    solved_parts.append(f"{idx}. {ans}")
+            if solved_parts:
+                return "Here are your calculations:\n\n" + "\n\n".join(solved_parts)
+
+        # Single expression
+        single_ans = self._solve_single_math_or_conversion(p_clean)
+        if single_ans:
+            return single_ans
+
+        return None
+
     def _execute_agent_tools(self, prompt: str) -> Optional[str]:
+        """Provides hardware diagnostics telemetry."""
         p_lower = prompt.lower()
 
         if any(k in p_lower for k in ["telemetry", "cpu", "ram usage", "memory usage", "battery", "hardware status", "diagnostic"]):
@@ -85,19 +149,6 @@ class LocalLLMEngine(BaseAIProvider):
         if any(k in p_lower for k in ["what time", "current time", "what is the date", "today's date"]):
             td = agent_tools.get_current_time_and_date()
             return f"The current time is **{td['time']}** on **{td['date']}**."
-
-        if "spotify" in p_lower or "play music" in p_lower or "play song" in p_lower:
-            agent_tools.launch_desktop_app("Spotify")
-            return "Launching **Spotify** on your Mac."
-        elif "vscode" in p_lower or "vs code" in p_lower or "open code" in p_lower:
-            agent_tools.launch_desktop_app("Visual Studio Code")
-            return "Opening **Visual Studio Code** in your project workspace."
-        elif "terminal" in p_lower or "open terminal" in p_lower:
-            agent_tools.launch_desktop_app("Terminal")
-            return "Opening a new **Terminal** session."
-        elif "finder" in p_lower:
-            agent_tools.launch_desktop_app("Finder")
-            return "Opening **macOS Finder** in your workspace directory."
 
         return None
 
@@ -213,7 +264,7 @@ if __name__ == "__main__":
     ) -> str:
         p = prompt.strip()
 
-        # 1. Immediate Math & Arithmetic Evaluation (including composite queries)
+        # 1. Immediate Safe Math & Arithmetic Evaluation (AST-based, dynamic composite)
         math_result = self._solve_math_and_conversions(p)
         if math_result:
             return math_result

@@ -135,7 +135,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
         </div>
 
         {/* Smart Response Card */}
-        {!isUser && <SmartCard content={message.content} />}
+        {!isUser && message.content && message.content.length > 5 && <SmartCard content={message.content} />}
 
         {/* Footer Actions & Continuous Learning Reinforcement Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.07)' }}>
