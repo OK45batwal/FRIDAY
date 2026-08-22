@@ -1,16 +1,21 @@
+import os
 import re
 import math
 import ast
 import operator
 import httpx
+import logging
 from typing import List, Dict, Any, Optional, Union
+from pathlib import Path
 from services.core.core.ai.provider import BaseAIProvider
 from services.core.core.learning.feedback_engine import learning_engine
 from services.core.core.memory.rag_memory import rag_memory
 from services.core.core.agent.tools import agent_tools
 from services.core.app.config import settings
 
-# Whitelisted AST math operators for 100% safe arithmetic evaluation (Fix for C-1)
+logger = logging.getLogger(__name__)
+
+# Whitelisted AST math operators for safe arithmetic evaluation
 SAFE_OPERATORS = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -52,11 +57,139 @@ def safe_eval_ast(node: ast.AST) -> Union[int, float]:
     else:
         raise ValueError(f"Unsupported AST node: {type(node)}")
 
+
+class FridayNeuralInference:
+    """
+    On-Device Neural Model Inference Engine.
+    Loads Qwen 2.5 0.5B Instruct + FRIDAY LoRA fine-tuned adapters from disk.
+    Executes real autoregressive token generation with Apple Silicon GPU (MPS) / CPU acceleration.
+    """
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(FridayNeuralInference, cls).__new__(cls)
+            cls._instance.model = None
+            cls._instance.tokenizer = None
+            cls._instance.device = None
+            cls._instance.is_loaded = False
+            cls._instance.load_failed = False
+        return cls._instance
+
+    def lazy_load(self):
+        """Loads base model and LoRA adapter into memory on demand."""
+        if self.is_loaded or self.load_failed:
+            return
+
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            from peft import PeftModel
+
+            # Hardware selection: Apple Silicon Metal GPU (MPS) -> CUDA -> CPU
+            if torch.backends.mps.is_available():
+                self.device = "mps"
+            elif torch.cuda.is_available():
+                self.device = "cuda"
+            else:
+                self.device = "cpu"
+
+            base_model_name = settings.LOCAL_MODEL_BASE
+            adapter_path = Path(settings.LOCAL_MODEL_PATH)
+
+            logger.info(f"🧠 Loading FRIDAY Neural Model [{base_model_name}] on {self.device}...")
+            
+            # Load tokenizer
+            if adapter_path.exists() and (adapter_path / "tokenizer_config.json").exists():
+                self.tokenizer = AutoTokenizer.from_pretrained(str(adapter_path), trust_remote_code=True)
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained(base_model_name, trust_remote_code=True)
+
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+
+            # Load base model in float16 for fast on-device inference
+            dtype = torch.float16 if self.device in ("mps", "cuda") else torch.float32
+            base_model = AutoModelForCausalLM.from_pretrained(
+                base_model_name,
+                torch_dtype=dtype,
+                trust_remote_code=True
+            )
+
+            # Attach fine-tuned LoRA adapters if present
+            if adapter_path.exists() and (adapter_path / "adapter_config.json").exists():
+                logger.info(f"🎯 Attaching fine-tuned LoRA adapters from {adapter_path}...")
+                self.model = PeftModel.from_pretrained(base_model, str(adapter_path))
+            else:
+                self.model = base_model
+
+            self.model.to(self.device)
+            self.model.eval()
+            self.is_loaded = True
+            logger.info(f"✅ FRIDAY Neural Model loaded successfully into memory on {self.device}!")
+
+        except Exception as err:
+            logger.warning(f"⚠️ Could not load neural model locally: {err}. Falling back to standard pipeline.")
+            self.load_failed = True
+
+    def generate(self, prompt: str, system_prompt: str, history: List[Dict[str, Any]]) -> Optional[str]:
+        """Generates dynamic, authentic response using the neural language model."""
+        self.lazy_load()
+        if not self.is_loaded or self.model is None or self.tokenizer is None:
+            return None
+
+        try:
+            import torch
+
+            # Prepare ChatML conversation history
+            messages = [{"role": "system", "content": system_prompt}]
+            for h in history[-6:]:
+                messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+            messages.append({"role": "user", "content": prompt})
+
+            # Format input using ChatML template
+            formatted_input = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+
+            input_ids = self.tokenizer(formatted_input, return_tensors="pt").input_ids.to(self.device)
+
+            # Generate tokens
+            with torch.no_grad():
+                output_ids = self.model.generate(
+                    input_ids,
+                    max_new_tokens=400,
+                    temperature=0.7,
+                    top_p=0.9,
+                    repetition_penalty=1.1,
+                    do_sample=True,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+
+            # Slice out generated tokens (excluding the prompt)
+            generated_tokens = output_ids[0][input_ids.shape[1]:]
+            response = self.tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+
+            if response:
+                return response
+
+        except Exception as err:
+            logger.warning(f"Neural generation error: {err}")
+
+        return None
+
+
+neural_engine = FridayNeuralInference()
+
+
 class LocalLLMEngine(BaseAIProvider):
     """
     FRIDAY 1.0 Advanced Cognitive Agent Engine (ChatGPT / Gemini Architecture).
     Rules:
-    - Safe AST-based arithmetic and dynamic multi-unit conversions (C-1, W-3, W-4).
+    - Real neural language model inference (Qwen 2.5 0.5B + FRIDAY fine-tuned LoRA).
+    - Safe AST-based arithmetic and dynamic multi-unit conversions.
     - Clean markdown formatting with code blocks, bullet points, and bold takeaways.
     - Native hardware telemetry tools and RAG memory integration.
     """
@@ -89,13 +222,11 @@ class LocalLLMEngine(BaseAIProvider):
             c = round((f - 32) * 5/9, 2)
             return f"**{f}°F** = **{c}°C** *(Formula: $({f} - 32) \\times 5/9$)*"
 
-        # Safe AST Arithmetic Evaluation (Fix for W-4 and C-1)
+        # Safe AST Arithmetic Evaluation
         expr_str = cleaned_no_prefix.replace('^', '**').replace('÷', '/')
-        # Only replace 'x' when it acts as multiplication between digits/parentheses
         expr_str = re.sub(r'(?<=\d)\s*x\s*(?=\d)', '*', expr_str, flags=re.I)
         expr_str = re.sub(r'(?<=\))\s*x\s*(?=\d|\()', '*', expr_str, flags=re.I)
 
-        # Check if the string consists of numeric mathematical tokens
         if re.search(r'[\d]', expr_str) and any(op in expr_str for op in ['+', '-', '*', '/', '%', 'sqrt']):
             try:
                 parsed_ast = ast.parse(expr_str.strip(), mode='eval')
@@ -110,12 +241,9 @@ class LocalLLMEngine(BaseAIProvider):
         return None
 
     def _solve_math_and_conversions(self, text: str) -> Optional[str]:
-        """
-        Dynamically handles both single and composite multi-part math/conversion queries (Fix for W-3).
-        """
+        """Dynamically handles both single and composite multi-part math/conversion queries."""
         p_clean = text.strip().rstrip('?= .')
 
-        # Check if query contains composite parts joined by " and " or " then "
         parts = re.split(r'\s+(?:and|then|\&)\s+', p_clean, flags=re.I)
         if len(parts) > 1:
             solved_parts = []
@@ -126,12 +254,7 @@ class LocalLLMEngine(BaseAIProvider):
             if solved_parts:
                 return "Here are your calculations:\n\n" + "\n\n".join(solved_parts)
 
-        # Single expression
-        single_ans = self._solve_single_math_or_conversion(p_clean)
-        if single_ans:
-            return single_ans
-
-        return None
+        return self._solve_single_math_or_conversion(p_clean)
 
     def _execute_agent_tools(self, prompt: str) -> Optional[str]:
         """Provides hardware diagnostics telemetry."""
@@ -152,110 +275,6 @@ class LocalLLMEngine(BaseAIProvider):
 
         return None
 
-    def _generate_direct_expert_response(self, prompt: str, rag_context: List[Dict[str, Any]]) -> str:
-        """
-        Direct, intelligent, high-density ChatGPT / Gemini-style response synthesis.
-        """
-        p_clean = prompt.strip(" ?.,")
-        p_lower = prompt.lower()
-
-        # Greetings & Persona
-        if any(k in p_lower for k in ["namaste", "hello", "hi", "hey", "good morning", "good evening", "hey friday"]):
-            return "Namaste Omkar! I am online and standing ready. How can I assist you with your code, computer, or projects today?"
-
-        if "who are you" in p_lower or "introduce yourself" in p_lower:
-            return "I am **FRIDAY 1.0** — your custom AI Operating Assistant and software engineering copilot. I combine local neural intelligence, native Mac OS automation, and real-time hardware telemetry to help you build, solve, and automate tasks at maximum speed."
-
-        # Tech & People Profiles
-        if "elon musk" in p_lower:
-            return """**Elon Musk** is a prominent technology entrepreneur, engineer, and investor. He is the founder, CEO, and chief engineer at **SpaceX**, CEO and product architect of **Tesla**, founder of **xAI** and **Neuralink**, and owner of **X (formerly Twitter)**. He is widely recognized for his work in commercial space exploration, electric vehicles, satellite internet (Starlink), and brain-computer interfaces."""
-
-        if "sam altman" in p_lower:
-            return """**Sam Altman** is the CEO of **OpenAI**, the research laboratory behind ChatGPT, GPT-4, and DALL-E. Prior to leading OpenAI, he served as the President of Y Combinator, where he funded and scaled hundreds of early-stage technology companies worldwide."""
-
-        # Machine Learning & AI Topics
-        if "transformer" in p_lower or "attention mechanism" in p_lower:
-            return """A **Transformer** is a deep learning neural network architecture introduced in the 2017 paper *"Attention Is All You Need"*. It replaces recurrence (RNNs/LSTMs) with **Self-Attention**:
-
-### How It Works:
-1. **Self-Attention ($Q, K, V$)**: Computes similarity scores between all tokens in a sequence using query, key, and value vectors:
-   $$\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V$$
-2. **Multi-Head Attention**: Allows the model to attend to information from different representation subspaces simultaneously.
-3. **Feed-Forward Layers**: Applies non-linear transformations to each position independently.
-4. **Positional Encodings**: Injects order information since Transformers process all tokens in parallel.
-
-Transformers form the foundation of modern Large Language Models like GPT-4, Gemini, Claude, and LLaMA."""
-
-        if "llm" in p_lower or "language model" in p_lower:
-            return """A **Large Language Model (LLM)** is an autoregressive neural network trained on vast amounts of text to understand and generate natural language.
-
-### Core Lifecycle:
-1. **Pre-Training**: Learns general language, reasoning, and world knowledge by predicting the next token across trillions of words.
-2. **Supervised Fine-Tuning (SFT)**: Aligns the base model into an instruction-following assistant.
-3. **RLHF / DPO**: Human preference alignment using reward models to maximize helpfulness and eliminate hallucinations."""
-
-        # Python / Software Engineering Code Generation
-        if any(k in p_lower for k in ["python", "async", "fastapi", "react", "typescript", "code", "write a", "script"]):
-            return """Here is a clean, production-ready solution:
-
-```python
-import asyncio
-from typing import Dict, Any
-
-async def process_task(task_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    \"\"\"
-    Asynchronous non-blocking worker pipeline.
-    \"\"\"
-    try:
-        await asyncio.sleep(0.05)  # Non-blocking async execution
-        return {
-            "status": "success",
-            "task": task_name,
-            "data": payload
-        }
-    except Exception as err:
-        return {"status": "error", "message": str(err)}
-
-if __name__ == "__main__":
-    result = asyncio.run(process_task("DataPipeline", {"record_id": 1042}))
-    print("Result:", result)
-```
-
-### Key Highlights:
-- **Asynchronous I/O**: High throughput with non-blocking execution.
-- **Type Annotations**: Explicit type safety for robust maintainability.
-- **Structured Error Handling**: Guarded execution boundaries."""
-
-        # Project Specification Document Drafting
-        if any(k in p_lower for k in ["specification", "spec document", "draft a project", "project plan", "draft complete project"]):
-            return """# 📋 Project Specification Document
-
-## 1. Executive Summary
-- **Project**: FRIDAY Intelligent Operating Assistant
-- **Target Platforms**: macOS (Apple Silicon Metal GPU) & Android (ARM64)
-- **Primary Goal**: Private, sub-50ms on-device AI assistant with native OS automation and low-latency voice synthesis.
-
-## 2. System Architecture
-1. **Frontend**: React + TypeScript client with progressive SSE token streaming and 16-bit Studio WAV voice.
-2. **Backend**: FastAPI async microservice with SQLite conversation store, RAG vector memory, and OS automation tools.
-3. **Core Model**: FRIDAY 1.0 (1.1B Parameters) with 4-bit `Q4_K_M` quantization.
-4. **Continuous Learning**: Real-time RLHF / DPO experience store."""
-
-        # Clean fallback for any arbitrary query
-        topic = p_clean.replace("what is", "").replace("explain", "").replace("how does", "").replace("why", "").replace("tell me about", "").strip(" the a an is are do does ?.")
-        return f"""### {topic.title()}
-
-**{topic.title()}** is an important concept in its field, characterized by several key aspects:
-
-1. **Definition & Purpose**: It provides structured principles for solving specific problems, organizing systems, and streamlining operations.
-2. **Core Mechanism**: It functions through defined input states, logical transformations, and measurable outputs.
-3. **Key Benefits**:
-   - **Reliability**: Produces consistent, verifiable results.
-   - **Scalability**: Easily adapts across varied environments and scales.
-   - **Efficiency**: Reduces friction and eliminates redundant processing steps.
-
-*Let me know if you would like me to dive deeper into code implementations, mathematical formulas, or practical use cases!*"""
-
     async def generate_response(
         self,
         prompt: str,
@@ -269,7 +288,7 @@ if __name__ == "__main__":
         if math_result:
             return math_result
 
-        # 2. Experience Store / Positive Feedback Recall
+        # 2. Experience Store / Positive Feedback Recall (RLHF / DPO learned responses)
         learned_answer = learning_engine.get_learned_response(p)
         if learned_answer:
             return learned_answer
@@ -279,15 +298,24 @@ if __name__ == "__main__":
         if tool_result:
             return tool_result
 
-        # 4. RAG Semantic Document Search
+        # 4. RAG Semantic Document Context Search
         rag_context = rag_memory.search_relevant_context(p)
+        enriched_system_prompt = system_prompt
+        if rag_context:
+            context_blocks = "\n".join([f"- {item.get('text', '')}" for item in rag_context[:3]])
+            enriched_system_prompt += f"\n\n[RELEVANT LOCAL KNOWLEDGE BASE]:\n{context_blocks}"
 
-        # 5. Check Local Model Daemon (Ollama / vLLM / llama.cpp)
+        # 5. REAL NEURAL INFERENCE: Local Fine-Tuned FRIDAY 1.0 Model (Qwen 2.5 0.5B + LoRA)
+        neural_response = neural_engine.generate(p, enriched_system_prompt, history)
+        if neural_response:
+            return neural_response
+
+        # 6. Check Local Model Daemon (Ollama / vLLM / llama.cpp if running)
         base_url = settings.OLLAMA_BASE_URL.rstrip('/')
         model = settings.OLLAMA_MODEL or "friday-1.0"
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
-                messages = [{"role": "system", "content": system_prompt}]
+                messages = [{"role": "system", "content": enriched_system_prompt}]
                 for h in history[-8:]:
                     messages.append({"role": h["role"], "content": h["content"]})
                 messages.append({"role": "user", "content": prompt})
@@ -303,5 +331,9 @@ if __name__ == "__main__":
         except Exception:
             pass
 
-        # 6. Direct Expert Synthesized Response (ChatGPT / Gemini style)
-        return self._generate_direct_expert_response(p, rag_context)
+        # 7. Conversational Rule-Based Fallback (if neural model is completely unavailable)
+        p_lower = p.lower()
+        if any(k in p_lower for k in ["namaste", "hello", "hi", "hey", "good morning", "good evening"]):
+            return "Namaste Omkar! I am online and standing ready. How can I assist you with your code, computer, or projects today?"
+
+        return f"I understand your query regarding **{p}**. Please connect a local LLM runner or ensure model weights are loaded to generate extended multi-paragraph reasoning."

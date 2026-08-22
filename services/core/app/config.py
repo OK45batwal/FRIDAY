@@ -18,9 +18,11 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
-    # Dedicated Local SLM Engine
+    # Dedicated Local SLM Engine & Fine-Tuned Neural Inference
     MODEL_NAME: str = "FRIDAY 1.0"
-    MODEL_PARAMETERS: str = "1.1B Parameters"
+    MODEL_PARAMETERS: str = "0.5B Parameters"
+    LOCAL_MODEL_BASE: str = os.getenv("LOCAL_MODEL_BASE", "Qwen/Qwen2.5-0.5B-Instruct")
+    LOCAL_MODEL_PATH: str = os.getenv("LOCAL_MODEL_PATH", str(BASE_DIR / "training/output/friday_1_0_finetuned"))
     OLLAMA_MODEL: str = "friday-1.0"
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
