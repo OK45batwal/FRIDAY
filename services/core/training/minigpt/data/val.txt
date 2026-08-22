@@ -1,0 +1,1 @@
+Quantization compresses floating point weights into 4-bit integers to run large language models on Mac and Android.

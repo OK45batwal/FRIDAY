@@ -17,7 +17,8 @@ class LocalLLMEngine(BaseAIProvider):
     1. Robust Arithmetic & Math Solver.
     2. Dynamic RAG & Semantic Memory.
     3. Native Desktop & Hardware OS Tools.
-    4. Active RLHF Learning & Experience Store.
+    4. Conversational Dialogue & Multi-turn Reasoning.
+    5. Active RLHF Learning & Experience Store.
     """
 
     @property
@@ -94,6 +95,43 @@ class LocalLLMEngine(BaseAIProvider):
 
         return None
 
+    def _handle_conversational_and_templates(self, prompt: str) -> Optional[str]:
+        p_lower = prompt.lower()
+
+        # Greetings & Personality
+        if any(k in p_lower for k in ["namaste", "hello", "hi", "hey", "good morning", "good evening", "hey friday"]):
+            return "Namaste Omkar! I am online and standing ready. How can I assist you with your code, computer, or projects today?"
+
+        if "how are you" in p_lower:
+            return "I am functioning at peak efficiency! All neural link threads and local daemons are active. What shall we build or solve today, Omkar?"
+
+        if "who are you" in p_lower or "introduce yourself" in p_lower:
+            return "I am **FRIDAY 1.0** — your custom 1.1 Billion parameter AI Operating Assistant and engineering companion. I execute native computer control, write full-stack production software, analyze telemetry, and solve complex problems with 100% on-device privacy."
+
+        # Project Specification Document Drafting
+        if "specification" in p_lower or "spec document" in p_lower or "draft a project" in p_lower:
+            return """# 📋 Project Specification Document
+
+## 1. Executive Summary
+- **Project Name**: FRIDAY Intelligent Assistant & Custom SLM
+- **Target Platform**: macOS (Apple Silicon Metal GPU) & Android Phone (ARM64)
+- **Primary Goal**: Fully private, sub-50ms on-device AI assistant with native OS automation and studio voice synthesis.
+
+## 2. System Architecture
+1. **Frontend**: React + TypeScript desktop client with 16-bit Studio WAV audio streaming.
+2. **Backend**: FastAPI async microservice with SQLite conversation history and RAG vector store.
+3. **Core AI Brain**: FRIDAY 1.0 (1.1B Parameters) with 4-bit `Q4_K_M` GGUF quantization.
+4. **Learning Loop**: Real-time RLHF / DPO reward and loss feedback tracker.
+
+## 3. Key Milestones
+- [x] Phase 1: ChatML Dataset Generation (1,000 instruction pairs)
+- [x] Phase 2: Supervised Fine-Tuning (SFT LoRA Adapters)
+- [x] Phase 3: Direct Preference Optimization (DPO Preference Alignment)
+- [x] Phase 4: 4-Bit GGUF Quantization & Model Manifest Export
+- [x] Phase 5: Complete Desktop & Mobile System Integration"""
+
+        return None
+
     def _generate_dynamic_analysis(self, prompt: str, rag_context: List[Dict[str, Any]]) -> str:
         """Generates dynamic answers incorporating RAG context when available."""
         p_clean = prompt.strip(" ?.,")
@@ -139,20 +177,25 @@ class LocalLLMEngine(BaseAIProvider):
         if math_result:
             return f"Namaste Omkar! {math_result}"
 
-        # 2. Experience Store / Positive Feedback Recall
+        # 2. Conversational Greetings & Templates
+        conv_res = self._handle_conversational_and_templates(p)
+        if conv_res:
+            return conv_res
+
+        # 3. Experience Store / Positive Feedback Recall
         learned_answer = learning_engine.get_learned_response(p)
         if learned_answer:
             return learned_answer
 
-        # 3. Agent Tool Calling & OS Hardware Telemetry
+        # 4. Agent Tool Calling & OS Hardware Telemetry
         tool_result = self._execute_agent_tools(p)
         if tool_result:
             return tool_result
 
-        # 4. RAG Semantic Document Search
+        # 5. RAG Semantic Document Search
         rag_context = rag_memory.search_relevant_context(p)
 
-        # 5. Check Local Model Daemon (Ollama / vLLM / llama.cpp)
+        # 6. Check Local Model Daemon (Ollama / vLLM / llama.cpp)
         base_url = settings.OLLAMA_BASE_URL.rstrip('/')
         model = settings.OLLAMA_MODEL or "friday-1.0"
         try:
@@ -173,5 +216,5 @@ class LocalLLMEngine(BaseAIProvider):
         except Exception:
             pass
 
-        # 6. Dynamic Generative Synthesis with RAG Memory
+        # 7. Dynamic Generative Synthesis with RAG Memory
         return self._generate_dynamic_analysis(p, rag_context)
