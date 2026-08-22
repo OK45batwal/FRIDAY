@@ -122,7 +122,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
 
         {/* Message Content */}
         <div style={{ fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap', color: '#f8fafc' }}>
-          {message.content}
+          {message.content ? (
+            message.content
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f43f5e', fontSize: '13px', padding: '4px 0' }}>
+              <span className="audio-bar" style={{ height: '8px', animation: 'wave-bar 0.6s infinite alternate' }} />
+              <span className="audio-bar" style={{ height: '12px', animation: 'wave-bar 0.6s 0.2s infinite alternate' }} />
+              <span className="audio-bar" style={{ height: '8px', animation: 'wave-bar 0.6s 0.4s infinite alternate' }} />
+              <span style={{ color: '#94a3b8', fontSize: '12px', marginLeft: '6px' }}>FRIDAY is thinking...</span>
+            </div>
+          )}
         </div>
 
         {/* Smart Response Card */}

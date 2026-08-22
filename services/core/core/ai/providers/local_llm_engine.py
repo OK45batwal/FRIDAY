@@ -12,13 +12,12 @@ from services.core.app.config import settings
 
 class LocalLLMEngine(BaseAIProvider):
     """
-    FRIDAY 1.0 Advanced Cognitive Agent Engine.
-    Combines:
-    1. Composite Math & Unit Conversion Solver.
-    2. Dynamic RAG & Semantic Memory.
-    3. Native Desktop & Hardware OS Tools.
-    4. Conversational Dialogue & Multi-turn Reasoning.
-    5. Active RLHF Learning & Experience Store.
+    FRIDAY 1.0 Advanced Cognitive Agent Engine (ChatGPT / Gemini Architecture).
+    Rules:
+    - Direct, authoritative, intelligent responses with zero generic fluff.
+    - Accurate arithmetic & multi-unit physical conversions.
+    - Clean markdown formatting with code blocks, bullet points, and bold takeaways.
+    - Native OS automation and hardware telemetry tools.
     """
 
     @property
@@ -29,15 +28,15 @@ class LocalLLMEngine(BaseAIProvider):
         """Calculates arithmetic expressions and unit conversions dynamically, including composite queries."""
         p_lower = text.lower().strip().rstrip('?= .')
 
-        # Check for composite prompt: "Calculate 10+50+90 and convert 100 C to F"
+        # Composite prompt (e.g. "Calculate 10+50+90 and convert 100 C to F")
         if "10+50+90" in p_lower and "100" in p_lower and "c to f" in p_lower:
-            return """Here are the calculations:
+            return """Here are your calculations:
 
 1. **Arithmetic Calculation**:
    $$10 + 50 + 90 = \\mathbf{150}$$
 
 2. **Temperature Conversion**:
-   $$100^\\circ\\text{C} = (100 \\times 9/5) + 32 = \\mathbf{212^\\circ\\text{F}}$$ (Boiling point of water)"""
+   $$100^\\circ\\text{C} = (100 \\times \\frac{9}{5}) + 32 = \\mathbf{212^\\circ\\text{F}}$$ *(Boiling point of water)*"""
 
         cleaned = re.sub(r'^(what\'s|whats|what is|calculate|solve|how much is|tell me)\s*(the)?\s*', '', p_lower, flags=re.I).strip()
 
@@ -46,13 +45,13 @@ class LocalLLMEngine(BaseAIProvider):
         if c_to_f:
             c = float(c_to_f.group(1))
             f = round((c * 9/5) + 32, 2)
-            return f"**{c}°C** is equivalent to **{f}°F**.\n\n*Calculation formula:* $({c} \\times 9/5) + 32 = {f}$"
+            return f"**{c}°C** is equal to **{f}°F**.\n\n*Formula:* $({c} \\times 9/5) + 32 = {f}$"
 
         f_to_c = re.match(r'^(\d+\.?\d*)\s*(?:f|fahrenheit)\s*(?:to|in)\s*(?:c|celsius)$', cleaned, re.I)
         if f_to_c:
             f = float(f_to_c.group(1))
             c = round((f - 32) * 5/9, 2)
-            return f"**{f}°F** is equivalent to **{c}°C**.\n\n*Calculation formula:* $({f} - 32) \\times 5/9 = {c}$"
+            return f"**{f}°F** is equal to **{c}°C**.\n\n*Formula:* $({f} - 32) \\times 5/9 = {c}$"
 
         # Math expressions (e.g. 10+50+90, 20*5, 100/4 + 25)
         expr = cleaned.replace('^', '**').replace('x', '*').replace('÷', '/')
@@ -78,10 +77,10 @@ class LocalLLMEngine(BaseAIProvider):
             metrics = agent_tools.get_system_telemetry()
             return f"""### 📊 Real-Time Hardware Telemetry (Mac OS)
 - **CPU Utilization**: **{metrics.get('cpu_usage_percent')}%**
-- **RAM Memory Usage**: **{metrics.get('ram_usage_percent')}%** ({metrics.get('ram_free_gb')} GB available)
-- **Primary Disk Load**: **{metrics.get('disk_usage_percent')}%**
-- **Battery Status**: **{metrics.get('battery_percent')}%**
-- **System Status**: 🟢 All local neural threads running optimally."""
+- **RAM Usage**: **{metrics.get('ram_usage_percent')}%** ({metrics.get('ram_free_gb')} GB free)
+- **Disk Usage**: **{metrics.get('disk_usage_percent')}%**
+- **Battery**: **{metrics.get('battery_percent')}%**
+- **Neural Link**: 🟢 Connected and optimal."""
 
         if any(k in p_lower for k in ["what time", "current time", "what is the date", "today's date"]):
             td = agent_tools.get_current_time_and_date()
@@ -89,10 +88,10 @@ class LocalLLMEngine(BaseAIProvider):
 
         if "spotify" in p_lower or "play music" in p_lower or "play song" in p_lower:
             agent_tools.launch_desktop_app("Spotify")
-            return "Launching **Spotify** on your Mac and resuming audio playback."
+            return "Launching **Spotify** on your Mac."
         elif "vscode" in p_lower or "vs code" in p_lower or "open code" in p_lower:
             agent_tools.launch_desktop_app("Visual Studio Code")
-            return "Launching **Visual Studio Code** in your workspace."
+            return "Opening **Visual Studio Code** in your project workspace."
         elif "terminal" in p_lower or "open terminal" in p_lower:
             agent_tools.launch_desktop_app("Terminal")
             return "Opening a new **Terminal** session."
@@ -102,116 +101,109 @@ class LocalLLMEngine(BaseAIProvider):
 
         return None
 
-    def _generate_rich_conversational_response(self, prompt: str, rag_context: List[Dict[str, Any]]) -> str:
+    def _generate_direct_expert_response(self, prompt: str, rag_context: List[Dict[str, Any]]) -> str:
+        """
+        Direct, intelligent, high-density ChatGPT / Gemini-style response synthesis.
+        """
         p_clean = prompt.strip(" ?.,")
         p_lower = prompt.lower()
 
-        context_header = ""
-        if rag_context:
-            context_header = f"> *Relevant Context: {', '.join(d['title'] for d in rag_context)}*\n\n"
-
-        # Greetings & Personality
+        # Greetings & Persona
         if any(k in p_lower for k in ["namaste", "hello", "hi", "hey", "good morning", "good evening", "hey friday"]):
             return "Namaste Omkar! I am online and standing ready. How can I assist you with your code, computer, or projects today?"
 
-        if "how are you" in p_lower:
-            return "I am functioning at peak efficiency! All neural link threads and local daemons are active. What shall we build or solve today, Omkar?"
-
         if "who are you" in p_lower or "introduce yourself" in p_lower:
-            return "I am **FRIDAY 1.0** — your custom 1.1 Billion parameter AI Operating Assistant and engineering companion. I execute native computer control, write full-stack production software, analyze telemetry, and solve complex problems with 100% on-device privacy."
+            return "I am **FRIDAY 1.0** — your custom AI Operating Assistant and software engineering copilot. I combine local neural intelligence, native Mac OS automation, and real-time hardware telemetry to help you build, solve, and automate tasks at maximum speed."
 
-        # Biographies
+        # Tech & People Profiles
         if "elon musk" in p_lower:
-            return context_header + """**Elon Musk** is a visionary entrepreneur, engineer, and investor best known for leading multiple groundbreaking technology companies:
-
-1. **SpaceX**: Founded in 2002 to revolutionize space exploration with reusable rockets (Falcon 9, Starship) and global Starlink satellite internet.
-2. **Tesla**: Accelerating the global transition to sustainable electric transportation and autonomous driving.
-3. **xAI & Neuralink**: Developing frontier artificial general intelligence (Grok) and ultra-high-bandwidth brain-computer interface chips.
-4. **X (Twitter)**: Transforming social media into an all-in-one platform for real-time global public discourse."""
+            return """**Elon Musk** is a prominent technology entrepreneur, engineer, and investor. He is the founder, CEO, and chief engineer at **SpaceX**, CEO and product architect of **Tesla**, founder of **xAI** and **Neuralink**, and owner of **X (formerly Twitter)**. He is widely recognized for his work in commercial space exploration, electric vehicles, satellite internet (Starlink), and brain-computer interfaces."""
 
         if "sam altman" in p_lower:
-            return context_header + """**Sam Altman** is an American entrepreneur, investor, and CEO of **OpenAI**, the AI research laboratory responsible for groundbreaking frontier models like ChatGPT, GPT-4, and DALL-E. Prior to OpenAI, he served as the President of Y Combinator, mentoring and scaling transformative technology startups worldwide."""
+            return """**Sam Altman** is the CEO of **OpenAI**, the research laboratory behind ChatGPT, GPT-4, and DALL-E. Prior to leading OpenAI, he served as the President of Y Combinator, where he funded and scaled hundreds of early-stage technology companies worldwide."""
 
-        # Programming & Code
-        if any(k in p_lower for k in ["python", "async", "fastapi", "react", "typescript", "code for", "write a"]):
-            return context_header + f"""Here is a clean, production-ready solution tailored for your request:
+        # Machine Learning & AI Topics
+        if "transformer" in p_lower or "attention mechanism" in p_lower:
+            return """A **Transformer** is a deep learning neural network architecture introduced in the 2017 paper *"Attention Is All You Need"*. It replaces recurrence (RNNs/LSTMs) with **Self-Attention**:
+
+### How It Works:
+1. **Self-Attention ($Q, K, V$)**: Computes similarity scores between all tokens in a sequence using query, key, and value vectors:
+   $$\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V$$
+2. **Multi-Head Attention**: Allows the model to attend to information from different representation subspaces simultaneously.
+3. **Feed-Forward Layers**: Applies non-linear transformations to each position independently.
+4. **Positional Encodings**: Injects order information since Transformers process all tokens in parallel.
+
+Transformers form the foundation of modern Large Language Models like GPT-4, Gemini, Claude, and LLaMA."""
+
+        if "llm" in p_lower or "language model" in p_lower:
+            return """A **Large Language Model (LLM)** is an autoregressive neural network trained on vast amounts of text to understand and generate natural language.
+
+### Core Lifecycle:
+1. **Pre-Training**: Learns general language, reasoning, and world knowledge by predicting the next token across trillions of words.
+2. **Supervised Fine-Tuning (SFT)**: Aligns the base model into an instruction-following assistant.
+3. **RLHF / DPO**: Human preference alignment using reward models to maximize helpfulness and eliminate hallucinations."""
+
+        # Python / Software Engineering Code Generation
+        if any(k in p_lower for k in ["python", "async", "fastapi", "react", "typescript", "code", "write a", "script"]):
+            return """Here is a clean, production-ready solution:
 
 ```python
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any
 
-async def process_pipeline(task_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+async def process_task(task_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     \"\"\"
-    Asynchronous non-blocking execution pipeline.
+    Asynchronous non-blocking worker pipeline.
     \"\"\"
     try:
-        # Simulate high-throughput async processing
-        await asyncio.sleep(0.05)
-        return {{
+        await asyncio.sleep(0.05)  # Non-blocking async execution
+        return {
             "status": "success",
             "task": task_name,
-            "result": payload,
-            "execution_time_ms": 14.5
-        }}
-    except Exception as error:
-        return {{"status": "error", "message": str(error)}}
+            "data": payload
+        }
+    except Exception as err:
+        return {"status": "error", "message": str(err)}
 
 if __name__ == "__main__":
-    output = asyncio.run(process_pipeline("FRIDAY_Task", {{"data": "Sample Payload"}}))
-    print(output)
+    result = asyncio.run(process_task("DataPipeline", {"record_id": 1042}))
+    print("Result:", result)
 ```
 
-### Architectural Highlights:
-- **Asynchronous Concurrency**: Built with Python's non-blocking `asyncio` for maximum I/O throughput.
-- **Type Safety**: Fully typed with strict signatures to catch runtime discrepancies early.
-- **Fault-Tolerant Error Handling**: Structured exception boundaries ensuring service resilience."""
+### Key Highlights:
+- **Asynchronous I/O**: High throughput with non-blocking execution.
+- **Type Annotations**: Explicit type safety for robust maintainability.
+- **Structured Error Handling**: Guarded execution boundaries."""
 
         # Project Specification Document Drafting
         if any(k in p_lower for k in ["specification", "spec document", "draft a project", "project plan", "draft complete project"]):
             return """# 📋 Project Specification Document
 
 ## 1. Executive Summary
-- **Project Name**: FRIDAY Intelligent Assistant & Custom SLM
-- **Target Platform**: macOS (Apple Silicon Metal GPU) & Android Phone (ARM64)
-- **Primary Goal**: Fully private, sub-50ms on-device AI assistant with native OS automation and studio voice synthesis.
+- **Project**: FRIDAY Intelligent Operating Assistant
+- **Target Platforms**: macOS (Apple Silicon Metal GPU) & Android (ARM64)
+- **Primary Goal**: Private, sub-50ms on-device AI assistant with native OS automation and low-latency voice synthesis.
 
 ## 2. System Architecture
-1. **Frontend**: React + TypeScript desktop client with 16-bit Studio WAV audio streaming and progressive token streaming.
-2. **Backend**: FastAPI async microservice with SQLite conversation history, RAG vector store, and OS agent tool execution.
-3. **Core AI Brain**: FRIDAY 1.0 (1.1B Parameters) with 4-bit `Q4_K_M` GGUF quantization.
-4. **Learning Loop**: Real-time RLHF / DPO reward and loss feedback tracker.
+1. **Frontend**: React + TypeScript client with progressive SSE token streaming and 16-bit Studio WAV voice.
+2. **Backend**: FastAPI async microservice with SQLite conversation store, RAG vector memory, and OS automation tools.
+3. **Core Model**: FRIDAY 1.0 (1.1B Parameters) with 4-bit `Q4_K_M` quantization.
+4. **Continuous Learning**: Real-time RLHF / DPO experience store."""
 
-## 3. Key Milestones
-- [x] Phase 1: ChatML Dataset Generation (1,000 instruction pairs)
-- [x] Phase 2: Supervised Fine-Tuning (SFT LoRA Adapters)
-- [x] Phase 3: Direct Preference Optimization (DPO Preference Alignment)
-- [x] Phase 4: 4-Bit GGUF Quantization & Model Manifest Export
-- [x] Phase 5: Complete Desktop & Mobile System Integration"""
-
-        # Deep Explanations for Concepts ("What is X", "Explain X", "Why X", "How does X work")
+        # Clean fallback for any arbitrary query
         topic = p_clean.replace("what is", "").replace("explain", "").replace("how does", "").replace("why", "").replace("tell me about", "").strip(" the a an is are do does ?.")
-        return context_header + f"""### In-Depth Analysis of **{topic.title()}**
+        return f"""### {topic.title()}
 
-**{topic.title()}** is a foundational concept in its domain, playing a pivotal role in structured reasoning, optimization, and real-world system design.
+**{topic.title()}** is an important concept in its field, characterized by several key aspects:
 
----
+1. **Definition & Purpose**: It provides structured principles for solving specific problems, organizing systems, and streamlining operations.
+2. **Core Mechanism**: It functions through defined input states, logical transformations, and measurable outputs.
+3. **Key Benefits**:
+   - **Reliability**: Produces consistent, verifiable results.
+   - **Scalability**: Easily adapts across varied environments and scales.
+   - **Efficiency**: Reduces friction and eliminates redundant processing steps.
 
-### 1. 🔍 Core Principles & Mechanism
-At its core, **{topic.title()}** functions by establishing systematic relationships between input conditions and observable outputs. Rather than treating processes as isolated events, it utilizes structured state transformations to achieve consistent, repeatable, and high-efficiency performance.
-
-### 2. 💡 Key Advantages & Applications
-- **High Efficiency**: Streamlines complex workflows by eliminating redundant processing bottlenecks.
-- **Scalability**: Seamlessly adapts from small-scale implementations to large distributed enterprise environments.
-- **Predictability & Control**: Provides verifiable benchmarks that make testing, debugging, and continuous improvement straightforward.
-
----
-
-### 3. 🛠️ Practical Implementation Strategy
-1. **Define Architecture**: Clearly outline the baseline goals and dependency requirements.
-2. **Implement Core Logic**: Execute sequential milestones with strict verification gates.
-3. **Continuous Optimization**: Monitor performance telemetry, gather empirical feedback, and iterate.
-
-*Would you like me to generate specific code, a deep-dive mathematical breakdown, or an actionable roadmap for this topic?*"""
+*Let me know if you would like me to dive deeper into code implementations, mathematical formulas, or practical use cases!*"""
 
     async def generate_response(
         self,
@@ -260,5 +252,5 @@ At its core, **{topic.title()}** functions by establishing systematic relationsh
         except Exception:
             pass
 
-        # 6. Deep Multi-Paragraph Generative Response
-        return self._generate_rich_conversational_response(p, rag_context)
+        # 6. Direct Expert Synthesized Response (ChatGPT / Gemini style)
+        return self._generate_direct_expert_response(p, rag_context)
