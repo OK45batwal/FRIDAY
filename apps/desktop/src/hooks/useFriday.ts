@@ -77,36 +77,105 @@ export const useFriday = () => {
     }
 
     const tempUserMsg: Message = {
-      id: String(Date.now()),
+      id: `user_${Date.now()}`,
       conversation_id: convId,
       role: 'user',
       content,
       input_type: inputType,
       created_at: new Date().toISOString()
     };
-    setMessages(prev => [...prev, tempUserMsg]);
+
+    const tempAssistantMsgId = `asst_${Date.now()}`;
+    const initialAssistantMsg: Message = {
+      id: tempAssistantMsgId,
+      conversation_id: convId,
+      role: 'assistant',
+      content: '',
+      input_type: 'text',
+      created_at: new Date().toISOString()
+    };
+
+    setMessages(prev => [...prev, tempUserMsg, initialAssistantMsg]);
     setState('THINKING');
 
-    // Try WebSocket first
-    const sentViaWs = socketService.sendChatMessage(convId, content, inputType, agentMode);
-    
-    // Automatic REST fallback if WebSocket is offline or not yet connected
-    if (!sentViaWs) {
+    try {
+      // ChatGPT / Gemini style Token Streaming
+      const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      const res = await fetch(`http://${host}:8000/api/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: convId,
+          message: content,
+          input_type: inputType,
+          agent_mode: agentMode
+        })
+      });
+
+      if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let accumulatedText = '';
+
+      if (reader) {
+        setState('SPEAKING');
+        let done = false;
+        while (!done) {
+          const { value, done: streamDone } = await reader.read();
+          done = streamDone;
+          if (value) {
+            const rawChunk = decoder.decode(value, { stream: true });
+            const lines = rawChunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const event = JSON.parse(line.slice(6));
+                  if (event.type === 'token') {
+                    accumulatedText += event.content;
+                    setMessages(prev =>
+                      prev.map(m =>
+                        m.id === tempAssistantMsgId
+                          ? { ...m, content: accumulatedText }
+                          : m
+                      )
+                    );
+                  } else if (event.type === 'done') {
+                    setMessages(prev =>
+                      prev.map(m =>
+                        m.id === tempAssistantMsgId
+                          ? { ...m, content: event.full_response || accumulatedText, id: event.message_id || tempAssistantMsgId }
+                          : m
+                      )
+                    );
+                  }
+                } catch {
+                  // Non-JSON line
+                }
+              }
+            }
+          }
+        }
+      }
+
+      setState('IDLE');
+      loadConversations();
+    } catch (err) {
+      console.warn("SSE Stream fallback, invoking standard REST:", err);
       try {
-        const res = await api.sendMessage(convId, content, inputType);
-        const assistantMsg: Message = {
-          id: res.message_id || String(Date.now()),
-          conversation_id: res.conversation_id,
-          role: 'assistant',
-          content: res.response,
-          input_type: 'text',
-          created_at: res.created_at || new Date().toISOString()
-        };
-        setMessages(prev => [...prev, assistantMsg]);
+        const fallbackRes = await api.sendMessage(convId, content, inputType);
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === tempAssistantMsgId
+              ? { ...m, content: fallbackRes.response, id: fallbackRes.message_id }
+              : m
+          )
+        );
         setState('IDLE');
         loadConversations();
-      } catch (err) {
-        console.error("REST fallback error:", err);
+      } catch (restErr) {
+        console.error("REST fallback error:", restErr);
         setState('ERROR');
       }
     }
@@ -119,19 +188,7 @@ export const useFriday = () => {
       onStateChange: (newState) => setState(newState),
       onTelemetry: (data) => setTelemetry(data),
       onConnectionChange: (connected) => setIsConnected(connected),
-      onMessageResponse: (data) => {
-        const assistantMsg: Message = {
-          id: data.message_id || String(Date.now()),
-          conversation_id: data.conversation_id,
-          role: 'assistant',
-          content: data.response,
-          input_type: 'text',
-          created_at: data.created_at || new Date().toISOString()
-        };
-        setMessages(prev => [...prev, assistantMsg]);
-        setState('IDLE');
-        loadConversations();
-      }
+      onMessageResponse: () => {}
     });
 
     return () => {
