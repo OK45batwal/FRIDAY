@@ -1,16 +1,27 @@
 import os
 import sys
+import glob
 import psutil
 import datetime
 import subprocess
-from typing import Dict, Any, Optional
+import urllib.parse
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+
+WORKSPACE_ROOT = Path("/Users/omkar/FRIDAY").resolve()
 
 class AgentToolRegistry:
     """
     Native OS & System Tools for FRIDAY 1.0 AI Agent.
-    Allows FRIDAY to execute actions across your Mac and system environment.
+    Capabilities:
+    1. System Telemetry & Mac Diagnostics
+    2. Web Search & Browser Navigation
+    3. File System Management (Read, Write, List, Search)
+    4. macOS Reminders & Calendar Management (via AppleScript)
+    5. Desktop App Launching
     """
 
+    # ---------------- 1. Hardware & System ----------------
     @staticmethod
     def get_system_telemetry() -> Dict[str, Any]:
         """Reads real hardware telemetry (CPU load, RAM usage, battery)."""
@@ -42,6 +53,122 @@ class AgentToolRegistry:
             "iso": now.isoformat()
         }
 
+    # ---------------- 2. Web Search & Browser Automation ----------------
+    @staticmethod
+    def search_web(query: str) -> Dict[str, Any]:
+        """Performs a web search by opening the query in the default browser."""
+        encoded = urllib.parse.quote(query)
+        search_url = f"https://www.google.com/search?q={encoded}"
+        try:
+            if sys.platform == "darwin":
+                subprocess.Popen(["open", search_url])
+            return {"status": "success", "url": search_url, "query": query}
+        except Exception as e:
+            return {"status": "failed", "error": str(e)}
+
+    @staticmethod
+    def open_browser_url(url: str) -> Dict[str, Any]:
+        """Opens a specific URL in the default macOS browser."""
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
+        try:
+            if sys.platform == "darwin":
+                subprocess.Popen(["open", url])
+            return {"status": "success", "url": url}
+        except Exception as e:
+            return {"status": "failed", "error": str(e)}
+
+    # ---------------- 3. File System Management ----------------
+    @staticmethod
+    def list_directory_contents(target_dir: str = ".") -> Dict[str, Any]:
+        """Lists files and folders inside a given workspace directory."""
+        path = (WORKSPACE_ROOT / target_dir).resolve() if not os.path.isabs(target_dir) else Path(target_dir).resolve()
+        if not path.exists() or not path.is_dir():
+            return {"status": "error", "message": f"Directory '{target_dir}' does not exist."}
+
+        try:
+            entries = []
+            for item in sorted(path.iterdir()):
+                if item.name.startswith("."):
+                    continue
+                entries.append({
+                    "name": item.name,
+                    "type": "directory" if item.is_dir() else "file",
+                    "size_bytes": item.stat().st_size if item.is_file() else None
+                })
+            return {"status": "success", "path": str(path), "entries": entries[:50]}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    @staticmethod
+    def read_file_snippet(file_path: str, max_lines: int = 100) -> Dict[str, Any]:
+        """Reads content from a text file within workspace."""
+        path = (WORKSPACE_ROOT / file_path).resolve() if not os.path.isabs(file_path) else Path(file_path).resolve()
+        if not path.exists() or not path.is_file():
+            return {"status": "error", "message": f"File '{file_path}' not found."}
+
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = [f.readline() for _ in range(max_lines)]
+            content = "".join(lines)
+            return {"status": "success", "file": str(path), "content": content}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    @staticmethod
+    def search_workspace_files(pattern: str) -> Dict[str, Any]:
+        """Finds files in workspace matching a glob pattern."""
+        try:
+            search_str = str(WORKSPACE_ROOT / "**" / pattern)
+            matches = glob.glob(search_str, recursive=True)
+            rel_matches = [os.path.relpath(m, WORKSPACE_ROOT) for m in matches if not "/." in m]
+            return {"status": "success", "matches": rel_matches[:20]}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    # ---------------- 4. macOS Reminders (AppleScript) ----------------
+    @staticmethod
+    def create_macos_reminder(title: str, notes: str = "") -> Dict[str, Any]:
+        """Creates a reminder in native macOS Reminders app using AppleScript."""
+        if sys.platform != "darwin":
+            return {"status": "unsupported", "platform": sys.platform}
+
+        escaped_title = title.replace('"', '\\"')
+        escaped_notes = notes.replace('"', '\\"')
+        script = f'''
+        tell application "Reminders"
+            make new reminder at end of default list with properties {{name:"{escaped_title}", body:"{escaped_notes}"}}
+        end tell
+        '''
+        try:
+            subprocess.run(["osascript", "-e", script], capture_output=True, text=True, check=True)
+            return {"status": "success", "reminder": title}
+        except Exception as e:
+            return {"status": "failed", "error": str(e)}
+
+    @staticmethod
+    def get_upcoming_reminders() -> Dict[str, Any]:
+        """Fetches active reminders from macOS Reminders app."""
+        if sys.platform != "darwin":
+            return {"status": "unsupported", "reminders": []}
+
+        script = '''
+        tell application "Reminders"
+            set reminderList to {}
+            repeat with r in (reminders of default list whose completed is false)
+                set end of reminderList to name of r
+            end repeat
+            return reminderList
+        end tell
+        '''
+        try:
+            res = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=5)
+            names = [n.strip() for n in res.stdout.strip().split(",") if n.strip()]
+            return {"status": "success", "reminders": names[:10]}
+        except Exception as e:
+            return {"status": "failed", "error": str(e), "reminders": []}
+
+    # ---------------- 5. Desktop Application Launching ----------------
     @staticmethod
     def launch_desktop_app(app_name: str) -> Dict[str, Any]:
         """Launches a desktop application on macOS using native 'open -a'."""
@@ -55,7 +182,10 @@ class AgentToolRegistry:
             "terminal": "Terminal",
             "finder": "Finder",
             "chrome": "Google Chrome",
-            "safari": "Safari"
+            "safari": "Safari",
+            "reminders": "Reminders",
+            "calendar": "Calendar",
+            "notes": "Notes"
         }
         resolved = app_map.get(app_name.lower(), app_name)
         try:
@@ -63,24 +193,5 @@ class AgentToolRegistry:
             return {"status": "success", "launched_app": resolved}
         except Exception as e:
             return {"status": "failed", "error": str(e)}
-
-    @staticmethod
-    def execute_safe_bash(command: str) -> Dict[str, Any]:
-        """Executes safe local development commands."""
-        # Restrict dangerous commands
-        forbidden = ["rm -rf /", "mkfs", ":(){ :|:& };:"]
-        if any(f in command for f in forbidden):
-            return {"status": "blocked", "reason": "Dangerous operation prohibited."}
-
-        try:
-            res = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
-            return {
-                "status": "completed",
-                "exit_code": res.returncode,
-                "stdout": res.stdout.strip(),
-                "stderr": res.stderr.strip()
-            }
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
 
 agent_tools = AgentToolRegistry()

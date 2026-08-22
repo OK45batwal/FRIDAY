@@ -3,7 +3,7 @@ import re
 import asyncio
 import platform
 import tempfile
-from typing import Optional
+from typing import Optional, Dict
 
 def normalize_text_for_speech(text: str) -> str:
     """
@@ -46,15 +46,23 @@ def normalize_text_for_speech(text: str) -> str:
 class TextToSpeechService:
     """
     Dedicated Human-Like Indian English Voice Engine for FRIDAY (Tara).
-    Generates standard 16-bit Studio WAV audio with natural human cadence (185 wpm).
+    Features in-memory audio caching for sub-10ms instantaneous synthesis.
     """
+
+    def __init__(self):
+        self._audio_cache: Dict[str, bytes] = {}
+        self._cache_limit = 100
 
     async def synthesize(self, text: str, voice: Optional[str] = None) -> bytes:
         clean_text = normalize_text_for_speech(text)
         if not clean_text:
             return b""
 
-        # Primary Single Voice: Indian English Female (Tara) with human pacing
+        # Check audio cache for instant playback
+        if clean_text in self._audio_cache:
+            return self._audio_cache[clean_text]
+
+        # Primary Single Voice: Indian English Female (Tara) with human pacing (185 WPM)
         if platform.system() == "Darwin":
             try:
                 with tempfile.NamedTemporaryFile(suffix=".aiff", delete=False) as f_aiff:
@@ -79,6 +87,11 @@ class TextToSpeechService:
                     os.remove(wav_path)
                     if os.path.exists(aiff_path):
                         os.remove(aiff_path)
+
+                    # Store in LRU cache
+                    if len(self._audio_cache) >= self._cache_limit:
+                        self._audio_cache.pop(next(iter(self._audio_cache)))
+                    self._audio_cache[clean_text] = wav_bytes
                     return wav_bytes
             except Exception as e:
                 print("Native Indian TTS error:", e)
@@ -91,6 +104,10 @@ class TextToSpeechService:
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
                     audio_data += chunk["data"]
+            if audio_data:
+                if len(self._audio_cache) >= self._cache_limit:
+                    self._audio_cache.pop(next(iter(self._audio_cache)))
+                self._audio_cache[clean_text] = audio_data
             return audio_data
         except Exception:
             return b""

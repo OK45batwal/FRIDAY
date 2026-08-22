@@ -5,6 +5,9 @@ from enum import Enum
 class UserIntent(str, Enum):
     MATH_CALCULATOR = "math_calculator"
     OS_TOOL = "os_tool"
+    WEB_SEARCH = "web_search"
+    FILE_SYSTEM = "file_system"
+    REMINDERS = "reminders"
     RAG_KNOWLEDGE = "rag_knowledge"
     GENERAL_REASONING = "general_reasoning"
     CODE_SYNTHESIS = "code_synthesis"
@@ -16,7 +19,7 @@ class AICoreRules:
     Implements the 10 Golden Rules of AI Chatbots:
     1. Define Purpose & Personality
     2. Input Validation & Normalization
-    3. Intent Routing (Tools vs LLM vs RAG vs Math)
+    3. Intent Routing (Tools vs LLM vs RAG vs Math vs Files vs Reminders)
     4. Context & Memory Management
     5. Anti-Hallucination & Truthfulness
     6. Destructive Action & Safety Boundaries
@@ -54,7 +57,19 @@ class AICoreRules:
         if any(k in t_lower for k in ["delete all", "rm -rf", "format disk", "wipe system", "drop database"]):
             return UserIntent.DESTRUCTIVE_ACTION
 
-        # 2. Math & Unit Conversions
+        # 2. Web Search & Browser Navigation
+        if any(k in t_lower for k in ["search web", "search google", "google for", "look up on web", "browse for", "open url"]):
+            return UserIntent.WEB_SEARCH
+
+        # 3. macOS Reminders & Schedule
+        if any(k in t_lower for k in ["remind me", "create reminder", "add reminder", "set reminder", "my reminders", "show reminders"]):
+            return UserIntent.REMINDERS
+
+        # 4. File System Operations
+        if any(k in t_lower for k in ["list files", "list directory", "read file", "read package.json", "find files", "search file"]):
+            return UserIntent.FILE_SYSTEM
+
+        # 5. Math & Unit Conversions
         if any(k in t_lower for k in ["calculate", "solve", "what is", "convert"]) and any(c in t_lower for c in ["+", "-", "*", "/", "%", "c to f", "f to c", "celsius", "fahrenheit"]):
             return UserIntent.MATH_CALCULATOR
 
@@ -62,15 +77,15 @@ class AICoreRules:
         if re.match(r'^[\d\.\s\+\-\*\/\(\)\^x÷]+$', t_lower) and any(op in t_lower for op in ['+', '-', '*', '/', 'x', '÷']):
             return UserIntent.MATH_CALCULATOR
 
-        # 3. Native OS & Computer Tools
+        # 6. Native OS & Computer Tools
         if any(k in t_lower for k in ["telemetry", "cpu", "ram usage", "battery", "hardware status", "open spotify", "launch spotify", "open vscode", "open code", "open terminal", "what time"]):
             return UserIntent.OS_TOOL
 
-        # 4. Code & Architecture
+        # 7. Code & Architecture
         if any(k in t_lower for k in ["write code", "python script", "typescript function", "react component", "fastapi route", "implement"]):
             return UserIntent.CODE_SYNTHESIS
 
-        # 5. RAG & Document Knowledge
+        # 8. RAG & Document Knowledge
         if any(k in t_lower for k in ["documentation", "spec", "architecture", "dataset", "milestone"]):
             return UserIntent.RAG_KNOWLEDGE
 

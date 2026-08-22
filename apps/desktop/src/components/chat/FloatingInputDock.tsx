@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mic, Send, FileText, Code, Zap, Radio, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, MicOff, Send, Code, Zap, Radio, Globe, FolderTree } from 'lucide-react';
 import { AGENT_MODES } from '../home/WelcomeHero';
 
 interface FloatingInputDockProps {
@@ -11,9 +11,9 @@ interface FloatingInputDockProps {
 }
 
 const QUICK_PROMPTS = [
-  { id: 'spec', label: 'Draft complete project architecture spec', icon: <FileText size={13} />, agent: 'writing' },
+  { id: 'search', label: 'Search web for latest AI news', icon: <Globe size={13} />, agent: 'general' },
+  { id: 'files', label: 'List files in project workspace', icon: <FolderTree size={13} />, agent: 'system' },
   { id: 'code', label: 'Write full-stack async Python & React service', icon: <Code size={13} />, agent: 'programming' },
-  { id: 'sys', label: 'Show system hardware telemetry & diagnostics', icon: <Sparkles size={13} />, agent: 'system' },
   { id: 'math', label: 'Calculate 10+50+90 and convert 100 C to F', icon: <Zap size={13} />, agent: 'education' }
 ];
 
@@ -25,6 +25,67 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
   onSelectAgent
 }) => {
   const [text, setText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize browser Web Speech Recognition for real-time STT
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setText(currentTranscript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        if (text.trim()) {
+          // Auto-submit voice transcription
+          onSendMessage(text.trim(), 'voice', selectedAgent);
+          setText('');
+        }
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [selectedAgent, text, onSendMessage]);
+
+  const handleToggleMic = () => {
+    if (!recognitionRef.current) {
+      // Fallback to parent voice toggle if SpeechRecognition unsupported
+      onToggleVoice();
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        setText('');
+        recognitionRef.current.start();
+      } catch (err) {
+        console.warn("Speech recognition restart:", err);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,19 +100,25 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '840px', margin: '0 auto' }}>
       
       {/* Tesla Floating Cyber Command Dock */}
-      <div className="input-dock" style={{ border: isListening ? '1px solid #f43f5e' : '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <div
+        className="input-dock"
+        style={{
+          border: isRecording || isListening ? '1px solid #f43f5e' : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: isRecording ? '0 0 25px rgba(244, 63, 94, 0.25)' : 'none'
+        }}
+      >
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Main Input Text Area */}
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Ask FRIDAY anything, execute code, or control your Mac..."
+            placeholder={isRecording ? "Listening to your voice... Speak now..." : "Ask FRIDAY anything, search web, manage files, or control your Mac..."}
             style={{
               width: '100%',
               background: 'transparent',
               border: 'none',
-              color: '#ffffff',
+              color: isRecording ? '#fb7185' : '#ffffff',
               fontSize: '14px',
               outline: 'none',
               padding: '6px 0',
@@ -91,32 +158,33 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
               </div>
             </div>
 
-            {/* Right Controls: Tesla Voice & Send */}
+            {/* Right Controls: Real-Time STT Voice & Send */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Mic Icon */}
+              {/* Native Speech-to-Text Mic Icon */}
               <button
                 type="button"
-                onClick={onToggleVoice}
+                onClick={handleToggleMic}
                 className="btn-action-icon"
                 style={{
-                  color: isListening ? '#f43f5e' : '#94a3b8',
-                  background: isListening ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                  color: isRecording ? '#ffffff' : '#94a3b8',
+                  background: isRecording ? '#f43f5e' : 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '50%',
                   width: '34px',
-                  height: '34px'
+                  height: '34px',
+                  animation: isRecording ? 'pulse 1.5s infinite' : 'none'
                 }}
-                title={isListening ? "Listening..." : "Toggle Indian Voice Input"}
+                title={isRecording ? "Stop Recording & Submit" : "Click to Speak (Speech-To-Text)"}
               >
-                <Mic size={17} />
+                {isRecording ? <MicOff size={17} /> : <Mic size={17} />}
               </button>
 
               {/* Tesla Talk Pill */}
               <button
                 type="button"
-                onClick={onToggleVoice}
-                className={`btn-talk ${isListening ? 'listening' : ''}`}
+                onClick={handleToggleMic}
+                className={`btn-talk ${isRecording || isListening ? 'listening' : ''}`}
               >
-                {isListening ? (
+                {isRecording || isListening ? (
                   <div className="audio-wave-container">
                     <div className="audio-bar" style={{ background: '#ffffff' }} />
                     <div className="audio-bar" style={{ background: '#ffffff' }} />
@@ -125,7 +193,7 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                 ) : (
                   <Radio size={14} />
                 )}
-                <span>{isListening ? 'LISTENING...' : 'TALK'}</span>
+                <span>{isRecording ? 'LISTENING...' : isListening ? 'SPEAKING' : 'TALK'}</span>
               </button>
 
               {text.trim() && (

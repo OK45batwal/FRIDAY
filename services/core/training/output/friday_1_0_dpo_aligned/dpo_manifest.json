@@ -1,0 +1,15 @@
+{
+  "alignment_type": "Direct Preference Optimization (DPO)",
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "preference_pairs_count": 1000,
+  "beta": 0.1,
+  "target_domains": [
+    "OS Automation & Tool Execution",
+    "High-Density Production Code Synthesis",
+    "Exact Step-by-Step Math & Physics",
+    "Anti-Hallucination & Guardrails",
+    "Indian Conversational Cadence (Tara Voice 185 WPM)"
+  ],
+  "status": "aligned_and_verified",
+  "output_directory": "/Users/omkar/FRIDAY/services/core/training/output/friday_1_0_dpo_aligned"
+}
