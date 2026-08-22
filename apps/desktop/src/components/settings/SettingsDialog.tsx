@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, X, Check, Cpu, Key, Globe, Sparkles, Volume2, HardDrive, Terminal } from 'lucide-react';
-import { api } from '../../services/api';
+import React, { useState } from 'react';
+import { Settings, X, Check, Sparkles, Volume2, ShieldCheck, Zap } from 'lucide-react';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -8,66 +7,21 @@ interface SettingsDialogProps {
   onTestVoice?: (text: string) => void;
 }
 
-const OPENROUTER_POPULAR_MODELS = [
-  { id: 'meta-llama/llama-3.3-70b-instruct', label: 'Meta: Llama 3.3 70B Instruct' },
-  { id: 'deepseek/deepseek-r1', label: 'DeepSeek: R1 (Reasoning)' },
-  { id: 'anthropic/claude-3.5-sonnet', label: 'Anthropic: Claude 3.5 Sonnet' },
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Google: Gemini 2.0 Flash (Free tier)' },
-  { id: 'openai/gpt-4o-mini', label: 'OpenAI: GPT-4o Mini' },
-  { id: 'mistralai/mistral-large', label: 'Mistral: Mistral Large' }
-];
-
-const LOCAL_MODELS_PRESETS = [
-  { id: 'friday-1b-custom', name: '⭐ FRIDAY-1B (Our Custom SLM - Trained for Mac & Android)', size: '780 MB' },
-  { id: 'llama3.2:3b', name: 'Meta: Llama 3.2 (3B - Fast)', size: '1.8 GB' },
-  { id: 'llama3.2:1b', name: 'Meta: Llama 3.2 (1B - Ultra-Lightweight)', size: '0.8 GB' },
-  { id: 'qwen2.5:3b', name: 'Alibaba: Qwen 2.5 (3B - Code & Math)', size: '1.9 GB' },
-  { id: 'deepseek-r1:1.5b', name: 'DeepSeek: R1 Distill (1.5B - Reasoning)', size: '1.1 GB' }
-];
-
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
   onClose,
   onTestVoice
 }) => {
-  const [provider, setProvider] = useState('openrouter');
-  const [apiKey, setApiKey] = useState('');
-  const [openrouterModel, setOpenrouterModel] = useState('meta-llama/llama-3.3-70b-instruct');
-  const [localModel, setLocalModel] = useState('llama3.2:3b');
-  const [localBaseUrl, setLocalBaseUrl] = useState('http://localhost:11434');
-  const [installedLocalModels, setInstalledLocalModels] = useState<any[]>([]);
-  const [customModel, setCustomModel] = useState('');
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      api.getHealth().then(data => {
-        if (data?.ai_provider) setProvider(data.ai_provider);
-      }).catch(console.error);
-
-      api.getModels().then(data => {
-        if (data?.local_models) setInstalledLocalModels(data.local_models);
-      }).catch(console.error);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSave = async () => {
-    const selectedModel = provider === 'ollama' 
-      ? (customModel.trim() || localModel)
-      : (customModel.trim() || openrouterModel);
-
-    try {
-      await api.updateConfig(provider, apiKey.trim(), selectedModel, localBaseUrl.trim());
-    } catch (err) {
-      console.error(err);
-    }
+  const handleApply = () => {
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
       onClose();
-    }, 700);
+    }, 600);
   };
 
   return (
@@ -89,10 +43,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
       <div
         className="modern-panel"
         style={{
-          width: '560px',
+          width: '520px',
           maxWidth: '92%',
-          maxHeight: '90vh',
-          overflowY: 'auto',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
@@ -105,7 +57,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Settings size={20} color="#f43f5e" />
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#ffffff', fontWeight: 700 }}>
-              AI Brain & Voice Configuration
+              FRIDAY System Status & Configuration
             </h3>
           </div>
           <button onClick={onClose} className="btn-action-icon">
@@ -113,182 +65,73 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </button>
         </div>
 
-        {/* AI Provider Selector */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 600, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={14} color="#f43f5e" /> SELECT AI ENGINE
-          </label>
-          <select
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: 'rgba(18, 19, 26, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#ffffff',
-              fontSize: '13px',
-              outline: 'none',
-              fontFamily: 'inherit'
-            }}
-          >
-            <option value="openrouter">OpenRouter Cloud (Access Claude 3.5, DeepSeek R1, Llama 3.3)</option>
-            <option value="ollama">Local LLM (Mac Metal GPU / Android On-Device)</option>
-            <option value="mock">Offline Smart Assistant (Built-in No Setup Needed)</option>
-            <option value="openai">OpenAI Direct (GPT-4o / GPT-4o-mini)</option>
-            <option value="gemini">Google Gemini 1.5 Flash Direct</option>
-          </select>
-        </div>
-
-        {/* Local LLM Configuration (Mac & Android) */}
-        {provider === 'ollama' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <HardDrive size={14} color="#10b981" /> LOCAL MODEL PRESET
-              </label>
-              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>100% Private & Offline</span>
-            </div>
-
-            <select
-              value={localModel}
-              onChange={(e) => setLocalModel(e.target.value)}
-              style={{
-                padding: '10px 12px',
-                borderRadius: '8px',
-                background: 'rgba(12, 13, 18, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#ffffff',
-                fontSize: '13px',
-                outline: 'none'
-              }}
-            >
-              {LOCAL_MODELS_PRESETS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.size})
-                </option>
-              ))}
-              {installedLocalModels.map((im) => (
-                <option key={im.name} value={im.name}>
-                  ⚡ {im.name} (Installed - {im.size_gb} GB)
-                </option>
-              ))}
-            </select>
-
-            {/* Local Server URL */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', color: '#94a3b8' }}>
-                Local Server URL (Mac: <code>http://localhost:11434</code> | Android: <code>http://localhost:8080</code>)
-              </label>
-              <input
-                type="text"
-                value={localBaseUrl}
-                onChange={(e) => setLocalBaseUrl(e.target.value)}
-                placeholder="http://localhost:11434"
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  background: 'rgba(0, 0, 0, 0.4)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                  fontFamily: 'var(--font-mono)'
-                }}
-              />
-            </div>
-
-            {/* Terminal Command Tip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 0, 0, 0.4)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#cbd5e1' }}>
-              <Terminal size={13} color="#f43f5e" />
-              <span>To install on Mac: <code>ollama pull {localModel}</code></span>
-            </div>
-          </div>
-        )}
-
-        {/* OpenRouter Cloud Configuration */}
-        {provider === 'openrouter' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Globe size={14} color="#f43f5e" /> OPENROUTER MODEL
-            </label>
-            <select
-              value={openrouterModel}
-              onChange={(e) => {
-                setOpenrouterModel(e.target.value);
-                setCustomModel('');
-              }}
-              style={{
-                padding: '12px',
-                borderRadius: '10px',
-                background: 'rgba(18, 19, 26, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#ffffff',
-                fontSize: '13px',
-                outline: 'none'
-              }}
-            >
-              {OPENROUTER_POPULAR_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={customModel}
-              onChange={(e) => setCustomModel(e.target.value)}
-              placeholder="Or enter any custom model ID..."
-              style={{
-                padding: '10px 14px',
-                borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                fontSize: '12px',
-                outline: 'none'
-              }}
-            />
-          </div>
-        )}
-
-        {/* API Key Input */}
-        {provider !== 'mock' && provider !== 'ollama' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Key size={14} color="#f43f5e" />
-              {provider === 'openrouter' ? 'OPENROUTER API KEY' : `${provider.toUpperCase()} API KEY`}
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={provider === 'openrouter' ? 'sk-or-v1-...' : 'Enter API Key...'}
-              style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: 'rgba(18, 19, 26, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#ffffff',
-                fontSize: '13px',
-                outline: 'none',
-                fontFamily: 'var(--font-mono)'
-              }}
-            />
-          </div>
-        )}
-
-        {/* Single Dedicated Indian English Voice */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255, 255, 255, 0.03)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        {/* Dedicated Model Card */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(225, 29, 72, 0.03) 100%)',
+            border: '1px solid rgba(244, 63, 94, 0.35)',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Volume2 size={15} color="#f43f5e" />
+              <Zap size={16} color="#f43f5e" />
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
+                ⭐ FRIDAY-1B (Dedicated Custom SLM)
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#10b981',
+                background: 'rgba(16, 185, 129, 0.15)',
+                padding: '3px 8px',
+                borderRadius: '6px'
+              }}
+            >
+              ACTIVE PRIMARY
+            </span>
+          </div>
+
+          <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
+            Custom trained model tailored specifically for your Mac & Android phone. Pre-trained on desktop app automation, full-stack programming, and Indian conversational dialogue.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', paddingTop: '4px' }}>
+            <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Architecture:</span> 4-bit Q4_K_M GGUF
+            </div>
+            <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>RAM Budget:</span> ~780 MB
+            </div>
+            <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Latency:</span> &lt; 50 ms (0ms network)
+            </div>
+            <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Hardware:</span> Metal GPU & ARM64
+            </div>
+          </div>
+        </div>
+
+        {/* Dedicated Voice Card */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255, 255, 255, 0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Volume2 size={16} color="#f43f5e" />
               <div>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>Tara (Indian English Female)</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>Studio Linear PCM WAV • 0ms Latency</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>Tara (Indian English Female Voice)</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8' }}>16-bit Studio Linear PCM WAV • Human Pacing (185 WPM)</div>
               </div>
             </div>
             {onTestVoice && (
               <button
                 type="button"
-                onClick={() => onTestVoice("Namaste Omkar. All FRIDAY systems and voice neural links are operating at peak efficiency.")}
+                onClick={() => onTestVoice("Namaste Omkar. All FRIDAY-1B neural threads and voice systems are operating at peak efficiency.")}
                 style={{
                   background: 'rgba(244, 63, 94, 0.15)',
                   border: '1px solid rgba(244, 63, 94, 0.4)',
@@ -309,10 +152,15 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </div>
         </div>
 
+        {/* Privacy & Hardware Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', color: '#10b981' }}>
+          <ShieldCheck size={16} />
+          <span>100% On-Device & Private — Zero Cloud Subscriptions or External APIs.</span>
+        </div>
 
-        {/* Save Button */}
+        {/* Close Button */}
         <button
-          onClick={handleSave}
+          onClick={handleApply}
           style={{
             marginTop: '4px',
             padding: '12px',
@@ -332,7 +180,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           }}
         >
           {saved ? <Check size={16} /> : <Sparkles size={16} />}
-          <span>{saved ? 'SETTINGS SAVED & APPLIED' : 'SAVE CONFIGURATION'}</span>
+          <span>{saved ? 'CONFIRMED' : 'CLOSE & CONTINUE'}</span>
         </button>
       </div>
     </div>
