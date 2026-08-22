@@ -18,11 +18,11 @@ const OPENROUTER_POPULAR_MODELS = [
 ];
 
 const LOCAL_MODELS_PRESETS = [
-  { id: 'llama3.2:3b', name: 'Meta: Llama 3.2 (3B - Fast on Mac & Android)', size: '1.8 GB' },
+  { id: 'friday-1b-custom', name: '⭐ FRIDAY-1B (Our Custom SLM - Trained for Mac & Android)', size: '780 MB' },
+  { id: 'llama3.2:3b', name: 'Meta: Llama 3.2 (3B - Fast)', size: '1.8 GB' },
   { id: 'llama3.2:1b', name: 'Meta: Llama 3.2 (1B - Ultra-Lightweight)', size: '0.8 GB' },
   { id: 'qwen2.5:3b', name: 'Alibaba: Qwen 2.5 (3B - Code & Math)', size: '1.9 GB' },
-  { id: 'deepseek-r1:1.5b', name: 'DeepSeek: R1 Distill (1.5B - Reasoning)', size: '1.1 GB' },
-  { id: 'gemma2:2b', name: 'Google: Gemma 2 (2.6B - Mobile Optimized)', size: '1.6 GB' }
+  { id: 'deepseek-r1:1.5b', name: 'DeepSeek: R1 Distill (1.5B - Reasoning)', size: '1.1 GB' }
 ];
 
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({

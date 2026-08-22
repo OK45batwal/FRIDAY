@@ -1,0 +1,19 @@
+{
+  "model_id": "friday-1b-custom-slm",
+  "name": "FRIDAY-1B (Custom SLM - Trained for Mac & Android)",
+  "quantization": "Q4_K_M (4-bit)",
+  "parameters": "1.1B",
+  "ram_required_mb": 780,
+  "format": "GGUF",
+  "target_platforms": [
+    "macOS (Apple Silicon Metal GPU)",
+    "Android (ARM64 / ExecuTorch)"
+  ],
+  "domains": [
+    "Desktop OS Automation (Spotify, VS Code, Terminal, Telemetry)",
+    "Full-Stack Software Architecture (Python, FastAPI, React, TypeScript, SQL)",
+    "Indian English Conversational Cadence (Tara / Neerja)"
+  ],
+  "created_at": "2026-08-22 13:30:08",
+  "status": "ready_for_inference"
+}
