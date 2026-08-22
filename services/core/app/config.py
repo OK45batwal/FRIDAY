@@ -9,19 +9,20 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     CORS_ORIGINS: list[str] = ["*"]
 
-    # Active AI Provider: "local_llm" | "openrouter" | "gemini"
+    # AI Engine Provider Configuration: "openrouter" | "gemini" | "openai" | "local_llm"
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "local_llm")
     
-    # Local Custom SLM: FRIDAY 1.0
+    # Cloud Frontier LLM Keys & Models (ChatGPT, Claude, Gemini)
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    
+    # Dedicated Local SLM Engine
     MODEL_NAME: str = "FRIDAY 1.0"
     MODEL_PARAMETERS: str = "1.1B Parameters"
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "friday-1.0")
+    OLLAMA_MODEL: str = "friday-1.0"
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-
-    # Cloud Frontier LLMs (ChatGPT, Claude 3.5 Sonnet, Gemini 2.0)
-    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
-    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR}/friday.db")

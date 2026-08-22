@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Check, Sparkles, Volume2, Zap, Globe, Key } from 'lucide-react';
+import { Settings, X, Check, Sparkles, Volume2, ShieldCheck, Zap, Globe, Key } from 'lucide-react';
 import { api } from '../../services/api';
 
 interface SettingsDialogProps {
@@ -8,24 +8,32 @@ interface SettingsDialogProps {
   onTestVoice?: (text: string) => void;
 }
 
+const CLOUD_MODELS = [
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 (70B - Free Cloud Frontier)' },
+  { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash (Free)' },
+  { id: 'openai/gpt-4o-mini', name: 'OpenAI: ChatGPT (GPT-4o Mini)' },
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Anthropic: Claude 3.5 Sonnet' },
+  { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1 (Reasoning)' }
+];
+
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
   onClose,
   onTestVoice
 }) => {
-  const [provider, setProvider] = useState<'local_llm' | 'openrouter'>('local_llm');
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('google/gemini-2.0-flash-001');
+  const [activeTab, setActiveTab] = useState<'local' | 'cloud'>('local');
+  const [cloudKey, setCloudKey] = useState('');
+  const [selectedCloudModel, setSelectedCloudModel] = useState('meta-llama/llama-3.3-70b-instruct:free');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       api.getModels().then(data => {
         if (data.active_provider === 'openrouter') {
-          setProvider('openrouter');
-          if (data.active_model) setModel(data.active_model);
+          setActiveTab('cloud');
+          setSelectedCloudModel(data.active_model || 'meta-llama/llama-3.3-70b-instruct:free');
         } else {
-          setProvider('local_llm');
+          setActiveTab('local');
         }
       }).catch(console.error);
     }
@@ -33,14 +41,18 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   if (!isOpen) return null;
 
-  const handleApply = async () => {
+  const handleSaveAndApply = async () => {
     try {
-      await api.updateConfig(provider, apiKey || undefined, provider === 'openrouter' ? model : 'friday-1.0');
+      if (activeTab === 'cloud') {
+        await api.updateConfig('openrouter', cloudKey, selectedCloudModel);
+      } else {
+        await api.updateConfig('local_llm', undefined, 'friday-1.0');
+      }
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
         onClose();
-      }, 600);
+      }, 500);
     } catch (e) {
       console.error(e);
     }
@@ -66,11 +78,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         className="modern-panel"
         style={{
           width: '560px',
-          maxWidth: '92%',
+          maxWidth: '94%',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px',
+          gap: '16px',
           boxShadow: '0 16px 48px rgba(0, 0, 0, 0.7)'
         }}
       >
@@ -79,7 +91,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Settings size={20} color="#f43f5e" />
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#ffffff', fontWeight: 700 }}>
-              FRIDAY Intelligence & Model Settings
+              FRIDAY AI Intelligence Mode & Settings
             </h3>
           </div>
           <button onClick={onClose} className="btn-action-icon">
@@ -87,115 +99,58 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </button>
         </div>
 
-        {/* Intelligence Mode Tabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        {/* Mode Selector Tabs */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'rgba(0, 0, 0, 0.4)', padding: '4px', borderRadius: '10px' }}>
           <button
-            type="button"
-            onClick={() => setProvider('openrouter')}
+            onClick={() => setActiveTab('local')}
             style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: provider === 'openrouter' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-              border: `1px solid ${provider === 'openrouter' ? '#f43f5e' : 'rgba(255, 255, 255, 0.08)'}`,
-              color: '#ffffff',
+              padding: '10px',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'local' ? 'rgba(244, 63, 94, 0.2)' : 'transparent',
+              color: activeTab === 'local' ? '#ffffff' : '#94a3b8',
+              fontWeight: 700,
+              fontSize: '12px',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              textAlign: 'left'
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700 }}>
-              <Globe size={14} color="#f43f5e" /> Cloud Frontier (GPT-4 / Gemini / Claude)
-            </div>
-            <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              Full reasoning like ChatGPT & Gemini via OpenRouter API.
-            </div>
+            <Zap size={14} color={activeTab === 'local' ? '#f43f5e' : '#94a3b8'} />
+            <span>⭐ FRIDAY 1.0 (Local SLM)</span>
           </button>
-
           <button
-            type="button"
-            onClick={() => setProvider('local_llm')}
+            onClick={() => setActiveTab('cloud')}
             style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: provider === 'local_llm' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-              border: `1px solid ${provider === 'local_llm' ? '#10b981' : 'rgba(255, 255, 255, 0.08)'}`,
-              color: '#ffffff',
+              padding: '10px',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'cloud' ? 'rgba(244, 63, 94, 0.2)' : 'transparent',
+              color: activeTab === 'cloud' ? '#ffffff' : '#94a3b8',
+              fontWeight: 700,
+              fontSize: '12px',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              textAlign: 'left'
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700 }}>
-              <Zap size={14} color="#10b981" /> Local FRIDAY 1.0 (On-Device SLM)
-            </div>
-            <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              100% private, 4-bit GGUF (~780 MB) running locally on Mac/Phone.
-            </div>
+            <Globe size={14} color={activeTab === 'cloud' ? '#f43f5e' : '#94a3b8'} />
+            <span>⚡ ChatGPT / Claude / Gemini</span>
           </button>
         </div>
 
-        {/* Configuration Body */}
-        {provider === 'openrouter' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                <Key size={13} color="#f43f5e" /> OpenRouter API Key
-              </label>
-              <input
-                type="password"
-                placeholder="sk-or-v1-..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-mono)'
-                }}
-              />
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                Get an API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: '#f43f5e' }}>openrouter.ai/keys</a> (works with free and paid tiers).
-              </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '6px' }}>
-                Select Frontier Brain Model:
-              </label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  background: '#1a1b26',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontSize: '13px'
-                }}
-              >
-                <option value="google/gemini-2.0-flash-001">⚡ Google: Gemini 2.0 Flash (Fast & Ultra-Smart)</option>
-                <option value="anthropic/claude-3.5-sonnet">🧠 Anthropic: Claude 3.5 Sonnet (Best Reasoning)</option>
-                <option value="openai/gpt-4o-mini">🔥 OpenAI: GPT-4o Mini (ChatGPT Intelligence)</option>
-                <option value="meta-llama/llama-3.3-70b-instruct">🦙 Meta: Llama 3.3 (70B Open Source)</option>
-                <option value="deepseek/deepseek-r1">🔮 DeepSeek: R1 (Reasoning Master)</option>
-              </select>
-            </div>
-          </div>
-        ) : (
+        {/* Tab 1: Local SLM Mode */}
+        {activeTab === 'local' && (
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
+              background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.09) 0%, rgba(225, 29, 72, 0.03) 100%)',
+              border: '1px solid rgba(244, 63, 94, 0.35)',
               borderRadius: '12px',
               padding: '16px',
               display: 'flex',
@@ -204,32 +159,96 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
-                ⭐ FRIDAY 1.0 (On-Device SLM)
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff' }}>
+                ⭐ FRIDAY 1.0 (1.1B Parameters)
               </span>
               <span style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '6px' }}>
-                ON-DEVICE & PRIVATE
+                ON-DEVICE ACTIVE
               </span>
             </div>
             <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5' }}>
-              Our custom 1.1 Billion parameter model trained specifically for your Mac & Android phone. Uses local RAG memory and native OS tools with zero internet dependency.
+              Our custom 1.1 Billion parameter model trained for Mac & Android. 100% on-device privacy, zero cloud lag (&lt;50ms), and native system control.
             </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', paddingTop: '4px' }}>
+              <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Quantization:</span> 4-bit Q4_K_M GGUF
+              </div>
+              <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>RAM Usage:</span> ~780 MB
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Voice Card */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        {/* Tab 2: Cloud Frontier Mode */}
+        {activeTab === 'cloud' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                <Globe size={14} color="#f43f5e" /> Select Cloud Frontier Model:
+              </label>
+              <select
+                value={selectedCloudModel}
+                onChange={e => setSelectedCloudModel(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              >
+                {CLOUD_MODELS.map(m => (
+                  <option key={m.id} value={m.id} style={{ background: '#18181b', color: '#ffffff' }}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                <Key size={14} color="#f43f5e" /> OpenRouter / OpenAI / Gemini API Key:
+              </label>
+              <input
+                type="password"
+                placeholder="sk-or-v1-..."
+                value={cloudKey}
+                onChange={e => setCloudKey(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              />
+              <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
+                Get a free key from <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: '#f43f5e', textDecoration: 'underline' }}>openrouter.ai</a> to unlock full ChatGPT, Claude, and Gemini capabilities!
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Dedicated Voice Card */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Volume2 size={16} color="#f43f5e" />
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>Tara (Indian English Female Voice)</div>
-              <div style={{ fontSize: '11px', color: '#94a3b8' }}>16-bit Studio Linear PCM WAV • Human Pacing (185 WPM)</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>Tara (Indian English Female Voice)</div>
+              <div style={{ fontSize: '10px', color: '#94a3b8' }}>16-bit Studio Linear PCM WAV • 185 WPM Pacing</div>
             </div>
           </div>
           {onTestVoice && (
             <button
               type="button"
-              onClick={() => onTestVoice("Namaste Omkar. All FRIDAY neural links and voice systems are operating at peak efficiency.")}
+              onClick={() => onTestVoice("Namaste Omkar. All FRIDAY neural systems and voice links are operating at peak efficiency.")}
               style={{
                 background: 'rgba(244, 63, 94, 0.15)',
                 border: '1px solid rgba(244, 63, 94, 0.4)',
@@ -249,10 +268,17 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           )}
         </div>
 
-        {/* Apply & Save Button */}
+        {/* Privacy / Security Notice */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '10px 14px', borderRadius: '10px', fontSize: '11px', color: '#10b981' }}>
+          <ShieldCheck size={16} />
+          <span>Active mode will be saved and applied instantly across your desktop and mobile sessions.</span>
+        </div>
+
+        {/* Apply Button */}
         <button
-          onClick={handleApply}
+          onClick={handleSaveAndApply}
           style={{
+            marginTop: '4px',
             padding: '12px',
             borderRadius: '12px',
             background: saved ? '#10b981' : 'var(--accent-talk)',
@@ -270,7 +296,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           }}
         >
           {saved ? <Check size={16} /> : <Sparkles size={16} />}
-          <span>{saved ? 'SETTINGS SAVED' : 'SAVE & APPLY CONFIGURATION'}</span>
+          <span>{saved ? 'SETTINGS APPLIED' : 'APPLY & SAVE SETTINGS'}</span>
         </button>
       </div>
     </div>
