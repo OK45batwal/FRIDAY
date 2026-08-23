@@ -1,8 +1,13 @@
 import type { Conversation, Message } from '../types';
 
 export const getBaseUrl = () => {
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return (import.meta as any).env?.VITE_API_URL || `http://${host || 'localhost'}:8000`;
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('FRIDAY_SERVER_URL');
+    if (customUrl && customUrl.trim()) return customUrl.trim().replace(/\/+$/, '');
+    const host = window.location.hostname;
+    return (import.meta as any).env?.VITE_API_URL || `http://${host || 'localhost'}:8000`;
+  }
+  return (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
 };
 
 export const api = {
