@@ -25,14 +25,14 @@ async def download_android():
 @router.get("/mac")
 async def download_mac():
     """
-    1-Click Direct Download for macOS (.tar.gz / .dmg)
+    1-Click Direct Download for macOS (.dmg)
     """
-    mac_file = RELEASE_DIR / "FRIDAY-macOS-Universal.tar.gz"
-    if mac_file.exists():
+    dmg_file = RELEASE_DIR / "FRIDAY-0.1.0-arm64.dmg"
+    if dmg_file.exists():
         return FileResponse(
-            path=str(mac_file),
-            filename="FRIDAY-macOS.tar.gz",
-            media_type="application/gzip"
+            path=str(dmg_file),
+            filename="FRIDAY-macOS.dmg",
+            media_type="application/x-apple-diskimage"
         )
     return RedirectResponse(url=GITHUB_RELEASES_URL)
 

@@ -8,24 +8,24 @@
 ### Private On-Device Neural Intelligence • Voice Cockpit • Multi-Platform
 
 [![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/tag/v0.1.0)
-[![Android](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk)
-[![macOS](https://img.shields.io/badge/macOS-Direct%20Mac%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz)
+[![Mac DMG](https://img.shields.io/badge/macOS-Direct%20DMG%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg)
+[![Android APK](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk)
 
 </div>
 
 ---
 
-## 📥 Direct 1-Click Download Links
+## 📥 Direct 1-Click Downloads (Instant File Downloads)
 
-Clicking any link below will **automatically download the file immediately**:
+Clicking any button below **starts the download immediately**:
 
 <div align="center">
 
-| 📱 Android Mobile | 🍎 macOS Desktop | 🪟 Windows Desktop |
+| 🍎 macOS Installer | 📱 Android Installer | 🪟 Windows Package |
 |:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="56" height="56" /><br>**Android APK** | 🍏<br>**macOS Client** | 🪟<br>**Windows Client** |
-| [⬇️ **Download Android (.apk)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download Mac (.tar.gz)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) | [⬇️ **Download Windows (.zip)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) |
-| *Direct Download (4.1 MB)* | *Direct Download (67 KB)* | *Direct Download (67 KB)* |
+| 🍏<br>**macOS DMG** | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="48" height="48" /><br>**Android APK** | 🪟<br>**Windows Client** |
+| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download Windows**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) |
+| *Standalone Apple Disk Image (123 MB)* | *Direct Android Package (4.1 MB)* | *Windows / Portable Package* |
 
 </div>
 

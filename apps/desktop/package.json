@@ -10,7 +10,28 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "start:electron": "electron .",
     "android:sync": "npm run build && npx cap sync android",
-    "android:open": "npx cap open android"
+    "android:open": "npx cap open android",
+    "dist:mac": "npm run build && npm run build:electron && electron-builder --mac",
+    "dist:win": "npm run build && npm run build:electron && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.friday.assistant",
+    "productName": "FRIDAY",
+    "directories": {
+      "output": "../../release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    }
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",
@@ -26,6 +47,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^41.7.1",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.5.3",
     "vite": "^5.4.1",
     "vitest": "^4.1.11"
