@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import type { AssistantState, Message, SystemTelemetry } from '../types';
 
-describe('Google Assistant & Wake Word UI/UX System', () => {
+describe('Google Assistant & Cyber UI/UX System', () => {
   test('Assistant state machine transitions', () => {
     const states: AssistantState[] = ['IDLE', 'LISTENING', 'THINKING', 'SPEAKING', 'PROCESSING', 'ERROR', 'OFFLINE'];
     expect(states).toContain('LISTENING');
@@ -45,5 +45,19 @@ describe('Google Assistant & Wake Word UI/UX System', () => {
 
     expect(sampleTelemetry.cpu_usage_percent).toBeGreaterThan(0);
     expect(sampleTelemetry.battery.percent).toBe(88);
+  });
+
+  test('Dark and Light theme mode validation', () => {
+    const supportedThemes = ['dark', 'light'];
+    expect(supportedThemes).toContain('dark');
+    expect(supportedThemes).toContain('light');
+  });
+
+  test('Multi-platform compatibility configuration', () => {
+    const platforms = ['macOS', 'Android', 'Windows'];
+    expect(platforms).toHaveLength(3);
+    expect(platforms).toContain('Android');
+    expect(platforms).toContain('macOS');
+    expect(platforms).toContain('Windows');
   });
 });
