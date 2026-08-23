@@ -1,5 +1,6 @@
-import React from 'react';
-import { X, Apple, Smartphone, Download, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Apple, Smartphone, Download, ExternalLink, ShieldCheck, Wifi, Copy, Check } from 'lucide-react';
+import { getBaseUrl } from '../../services/api';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -7,9 +8,18 @@ interface DownloadModalProps {
 }
 
 export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose }) => {
+  const [copied, setCopied] = useState(false);
   if (!isOpen) return null;
 
-  const repoUrl = "https://github.com/OK45batwal/FRIDAY/releases";
+  const baseUrl = getBaseUrl();
+  const androidDownloadUrl = `${baseUrl}/api/download/android`;
+  const macDownloadUrl = `${baseUrl}/api/download/mac`;
+
+  const copyMobileLink = () => {
+    navigator.clipboard.writeText(androidDownloadUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div
@@ -72,7 +82,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                 Download FRIDAY Apps
               </h2>
               <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-                Native standalone client for macOS (Apple Silicon/Intel) and Android APK
+                Direct, zero-login downloads from your local FRIDAY server
               </p>
             </div>
           </div>
@@ -110,8 +120,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                 padding: '20px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '14px',
-                transition: 'all 0.2s ease'
+                gap: '14px'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -131,19 +140,18 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                 </div>
                 <div>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>macOS App</h3>
-                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>v0.1.0 • Apple Silicon & Intel</span>
+                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>v0.1.0 • Universal Mac</span>
                 </div>
               </div>
 
               <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' }}>
-                Native frameless Cyber HUD, Global Hotkey (<code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 4px', borderRadius: '4px' }}>Cmd+Shift+Space</code>), and Menu Bar Tray.
+                Frameless glass HUD, Global Hotkey (<code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 4px', borderRadius: '4px' }}>Cmd+Shift+Space</code>), and Menu Bar Tray.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
                 <a
-                  href={`${repoUrl}/latest`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={macDownloadUrl}
+                  download="FRIDAY-macOS-Universal.tar.gz"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -160,7 +168,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                   }}
                 >
                   <Download size={15} />
-                  <span>Download .dmg (Mac)</span>
+                  <span>Download for Mac (.tar.gz)</span>
                 </a>
               </div>
             </div>
@@ -174,8 +182,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                 padding: '20px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '14px',
-                transition: 'all 0.2s ease'
+                gap: '14px'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -195,19 +202,18 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                 </div>
                 <div>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Android APK</h3>
-                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>v0.1.0 • ARM64 & x86</span>
+                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>v0.1.0 • ARM64</span>
                 </div>
               </div>
 
               <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' }}>
-                Direct mic voice recognition, mobile touch gesture navigation, and local network AI pairing.
+                Direct mic voice recognition, mobile touch gesture navigation, and local LAN AI synchronization.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
                 <a
-                  href={`${repoUrl}/latest`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={androidDownloadUrl}
+                  download="FRIDAY-Android-v0.1.0.apk"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -224,11 +230,57 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                   }}
                 >
                   <Download size={15} />
-                  <span>Download .apk (Android)</span>
+                  <span>Download APK (Direct)</span>
                 </a>
               </div>
             </div>
 
+          </div>
+
+          {/* Wi-Fi Local Network Download Box for Mobile Phone */}
+          <div
+            style={{
+              padding: '14px 18px',
+              background: 'rgba(56, 189, 248, 0.06)',
+              border: '1px solid rgba(56, 189, 248, 0.2)',
+              borderRadius: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Wifi size={16} color="#38bdf8" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#38bdf8' }}>
+                  Download on Phone (Wi-Fi Direct URL)
+                </span>
+              </div>
+              <button
+                onClick={copyMobileLink}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  padding: '4px 10px',
+                  cursor: 'pointer'
+                }}
+              >
+                {copied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                <span>{copied ? 'Copied' : 'Copy Link'}</span>
+              </button>
+            </div>
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+              Open this link on your phone's browser to download the APK directly:
+            </p>
+            <code style={{ fontSize: '12px', color: '#ffffff', background: 'rgba(0, 0, 0, 0.4)', padding: '6px 10px', borderRadius: '6px', wordBreak: 'break-all' }}>
+              {androidDownloadUrl}
+            </code>
           </div>
 
           {/* Direct GitHub Release Link Footer */}
@@ -247,7 +299,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheck size={16} color="#10b981" />
-              <span>All releases are open source, signed, and malware-free.</span>
+              <span>Served directly from your local server. Zero authentication required.</span>
             </div>
 
             <a
