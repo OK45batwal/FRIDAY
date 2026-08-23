@@ -3,7 +3,10 @@ import type { Conversation, Message, AssistantState, SystemTelemetry } from '../
 import { api, getBaseUrl } from '../services/api';
 import { socketService } from '../services/websocket';
 
-export const useFriday = (onMessageComplete?: (content: string) => void) => {
+export const useFriday = (
+  onMessageComplete?: (content: string) => void,
+  onSentenceChunk?: (chunk: string) => void
+) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -99,7 +102,7 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
     setState('THINKING');
 
     try {
-      // ChatGPT / Gemini style Token Streaming
+      // ChatGPT / Gemini style Token Streaming with Sub-250ms Sentence Boundaries
       const res = await fetch(`${getBaseUrl()}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,6 +119,7 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
       const reader = res.body?.getReader();
       const decoder = new TextDecoder('utf-8');
       let accumulatedText = '';
+      let unspokenBuffer = '';
 
       if (reader) {
         setState('SPEAKING');
@@ -133,6 +137,16 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
                   const event = JSON.parse(line.slice(6));
                   if (event.type === 'token') {
                     accumulatedText += event.content;
+                    unspokenBuffer += event.content;
+
+                    // Sentence boundary split for <250ms Time-To-First-Audio (TTFA)
+                    const sentenceMatch = unspokenBuffer.match(/^(.*?[.!?\n])\s+(.*)$/s);
+                    if (sentenceMatch && sentenceMatch[1].trim().length > 10) {
+                      const completeSentence = sentenceMatch[1].trim();
+                      unspokenBuffer = sentenceMatch[2] || '';
+                      onSentenceChunk?.(completeSentence);
+                    }
+
                     setMessages(prev =>
                       prev.map(m =>
                         m.id === tempAssistantMsgId
@@ -142,6 +156,13 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
                     );
                   } else if (event.type === 'done') {
                     const finalReply = event.full_response || accumulatedText;
+                    
+                    // Dispatch any remaining unspoken tail
+                    if (unspokenBuffer.trim().length > 0) {
+                      onSentenceChunk?.(unspokenBuffer.trim());
+                      unspokenBuffer = '';
+                    }
+
                     setMessages(prev =>
                       prev.map(m =>
                         m.id === tempAssistantMsgId
@@ -177,6 +198,7 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
         );
         setState('IDLE');
         if (res.response) {
+          onSentenceChunk?.(res.response);
           onMessageComplete?.(res.response);
         }
       } catch (restErr) {
@@ -184,7 +206,7 @@ export const useFriday = (onMessageComplete?: (content: string) => void) => {
         setState('IDLE');
       }
     }
-  }, [activeConversationId, loadConversations]);
+  }, [activeConversationId, loadConversations, onMessageComplete, onSentenceChunk]);
 
   useEffect(() => {
     loadConversations();

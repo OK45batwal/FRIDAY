@@ -19,18 +19,19 @@ export const App: React.FC = () => {
     autoSpeak,
     setAutoSpeak,
     toggleListening,
-    speak
+    speak,
+    enqueueChunk
   } = useVoice((transcript) => {
     if (transcript.trim()) {
       sendMessage(transcript.trim(), 'voice', selectedAgent);
     }
   });
 
-  const handleMessageComplete = useCallback((content: string) => {
-    if (autoSpeak && content) {
-      speak(content);
+  const handleSentenceChunk = useCallback((chunk: string) => {
+    if (autoSpeak && chunk) {
+      enqueueChunk(chunk);
     }
-  }, [autoSpeak, speak]);
+  }, [autoSpeak, enqueueChunk]);
 
   const {
     conversations,
@@ -40,7 +41,7 @@ export const App: React.FC = () => {
     startNewConversation,
     deleteConversation,
     sendMessage
-  } = useFriday(handleMessageComplete);
+  } = useFriday(undefined, handleSentenceChunk);
 
   const handleSendMessage = (text: string, inputType: 'text' | 'voice' = 'text', agentMode?: string) => {
     sendMessage(text, inputType, agentMode || selectedAgent);
