@@ -14,7 +14,7 @@ export const App: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const {
     isListening,
@@ -50,7 +50,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#212121', color: '#ffffff', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', position: 'relative' }}>
       {/* Top Navbar */}
       <Navbar
         autoSpeak={autoSpeak}
@@ -60,25 +60,29 @@ export const App: React.FC = () => {
         onOpenLibrary={() => setToolsOpen(true)}
         onOpenDownload={() => setDownloadOpen(true)}
         onToggleSearch={() => setSidebarOpen(!sidebarOpen)}
-        sidebarOpen={sidebarOpen}
       />
 
-      {/* Main Workspace Layout */}
-      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        {/* Left Sidebar */}
+      {/* Main Workspace */}
+      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', height: 'calc(100vh - 65px)' }}>
+        {/* Slide-in Conversation Sidebar (Search & History) */}
         {sidebarOpen && (
-          <Sidebar
-            conversations={conversations}
-            activeConversationId={activeConversationId}
-            onSelectConversation={selectConversation}
-            onNewConversation={startNewConversation}
-            onDeleteConversation={deleteConversation}
-          />
+          <div style={{ width: '280px', height: '100%', borderRight: '1px solid rgba(255, 255, 255, 0.08)', background: 'var(--bg-card)' }}>
+            <Sidebar
+              conversations={conversations}
+              activeConversationId={activeConversationId}
+              onSelectConversation={(id) => {
+                selectConversation(id);
+                setSidebarOpen(false);
+              }}
+              onNewConversation={startNewConversation}
+              onDeleteConversation={deleteConversation}
+            />
+          </div>
         )}
 
-        {/* Center Content: Chat Feed + Bottom Input */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden', background: '#212121' }}>
-          {/* Chat Messages */}
+        {/* Center Content: Hero or Messages + Floating Dock */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px 20px 24px 20px', overflow: 'hidden' }}>
+          {/* Chat Feed or Hero Screen */}
           <ChatPanel
             messages={messages}
             selectedAgent={selectedAgent}
@@ -87,8 +91,8 @@ export const App: React.FC = () => {
             onTriggerPrompt={(prompt, agent) => handleSendMessage(prompt, 'text', agent)}
           />
 
-          {/* Bottom Clean Input Bar */}
-          <div style={{ padding: '0 16px 20px 16px' }}>
+          {/* Floating Input Dock at bottom */}
+          <div style={{ paddingTop: '12px' }}>
             <FloatingInputDock
               isListening={isListening}
               selectedAgent={selectedAgent}

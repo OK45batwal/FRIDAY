@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, MessageSquare, Search, Trash2 } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Search, Trash2 } from 'lucide-react';
 import type { Conversation } from '../../types';
 
 interface SidebarProps {
@@ -20,61 +20,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [search, setSearch] = useState('');
 
   const filtered = conversations.filter(c =>
-    (c.title || 'New Chat').toLowerCase().includes(search.toLowerCase())
+    (c.title || 'Conversation').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <aside
+      className="glass-panel"
       style={{
-        width: '260px',
+        width: '270px',
         display: 'flex',
         flexDirection: 'column',
-        padding: '14px',
+        padding: '16px',
         gap: '12px',
-        height: '100%',
-        background: '#171717',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)'
+        height: '100%'
       }}
     >
-      {/* New Chat Button */}
+      {/* New Conversation Button */}
       <button
         onClick={onNewConversation}
         style={{
           width: '100%',
-          padding: '10px 14px',
-          borderRadius: '10px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          padding: '12px',
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(255, 42, 95, 0.3) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.55)',
           color: '#ffffff',
-          fontSize: '13px',
-          fontWeight: 600,
+          fontFamily: 'Orbitron, sans-serif',
+          fontSize: '12px',
+          fontWeight: 700,
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          justifyContent: 'center',
+          gap: '8px',
           cursor: 'pointer',
-          transition: 'background 0.15s ease'
+          boxShadow: '0 0 16px rgba(239, 68, 68, 0.25)',
+          transition: 'all 0.2s ease'
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
       >
-        <Plus size={16} color="#ffffff" />
-        <span>New chat</span>
+        <MessageSquarePlus size={16} color="#ef4444" />
+        <span>NEW CONVERSATION</span>
       </button>
 
-      {/* Search Input */}
+      {/* Search Conversations Input */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <Search size={14} color="#737373" style={{ position: 'absolute', left: '10px' }} />
+        <Search size={14} color="#64748b" style={{ position: 'absolute', left: '12px' }} />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search chats..."
+          placeholder="Search conversations..."
           style={{
             width: '100%',
-            padding: '7px 10px 7px 30px',
-            borderRadius: '8px',
+            padding: '8px 12px 8px 32px',
+            borderRadius: '10px',
             background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             color: '#ffffff',
             fontSize: '12px',
             outline: 'none'
@@ -82,15 +82,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       </div>
 
-      <div style={{ fontSize: '11px', color: '#737373', fontWeight: 600, paddingLeft: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        Recent Chats
+      <div style={{ fontSize: '11px', fontFamily: 'Orbitron, sans-serif', color: '#94a3b8', marginTop: '4px', letterSpacing: '1px' }}>
+        SAVED SESSIONS ({filtered.length})
       </div>
 
-      {/* Conversation List */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      {/* List */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {filtered.length === 0 ? (
-          <div style={{ color: '#737373', fontSize: '12px', textAlign: 'center', marginTop: '30px' }}>
-            No chats found
+          <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>
+            No matching sessions
           </div>
         ) : (
           filtered.map((c) => {
@@ -98,50 +98,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <div
                 key={c.id}
-                onClick={() => onSelectConversation(c.id)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  background: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                  color: isActive ? '#ffffff' : '#a3a3a3',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  background: isActive ? 'rgba(239, 68, 68, 0.22)' : 'rgba(255, 255, 255, 0.03)',
+                  border: isActive ? '1px solid rgba(239, 68, 68, 0.55)' : '1px solid transparent',
+                  color: isActive ? '#ffffff' : '#94a3b8',
                   cursor: 'pointer',
                   fontSize: '13px',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.background = 'transparent';
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  overflow: 'hidden'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  <MessageSquare size={14} color={isActive ? '#ffffff' : '#737373'} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {c.title || 'New Chat'}
+                <div
+                  onClick={() => onSelectConversation(c.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}
+                >
+                  <MessageSquare size={14} color={isActive ? '#ef4444' : '#64748b'} style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isActive ? 600 : 400 }}>
+                    {c.title || 'Conversation'}
                   </span>
                 </div>
+
+                {c.message_count ? (
+                  <span style={{ fontSize: '10px', background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>
+                    {c.message_count}
+                  </span>
+                ) : null}
 
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteConversation(c.id);
                   }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#737373',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: isActive ? 1 : 0.6
-                  }}
-                  title="Delete chat"
+                  className="btn-action-icon btn-action-delete"
+                  title="Delete conversation"
                 >
                   <Trash2 size={13} />
                 </button>

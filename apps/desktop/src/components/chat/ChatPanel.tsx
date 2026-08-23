@@ -26,14 +26,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return (
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <WelcomeHero
-          onSelectPrompt={(prompt) => onTriggerPrompt(prompt, 'general')}
+          onTriggerPrompt={(prompt) => onTriggerPrompt(prompt, 'general')}
         />
       </div>
     );
   }
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '20px', maxWidth: '768px', margin: '0 auto', width: '100%' }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', maxWidth: '860px', margin: '0 auto', width: '100%' }}>
       {messages.map((m, index) => {
         let previousUserPrompt: string | undefined = undefined;
         if (m.role === 'assistant' && index > 0) {

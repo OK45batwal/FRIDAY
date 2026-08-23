@@ -1,5 +1,6 @@
 import React from 'react';
-import { PanelLeft, Plus, Settings, Volume2, VolumeX, Download } from 'lucide-react';
+import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Download } from 'lucide-react';
+import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
   autoSpeak: boolean;
@@ -9,7 +10,6 @@ interface NavbarProps {
   onOpenLibrary: () => void;
   onToggleSearch: () => void;
   onOpenDownload?: () => void;
-  sidebarOpen?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,8 +17,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleAutoSpeak,
   onNewChat,
   onOpenConfig,
-  onOpenDownload,
-  onToggleSearch
+  onOpenLibrary,
+  onToggleSearch,
+  onOpenDownload
 }) => {
   return (
     <header
@@ -26,140 +27,87 @@ export const Navbar: React.FC<NavbarProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '10px 16px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        background: '#171717',
-        zIndex: 40
+        padding: '12px 24px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        background: 'rgba(12, 13, 18, 0.85)',
+        backdropFilter: 'blur(20px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50
       }}
     >
-      {/* Left: Sidebar Toggle & App Title */}
+      {/* Brand & Logo */}
+      <FridayLogo size={32} fontSize={17} showText={true} />
+
+      {/* Action Navigation Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <button
-          onClick={onToggleSearch}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#a3a3a3',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.15s ease'
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          title="Toggle sidebar"
-        >
-          <PanelLeft size={18} />
-        </button>
-
-        <button
-          onClick={onNewChat}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#a3a3a3',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.15s ease'
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          title="New chat"
-        >
-          <Plus size={18} />
-        </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>FRIDAY</span>
-          <span style={{ fontSize: '11px', color: '#737373', background: 'rgba(255, 255, 255, 0.08)', padding: '2px 6px', borderRadius: '6px' }}>
-            1.0
-          </span>
-        </div>
-      </div>
-
-      {/* Right Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {/* Get App */}
+        {/* Get App (Mac / Android) Download Button */}
         <button
           onClick={onOpenDownload}
+          className="nav-pill"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'pointer'
+            borderColor: 'rgba(244, 63, 94, 0.3)',
+            background: 'rgba(244, 63, 94, 0.08)',
+            color: '#ffffff'
           }}
+          title="Download Standalone macOS App (.dmg) or Android (.apk)"
         >
-          <Download size={14} />
+          <Download size={14} color="#f43f5e" />
           <span>Get App</span>
         </button>
 
-        {/* Voice Toggle */}
+        {/* Voice Auto-Speak Toggle */}
         <button
           onClick={onToggleAutoSpeak}
+          className="nav-pill"
           style={{
-            background: 'transparent',
-            border: 'none',
-            color: autoSpeak ? '#ffffff' : '#737373',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            borderColor: autoSpeak ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.08)',
+            background: autoSpeak ? 'rgba(244, 63, 94, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+            color: autoSpeak ? '#ffffff' : '#94a3b8'
           }}
-          title={autoSpeak ? "Voice output enabled" : "Voice output muted"}
+          title={autoSpeak ? "Spoken Voice Audio Enabled" : "Voice Audio Muted"}
         >
-          {autoSpeak ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          {autoSpeak ? <Volume2 size={14} color="#f43f5e" /> : <VolumeX size={14} color="#64748b" />}
+          <span>{autoSpeak ? 'Voice On' : 'Muted'}</span>
         </button>
 
-        {/* Settings */}
-        <button
-          onClick={onOpenConfig}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#a3a3a3',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Settings"
-        >
-          <Settings size={18} />
+        <button onClick={onNewChat} className="nav-pill">
+          <Plus size={14} color="#f43f5e" />
+          <span>New chat</span>
         </button>
 
-        {/* User Profile */}
+        <button onClick={onToggleSearch} className="nav-pill">
+          <Search size={14} color="#94a3b8" />
+          <span>Search chats</span>
+        </button>
+
+        <button onClick={onOpenLibrary} className="nav-pill">
+          <BookOpen size={14} color="#94a3b8" />
+          <span>Tools & Agents</span>
+        </button>
+
+        <button onClick={onOpenConfig} className="nav-pill">
+          <Settings size={14} color="#94a3b8" />
+          <span>Config</span>
+        </button>
+
+        {/* User Avatar */}
         <div
           style={{
-            width: '28px',
-            height: '28px',
+            width: '32px',
+            height: '32px',
             borderRadius: '50%',
-            background: '#3b82f6',
-            color: '#ffffff',
-            fontSize: '12px',
-            fontWeight: 700,
+            background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: '#ffffff',
+            border: '1.5px solid rgba(255, 255, 255, 0.15)',
             marginLeft: '4px'
           }}
+          title="Omkar (Pro)"
         >
           O
         </div>
