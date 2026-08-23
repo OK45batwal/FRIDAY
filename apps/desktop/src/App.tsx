@@ -5,6 +5,7 @@ import { ChatPanel } from './components/chat/ChatPanel';
 import { FloatingInputDock } from './components/chat/FloatingInputDock';
 import { SettingsDialog } from './components/settings/SettingsDialog';
 import { ToolsModal } from './components/library/ToolsModal';
+import { DownloadModal } from './components/download/DownloadModal';
 import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
 
@@ -12,6 +13,7 @@ export const App: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState('general');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const {
@@ -56,6 +58,7 @@ export const App: React.FC = () => {
         onNewChat={startNewConversation}
         onOpenConfig={() => setSettingsOpen(true)}
         onOpenLibrary={() => setToolsOpen(true)}
+        onOpenDownload={() => setDownloadOpen(true)}
         onToggleSearch={() => setSidebarOpen(!sidebarOpen)}
       />
 
@@ -100,6 +103,12 @@ export const App: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Download Modal (macOS & Android Apps) */}
+      <DownloadModal
+        isOpen={downloadOpen}
+        onClose={() => setDownloadOpen(false)}
+      />
 
       {/* Settings Dialog */}
       <SettingsDialog

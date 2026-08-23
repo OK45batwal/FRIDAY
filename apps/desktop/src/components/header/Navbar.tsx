@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Search, BookOpen, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Download } from 'lucide-react';
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
@@ -9,6 +9,7 @@ interface NavbarProps {
   onOpenConfig: () => void;
   onOpenLibrary: () => void;
   onToggleSearch: () => void;
+  onOpenDownload?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,7 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewChat,
   onOpenConfig,
   onOpenLibrary,
-  onToggleSearch
+  onToggleSearch,
+  onOpenDownload
 }) => {
   return (
     <header
@@ -39,6 +41,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Navigation Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Get App (Mac / Android) Download Button */}
+        <button
+          onClick={onOpenDownload}
+          className="nav-pill"
+          style={{
+            borderColor: 'rgba(244, 63, 94, 0.3)',
+            background: 'rgba(244, 63, 94, 0.08)',
+            color: '#ffffff'
+          }}
+          title="Download Standalone macOS App (.dmg) or Android (.apk)"
+        >
+          <Download size={14} color="#f43f5e" />
+          <span>Get App</span>
+        </button>
+
         {/* Voice Auto-Speak Toggle */}
         <button
           onClick={onToggleAutoSpeak}

@@ -7,6 +7,7 @@ from services.core.api.routes.health import router as health_router
 from services.core.api.routes.chat import router as chat_router
 from services.core.api.routes.conversations import router as conversations_router
 from services.core.api.routes.voice import router as voice_router
+from services.core.api.routes.download import router as download_router
 from services.core.api.websocket.handler import ws_router
 
 app = FastAPI(
@@ -27,6 +28,7 @@ app.include_router(health_router)
 app.include_router(chat_router)
 app.include_router(conversations_router)
 app.include_router(voice_router)
+app.include_router(download_router)
 app.include_router(ws_router)
 
 @app.on_event("startup")
