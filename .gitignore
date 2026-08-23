@@ -45,3 +45,4 @@ dist-electron/
 services/core/training/output/
 services/core/training/checkpoints/
 services/core/training/data/*.jsonl
+release/

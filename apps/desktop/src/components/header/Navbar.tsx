@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Sun, Moon } from 'lucide-react';
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
@@ -9,7 +9,6 @@ interface NavbarProps {
   onOpenConfig: () => void;
   onOpenLibrary: () => void;
   onToggleSearch: () => void;
-  onOpenDownload?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,9 +17,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewChat,
   onOpenConfig,
   onOpenLibrary,
-  onToggleSearch,
-  onOpenDownload
+  onToggleSearch
 }) => {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = (localStorage.getItem('FRIDAY_THEME') as 'dark' | 'light') || 'dark';
+    setTheme(saved);
+    document.documentElement.setAttribute('data-theme', saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('FRIDAY_THEME', nextTheme);
+    document.documentElement.setAttribute('data-theme', nextTheme);
+  };
+
   return (
     <header
       style={{
@@ -28,32 +41,32 @@ export const Navbar: React.FC<NavbarProps> = ({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '12px 24px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        background: 'rgba(12, 13, 18, 0.85)',
+        borderBottom: '1px solid var(--border-subtle)',
+        background: 'var(--nav-bg)',
         backdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 50,
+        transition: 'background 0.3s ease, border-color 0.3s ease'
       }}
     >
       {/* Brand & Logo */}
-      <FridayLogo size={32} fontSize={17} showText={true} />
+      <FridayLogo size={34} fontSize={17} showText={true} />
 
       {/* Action Navigation Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Get App (Mac / Android) Download Button */}
+        
+        {/* Theme Toggle (Dark / Light Mode) */}
         <button
-          onClick={onOpenDownload}
+          onClick={toggleTheme}
           className="nav-pill"
           style={{
-            borderColor: 'rgba(244, 63, 94, 0.3)',
-            background: 'rgba(244, 63, 94, 0.08)',
-            color: '#ffffff'
+            color: theme === 'dark' ? '#f59e0b' : '#6366f1'
           }}
-          title="Download Standalone macOS App (.dmg) or Android (.apk)"
+          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
-          <Download size={14} color="#f43f5e" />
-          <span>Get App</span>
+          {theme === 'dark' ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#6366f1" />}
+          <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
 
         {/* Voice Auto-Speak Toggle */}
@@ -61,13 +74,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onToggleAutoSpeak}
           className="nav-pill"
           style={{
-            borderColor: autoSpeak ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.08)',
-            background: autoSpeak ? 'rgba(244, 63, 94, 0.1)' : 'rgba(255, 255, 255, 0.04)',
-            color: autoSpeak ? '#ffffff' : '#94a3b8'
+            borderColor: autoSpeak ? 'rgba(244, 63, 94, 0.4)' : 'var(--border-subtle)',
+            background: autoSpeak ? 'rgba(244, 63, 94, 0.1)' : 'var(--bg-card)',
+            color: autoSpeak ? 'var(--text-primary)' : 'var(--text-secondary)'
           }}
           title={autoSpeak ? "Spoken Voice Audio Enabled" : "Voice Audio Muted"}
         >
-          {autoSpeak ? <Volume2 size={14} color="#f43f5e" /> : <VolumeX size={14} color="#64748b" />}
+          {autoSpeak ? <Volume2 size={14} color="#f43f5e" /> : <VolumeX size={14} color="var(--text-muted)" />}
           <span>{autoSpeak ? 'Voice On' : 'Muted'}</span>
         </button>
 
@@ -77,17 +90,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         <button onClick={onToggleSearch} className="nav-pill">
-          <Search size={14} color="#94a3b8" />
+          <Search size={14} color="var(--text-secondary)" />
           <span>Search chats</span>
         </button>
 
         <button onClick={onOpenLibrary} className="nav-pill">
-          <BookOpen size={14} color="#94a3b8" />
+          <BookOpen size={14} color="var(--text-secondary)" />
           <span>Tools & Agents</span>
         </button>
 
         <button onClick={onOpenConfig} className="nav-pill">
-          <Settings size={14} color="#94a3b8" />
+          <Settings size={14} color="var(--text-secondary)" />
           <span>Config</span>
         </button>
 
@@ -104,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             fontSize: '13px',
             fontWeight: 700,
             color: '#ffffff',
-            border: '1.5px solid rgba(255, 255, 255, 0.15)',
+            border: '1.5px solid var(--border-subtle)',
             marginLeft: '4px'
           }}
           title="Omkar (Pro)"
