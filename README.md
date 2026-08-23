@@ -7,59 +7,35 @@
 # FRIDAY 1.0 (Cyber AI Operating Assistant)
 ### Private On-Device Neural Intelligence • Voice Cockpit • Multi-Platform
 
-[![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![Android](https://img.shields.io/badge/Android-APK%20Native-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/latest)
+[![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/tag/v0.1.0)
+[![Android](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk)
+[![macOS](https://img.shields.io/badge/macOS-Direct%20Mac%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz)
 
 </div>
 
 ---
 
-## 📥 Official Download Links (Choose Your Platform)
+## 📥 Direct 1-Click Download Links
+
+Clicking any link below will **automatically download the file immediately**:
 
 <div align="center">
 
 | 📱 Android Mobile | 🍎 macOS Desktop | 🪟 Windows Desktop |
 |:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="56" height="56" /><br>**Android Phone / Tablet** | 🍏<br>**macOS (Apple Silicon & Intel)** | 🪟<br>**Windows 10 / 11** |
-| [⬇️ **Download Android APK**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download for Mac**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download for Windows**](https://github.com/OK45batwal/FRIDAY/releases/latest) |
-| *v0.1.0 • Standalone APK (4.1 MB)* | *v0.1.0 • Universal macOS Client* | *v0.1.0 • Windows 64-bit Client* |
+| <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="56" height="56" /><br>**Android APK** | 🍏<br>**macOS Client** | 🪟<br>**Windows Client** |
+| [⬇️ **Download Android (.apk)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download Mac (.tar.gz)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) | [⬇️ **Download Windows (.zip)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) |
+| *Direct Download (4.1 MB)* | *Direct Download (67 KB)* | *Direct Download (67 KB)* |
 
 </div>
 
 ---
 
 ## ✨ Features & Architecture
-
-### 📱 1. Mobile Experience (Android)
-- **Mobile-Optimized Touch HUD**: Native safe-area insets, gesture navigation, and full-width fluid dock.
-- **Hardware Voice Pipeline**: Low-latency microphone speech-to-text with auto-endpointing.
-- **Sub-380MB RAM Neural Engine**: Designed specifically for smartphone processors with zero battery drain.
-
-### 🖥️ 2. Desktop Cockpit (Mac & Windows)
-- **Frameless Glass Cyber HUD**: Dark aesthetic with neon rose & cyan ambient glow.
-- **Global Summon Hotkey**: Press `Cmd + Shift + Space` (Mac) or `Ctrl + Shift + Space` (Windows) to toggle the cockpit over any app.
-- **Top Menu Bar Tray**: Quick hardware telemetry and background process controls.
-- **Autonomous OS Agent Tools**: Reminders, web searches, workspace file inspection, and math solvers.
-
----
-
-## ⚡ Quick Start (Developers)
-
-```bash
-# 1. Start Python AI Core Backend
-cd services/core
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python -m app.main
-
-# 2. Start Frontend Cockpit
-cd apps/desktop
-npm install
-npm run dev               # Web UI (http://localhost:5173)
-npm run start:electron    # Native Desktop Window
-```
+- **🧠 On-Device Neural LLM**: Zero-latency neural model with LoRA fine-tuning running directly on Apple Silicon Metal GPU (`mps`).
+- **🎙️ Responsive Voice HUD**: Real-time STT speech recognition and multi-tier speech synthesis across installed natural voices.
+- **⚡ Native macOS Hotkey**: Press `Cmd + Shift + Space` anywhere to summon the frameless cyber cockpit.
+- **📱 Android APK Client**: Native mic permissions, touch haptics, and local network AI sync.
 
 ---
 
