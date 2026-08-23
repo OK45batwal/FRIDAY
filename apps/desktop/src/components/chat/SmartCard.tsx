@@ -1,118 +1,179 @@
-import React from 'react';
-import { Sun, Cpu, CheckCircle, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sun, Cpu, CheckCircle, Calendar, Code2, RotateCcw, Check, Play } from 'lucide-react';
 
 interface SmartCardProps {
   content: string;
 }
 
 export const SmartCard: React.FC<SmartCardProps> = ({ content }) => {
+  const [reminderDone, setReminderDone] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const lower = content.toLowerCase();
 
-  // 1. Weather Smart Card
-  if (lower.includes('weather') || lower.includes('temperature') || lower.includes('forecast') || lower.includes('74°f')) {
+  // 1. macOS Reminders Interactive Action Card
+  if (lower.includes('reminder') || lower.includes('reminded') || lower.includes('scheduled')) {
     return (
       <div
-        className="glass-card-white"
+        className="glass-panel"
         style={{
-          marginTop: '10px',
+          marginTop: '12px',
           padding: '14px 18px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderLeft: '4px solid #ef4444'
+          borderLeft: '4px solid var(--accent-rose)',
+          background: 'var(--bg-card)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'rgba(244, 63, 94, 0.15)', padding: '10px', borderRadius: '12px' }}>
+            <Calendar size={22} color="var(--accent-rose)" />
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {reminderDone ? "Task Completed" : "macOS Reminder Synced"}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {reminderDone ? "Removed from your active reminders list" : "Added to native Apple Reminders"}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => setReminderDone(!reminderDone)}
+            className="btn-action-icon"
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: reminderDone ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.12)',
+              color: reminderDone ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+              fontSize: '11px',
+              fontWeight: 700,
+              gap: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {reminderDone ? <RotateCcw size={12} /> : <CheckCircle size={12} />}
+            <span>{reminderDone ? 'Undo' : 'Mark Done'}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Code Block Smart Card
+  if (content.includes('```')) {
+    const codeMatch = content.match(/```(?:[a-zA-Z0-9]+)?\n([\s\S]*?)```/);
+    const codeSnippet = codeMatch ? codeMatch[1].trim() : '';
+
+    const handleCopyCode = () => {
+      if (codeSnippet) {
+        navigator.clipboard.writeText(codeSnippet);
+        setCodeCopied(true);
+        setTimeout(() => setCodeCopied(false), 2000);
+      }
+    };
+
+    return (
+      <div
+        className="glass-panel"
+        style={{
+          marginTop: '12px',
+          padding: '10px 14px',
+          borderLeft: '4px solid var(--accent-cyan)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--bg-card)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <Code2 size={16} color="var(--accent-cyan)" />
+          <span>Code Block Generated</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={handleCopyCode}
+            className="btn-action-icon"
+            style={{
+              padding: '5px 10px',
+              borderRadius: '6px',
+              background: codeCopied ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.12)',
+              color: codeCopied ? 'var(--accent-emerald)' : 'var(--accent-cyan)',
+              fontSize: '11px',
+              fontWeight: 700,
+              gap: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {codeCopied ? <Check size={12} /> : <Play size={12} />}
+            <span>{codeCopied ? 'Copied' : 'Copy Snippet'}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. System Telemetry & Diagnostics Card
+  if (lower.includes('cpu') || lower.includes('memory') || lower.includes('telemetry') || lower.includes('ram')) {
+    return (
+      <div
+        className="glass-panel"
+        style={{
+          marginTop: '12px',
+          padding: '14px 18px',
+          borderLeft: '4px solid var(--accent-emerald)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          background: 'var(--bg-card)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <Cpu size={16} color="var(--accent-emerald)" />
+            <span>Hardware Telemetry Real-Time Status</span>
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: 800 }}>
+            NORMAL OPERATING THRESHOLDS
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Weather Smart Card
+  if (lower.includes('weather') || lower.includes('temperature') || lower.includes('forecast')) {
+    return (
+      <div
+        className="glass-panel"
+        style={{
+          marginTop: '12px',
+          padding: '14px 18px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderLeft: '4px solid #f59e0b',
+          background: 'var(--bg-card)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '10px', borderRadius: '12px' }}>
-            <Sun size={26} color="#ff2a5f" />
+          <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '10px', borderRadius: '12px' }}>
+            <Sun size={24} color="#f59e0b" />
           </div>
           <div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>
               74°F / 23°C
             </div>
-            <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
               Sunny & Clear • Humidity 45% • Wind 6 mph
             </div>
           </div>
         </div>
-        <div style={{ textAlign: 'right', fontSize: '11px', color: '#ef4444', fontFamily: 'Orbitron, sans-serif', fontWeight: 600 }}>
+        <div style={{ textAlign: 'right', fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>
           OPTIMAL CONDITIONS
         </div>
-      </div>
-    );
-  }
-
-  // 2. System Diagnostics Smart Card
-  if (lower.includes('diagnostic') || lower.includes('cpu') || lower.includes('memory') || lower.includes('telemetry') || lower.includes('optimal operating thresholds')) {
-    return (
-      <div
-        className="glass-card-white"
-        style={{
-          marginTop: '10px',
-          padding: '14px 18px',
-          borderLeft: '4px solid #ef4444',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
-            <Cpu size={14} color="#ef4444" /> SYSTEM PERFORMANCE TELEMETRY
-          </div>
-          <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontFamily: 'Orbitron, sans-serif' }}>
-            NORMAL
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-          <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '8px 12px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>
-              <span>CPU LOAD</span>
-              <span style={{ color: '#ef4444', fontWeight: 700 }}>18%</span>
-            </div>
-            <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ width: '18%', height: '100%', background: '#ef4444' }} />
-            </div>
-          </div>
-
-          <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '8px 12px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#cbd5e1', marginBottom: '4px' }}>
-              <span>RAM USAGE</span>
-              <span style={{ color: '#ffffff', fontWeight: 700 }}>42%</span>
-            </div>
-            <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ width: '42%', height: '100%', background: '#ffffff' }} />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 3. Action Execution Smart Card (e.g. Spotify / App / Web)
-  if (lower.includes('spotify') || lower.includes('launch') || lower.includes('playlist')) {
-    return (
-      <div
-        className="glass-card-white"
-        style={{
-          marginTop: '10px',
-          padding: '12px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderLeft: '4px solid #ffffff'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <CheckCircle size={18} color="#ef4444" />
-          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 600 }}>
-            Command Executed Successfully
-          </span>
-        </div>
-        <span style={{ fontSize: '11px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-          <ExternalLink size={12} /> OPEN
-        </span>
       </div>
     );
   }

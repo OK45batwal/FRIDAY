@@ -168,6 +168,12 @@ class AssistantOrchestrator:
             metadata={"executed_tool": executed_tool, "intent": intent.value} if executed_tool else {"intent": intent.value}
         )
 
+        # 9. Auto-Index Episodic Vector Memory (Pillar 4)
+        try:
+            rag_memory.add_episodic_memory(prompt=clean_message, response=ai_response)
+        except Exception:
+            pass
+
         return {
             "conversation_id": conversation_id,
             "message_id": assistant_msg.id,

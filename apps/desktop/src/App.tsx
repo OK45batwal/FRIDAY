@@ -16,9 +16,13 @@ export const App: React.FC = () => {
 
   const {
     isListening,
+    isSpeaking,
     autoSpeak,
+    isHandsFree,
+    audioLevel,
     setAutoSpeak,
     toggleListening,
+    toggleHandsFree,
     speak,
     enqueueChunk
   } = useVoice((transcript) => {
@@ -49,7 +53,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', background: 'var(--bg-main)', overflow: 'hidden' }}>
       {/* Top Navbar */}
       <Navbar
         autoSpeak={autoSpeak}
@@ -60,11 +64,23 @@ export const App: React.FC = () => {
         onToggleSearch={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* Main Workspace */}
-      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', height: 'calc(100vh - 65px)' }}>
-        {/* Slide-in Conversation Sidebar (Search & History) */}
+      {/* Main Content Area */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Left Sliding Sidebar */}
         {sidebarOpen && (
-          <div style={{ width: '280px', height: '100%', borderRight: '1px solid rgba(255, 255, 255, 0.08)', background: 'var(--bg-card)' }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 40,
+              animation: 'slideRight 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              width: '280px',
+              borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'var(--bg-card)'
+            }}
+          >
             <Sidebar
               conversations={conversations}
               activeConversationId={activeConversationId}
@@ -93,8 +109,12 @@ export const App: React.FC = () => {
           <div style={{ paddingTop: '12px' }}>
             <FloatingInputDock
               isListening={isListening}
+              isSpeaking={isSpeaking}
+              isHandsFree={isHandsFree}
+              audioLevel={audioLevel}
               selectedAgent={selectedAgent}
               onToggleVoice={toggleListening}
+              onToggleHandsFree={toggleHandsFree}
               onSendMessage={handleSendMessage}
               onSelectAgent={setSelectedAgent}
             />

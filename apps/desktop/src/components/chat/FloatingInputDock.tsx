@@ -1,225 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Send, Radio, Sparkles, X, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mic, MicOff, Send, Sparkles, Zap } from 'lucide-react';
+import { VoiceVisualizer } from '../voice/VoiceVisualizer';
 
 interface FloatingInputDockProps {
   isListening: boolean;
+  isSpeaking?: boolean;
+  isHandsFree?: boolean;
+  audioLevel?: number;
   selectedAgent?: string;
   onToggleVoice: () => void;
+  onToggleHandsFree?: () => void;
   onSendMessage: (text: string, inputType: 'text' | 'voice', agentMode?: string) => void;
   onSelectAgent?: (agentId: string) => void;
 }
 
 export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
   isListening,
+  isSpeaking = false,
+  isHandsFree = false,
+  audioLevel = 0,
+  selectedAgent = 'general',
   onToggleVoice,
+  onToggleHandsFree,
   onSendMessage
 }) => {
   const [text, setText] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [liveTranscript, setLiveTranscript] = useState('');
-  const recognitionRef = useRef<any>(null);
-
-  // Initialize browser Web Speech Recognition for real-time STT
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onstart = () => {
-        setIsRecording(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        let currentTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        setLiveTranscript(currentTranscript);
-        setText(currentTranscript);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error:', event.error);
-        setIsRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, []);
-
-  const handleStartRecording = () => {
-    if (!recognitionRef.current) {
-      onToggleVoice();
-      return;
-    }
-
-    try {
-      setText('');
-      setLiveTranscript('');
-      recognitionRef.current.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.warn("Speech recognition start:", err);
-    }
-  };
-
-  const handleStopAndSend = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsRecording(false);
-    const finalMsg = (liveTranscript || text).trim();
-    if (finalMsg) {
-      onSendMessage(finalMsg, 'voice', 'general');
-      setText('');
-      setLiveTranscript('');
-    }
-  };
-
-  const handleCancelRecording = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsRecording(false);
-    setText('');
-    setLiveTranscript('');
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
-    onSendMessage(text.trim(), 'text', 'general');
+    onSendMessage(text.trim(), 'text', selectedAgent);
     setText('');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '840px', margin: '0 auto', position: 'relative' }}>
-      
-      {/* 🌟 ENLARGED PROMINENT CYBER VOICE LISTENING HUD OVERLAY */}
-      {isRecording && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '75px',
-            left: 0,
-            right: 0,
-            background: 'rgba(11, 13, 19, 0.96)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(244, 63, 94, 0.4)',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(244, 63, 94, 0.25)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-            zIndex: 50
-          }}
-        >
-          {/* Header Status */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="pulse-circle" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f43f5e' }} />
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#f43f5e', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                FRIDAY Voice Listening...
-              </span>
-            </div>
-
-            {/* Equalizer Visualizer */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '18px' }}>
-              <div className="audio-bar" style={{ background: '#f43f5e', height: '18px', animation: 'wave 0.8s infinite' }} />
-              <div className="audio-bar" style={{ background: '#f43f5e', height: '14px', animation: 'wave 1.1s infinite 0.1s' }} />
-              <div className="audio-bar" style={{ background: '#f43f5e', height: '20px', animation: 'wave 0.9s infinite 0.2s' }} />
-              <div className="audio-bar" style={{ background: '#f43f5e', height: '12px', animation: 'wave 1.2s infinite 0.3s' }} />
-              <div className="audio-bar" style={{ background: '#f43f5e', height: '16px', animation: 'wave 0.7s infinite 0.4s' }} />
-            </div>
-          </div>
-
-          {/* Real-Time Live Transcript Preview Area */}
-          <div
-            style={{
-              minHeight: '60px',
-              padding: '12px 16px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
-              fontSize: '15px',
-              color: liveTranscript ? '#ffffff' : '#64748b',
-              lineHeight: '1.5',
-              fontStyle: liveTranscript ? 'normal' : 'italic'
-            }}
-          >
-            {liveTranscript || "Speak now, I'm listening to your request..."}
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={handleCancelRecording}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                borderRadius: '9999px',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#94a3b8',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              <X size={14} />
-              <span>Cancel</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleStopAndSend}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 20px',
-                borderRadius: '9999px',
-                background: '#f43f5e',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(244, 63, 94, 0.4)'
-              }}
-            >
-              <Check size={14} />
-              <span>Send Query</span>
-            </button>
-          </div>
-        </div>
-      )}
+    <div style={{ width: '100%', maxWidth: '860px', margin: '0 auto' }}>
+      {/* Live Acoustic Audio Orb Visualizer */}
+      <VoiceVisualizer
+        isListening={isListening}
+        isSpeaking={isSpeaking}
+        audioLevel={audioLevel}
+      />
 
       {/* Main Universal Cyber Command Dock */}
       <div
         className="input-dock"
         style={{
-          border: isRecording || isListening ? '1px solid #f43f5e' : '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: isRecording ? '0 0 25px rgba(244, 63, 94, 0.25)' : 'none',
-          padding: '12px 18px'
+          border: isListening ? '1px solid var(--accent-rose)' : '1px solid var(--border-subtle)',
+          boxShadow: isListening ? '0 0 25px rgba(244, 63, 94, 0.25)' : 'var(--card-shadow)',
+          padding: '12px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
         }}
       >
         <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
           {/* Neural AI Icon */}
-          <div style={{ color: '#f43f5e', display: 'flex', alignItems: 'center', opacity: 0.8 }}>
+          <div style={{ color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', opacity: 0.9 }}>
             <Sparkles size={18} />
           </div>
 
@@ -228,66 +65,74 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={isRecording ? "Listening to your voice..." : "Ask FRIDAY anything, write code, run math, or control your Mac..."}
+            placeholder={isListening ? "Listening to your voice (Zero-Click VAD)..." : "Ask FRIDAY anything, write code, run math, or control your Mac..."}
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               fontSize: '14px',
               outline: 'none',
               fontFamily: 'inherit'
             }}
           />
 
-          {/* Right Controls: Real-Time STT Voice & Send */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Native Speech-to-Text Mic Icon */}
-            <button
-              type="button"
-              onClick={isRecording ? handleStopAndSend : handleStartRecording}
-              className="btn-action-icon"
-              style={{
-                color: isRecording ? '#ffffff' : '#94a3b8',
-                background: isRecording ? '#f43f5e' : 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                animation: isRecording ? 'pulse 1.5s infinite' : 'none'
-              }}
-              title={isRecording ? "Click to Submit Voice" : "Click to Speak (Speech-To-Text)"}
-            >
-              {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
-            </button>
+          {/* Right Controls: Hands-Free Toggle, STT Mic & Send */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Hands-Free Mode Toggle */}
+            {onToggleHandsFree && (
+              <button
+                type="button"
+                onClick={onToggleHandsFree}
+                className="btn-action-icon"
+                style={{
+                  color: isHandsFree ? '#ffffff' : 'var(--text-muted)',
+                  background: isHandsFree ? 'var(--accent-emerald)' : 'transparent',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '9999px',
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  gap: '4px',
+                  cursor: 'pointer'
+                }}
+                title={isHandsFree ? "Hands-Free Auto Turn-Taking Active" : "Enable Hands-Free Continuous Voice Mode"}
+              >
+                <Zap size={12} color={isHandsFree ? '#ffffff' : 'var(--text-muted)'} />
+                <span>{isHandsFree ? 'Hands-Free' : 'Hands-Free'}</span>
+              </button>
+            )}
 
-            {/* Tesla Talk Pill */}
+            {/* Talk Button */}
             <button
               type="button"
-              onClick={isRecording ? handleStopAndSend : handleStartRecording}
-              className={`btn-talk ${isRecording || isListening ? 'listening' : ''}`}
-              style={{ padding: '7px 16px' }}
+              onClick={onToggleVoice}
+              className={`btn-talk ${isListening ? 'listening' : ''}`}
+              style={{ padding: '7px 14px' }}
+              title={isListening ? "Listening (Click to Stop)" : "Click to Speak"}
             >
-              {isRecording || isListening ? (
-                <div className="audio-wave-container">
-                  <div className="audio-bar" style={{ background: '#ffffff' }} />
-                  <div className="audio-bar" style={{ background: '#ffffff' }} />
-                  <div className="audio-bar" style={{ background: '#ffffff' }} />
-                </div>
+              {isListening ? (
+                <>
+                  <MicOff size={14} />
+                  <span>LISTENING...</span>
+                </>
               ) : (
-                <Radio size={14} />
+                <>
+                  <Mic size={14} />
+                  <span>TALK</span>
+                </>
               )}
-              <span>{isRecording ? 'LISTENING...' : isListening ? 'SPEAKING' : 'TALK'}</span>
             </button>
 
             {text.trim() && (
               <button
                 type="submit"
                 style={{
-                  background: 'var(--accent-talk)',
+                  background: 'var(--accent-rose)',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
+                  width: '34px',
+                  height: '34px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -296,7 +141,7 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                   boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)'
                 }}
               >
-                <Send size={15} />
+                <Send size={14} />
               </button>
             )}
           </div>
