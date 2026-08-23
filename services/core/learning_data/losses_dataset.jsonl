@@ -5,3 +5,4 @@
 {"timestamp": "2026-08-22 16:23:43", "reward": -1.0, "prompt": "how many e letters are there in tree", "rejected_response": "There are **1667 characters** in total.", "correction": ""}
 {"timestamp": "2026-08-22 16:23:45", "reward": -1.0, "prompt": "how many is are there in tree", "rejected_response": "There are **1667 elements** in total.", "correction": ""}
 {"timestamp": "2026-08-22 16:24:26", "reward": -1.0, "prompt": "calculate this 10 + 4 + 15 + 18 into 4", "rejected_response": "The sum of these numbers is **37**.", "correction": ""}
+{"timestamp": "2026-08-22 16:32:22", "reward": -1.0, "prompt": "how many alphabet in tree", "rejected_response": "In a balanced binary tree:\n\n- There are 2^8 = 256 unique characters.", "correction": ""}
