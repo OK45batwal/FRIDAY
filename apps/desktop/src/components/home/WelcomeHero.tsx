@@ -1,35 +1,18 @@
 import React from 'react';
-import { Terminal, Globe, Code2, Calculator } from 'lucide-react';
-import { FridayLogo } from '../common/FridayLogo';
+import { Code, Compass, Lightbulb, Sparkles } from 'lucide-react';
 
 interface WelcomeHeroProps {
-  onTriggerPrompt: (prompt: string) => void;
+  onSelectPrompt: (prompt: string, agentId?: string) => void;
 }
 
-const INSPIRATION_PROMPTS = [
-  {
-    icon: <Code2 size={15} color="#f43f5e" />,
-    label: "Write an async Python service",
-    prompt: "Write a high-performance asynchronous Python service with FastAPI and type annotations."
-  },
-  {
-    icon: <Terminal size={15} color="#10b981" />,
-    label: "Check hardware telemetry",
-    prompt: "Show real-time CPU utilization, RAM usage, and battery telemetry."
-  },
-  {
-    icon: <Calculator size={15} color="#3b82f6" />,
-    label: "Calculate math & formulas",
-    prompt: "Calculate 10+50+90 and convert 100 C to F"
-  },
-  {
-    icon: <Globe size={15} color="#a855f7" />,
-    label: "Search web & latest news",
-    prompt: "Search web for the latest artificial intelligence breakthroughs"
-  }
-];
+export const WelcomeHero: React.FC<WelcomeHeroProps> = ({ onSelectPrompt }) => {
+  const suggestions = [
+    { icon: <Code size={16} color="#3b82f6" />, label: "Write code", prompt: "Write a clean TypeScript WebSocket client with automatic reconnection." },
+    { icon: <Lightbulb size={16} color="#eab308" />, label: "Explain concept", prompt: "Explain how quantum computing works in simple terms." },
+    { icon: <Compass size={16} color="#10b981" />, label: "Solve math", prompt: "Calculate the derivative of f(x) = x^3 * e^(2x) step by step." },
+    { icon: <Sparkles size={16} color="#ec4899" />, label: "Brainstorm", prompt: "Give me 5 high-impact ideas for my AI assistant project." }
+  ];
 
-export const WelcomeHero: React.FC<WelcomeHeroProps> = ({ onTriggerPrompt }) => {
   return (
     <div
       style={{
@@ -37,82 +20,70 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({ onTriggerPrompt }) => 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px 20px',
-        gap: '32px',
-        textAlign: 'center',
-        width: '100%',
-        maxWidth: '780px',
-        margin: '0 auto'
+        height: '100%',
+        maxWidth: '720px',
+        margin: '0 auto',
+        padding: '20px',
+        textAlign: 'center'
       }}
     >
-      {/* Friday Center Logo & Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-        <div style={{ marginBottom: '4px' }}>
-          <FridayLogo size={48} showText={false} />
-        </div>
+      <h1
+        style={{
+          fontSize: '28px',
+          fontWeight: 700,
+          color: '#ffffff',
+          marginBottom: '24px',
+          letterSpacing: '-0.5px'
+        }}
+      >
+        What can I help with today?
+      </h1>
 
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '34px',
-            fontWeight: 800,
-            color: '#ffffff',
-            letterSpacing: '-0.8px',
-            lineHeight: '1.2'
-          }}
-        >
-          What can I help with today?
-        </h1>
-        <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '520px', lineHeight: '1.6' }}>
-          Ask anything, write code, run math, or automate your Mac. FRIDAY understands your intent automatically.
-        </p>
-      </div>
-
-      {/* Clean Minimal Inspiration Chips (ChatGPT / Gemini Style) */}
+      {/* Suggestion Chips */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: '10px',
           width: '100%',
-          maxWidth: '680px'
+          maxWidth: '640px'
         }}
       >
-        {INSPIRATION_PROMPTS.map((item, idx) => (
-          <div
+        {suggestions.map((item, idx) => (
+          <button
             key={idx}
-            onClick={() => onTriggerPrompt(item.prompt)}
-            className="prompt-card"
+            onClick={() => onSelectPrompt(item.prompt, 'general')}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              padding: '14px 18px',
-              background: 'rgba(14, 16, 23, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.07)',
-              borderRadius: '14px',
-              cursor: 'pointer',
+              gap: '10px',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#d4d4d4',
+              fontSize: '13px',
               textAlign: 'left',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '8px',
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.04)'
-              }}
-            >
-              {item.icon}
+            {item.icon}
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '13px' }}>{item.label}</div>
+              <div style={{ fontSize: '11px', color: '#737373', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.prompt}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#f1f5f9' }}>{item.label}</span>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Click to ask</span>
-            </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
