@@ -28,7 +28,22 @@
       "dist-electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "../../services/core",
+        "to": "services/core",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc",
+          "!**/memory_data/**",
+          "!**/learning_data/**",
+          "!friday.db*"
+        ]
+      }
+    ],
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+
     "mac": {
       "target": [
         {

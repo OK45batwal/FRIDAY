@@ -1,10 +1,13 @@
 import { app, BrowserWindow, globalShortcut, Tray, Menu, nativeImage, shell, session } from 'electron';
+import { spawn, ChildProcess } from 'child_process';
+import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let backendProcess: ChildProcess | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !!process.env.VITE_DEV_SERVER_URL;
 
@@ -12,13 +15,97 @@ const DEV_ORIGIN = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
 const BACKEND_ORIGIN = process.env.FRIDAY_API_URL || 'http://localhost:8000';
 
 /**
+ * Check if the backend is already responding to HTTP requests.
+ */
+function isBackendHealthy(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const req = http.get('http://127.0.0.1:8000/health', (res) => {
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(800, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * Automatically launch the backend service sidecar if not already running.
+ */
+async function ensureBackendRunning() {
+  const healthy = await isBackendHealthy();
+  if (healthy) {
+    console.log('✅ FRIDAY Core backend already running on http://127.0.0.1:8000');
+    return;
+  }
+
+  console.log('🚀 Spawning FRIDAY Core backend sidecar process...');
+
+  const possiblePythonPaths = [
+    // Packaged application path
+    path.join(process.resourcesPath, 'services', 'core', 'venv', 'bin', 'python'),
+    path.join(process.resourcesPath, 'services', 'core', 'venv', 'Scripts', 'python.exe'),
+    // Development repository path
+    path.join(__dirname, '..', '..', '..', 'services', 'core', 'venv', 'bin', 'python'),
+    path.join(__dirname, '..', '..', '..', 'services', 'core', 'venv', 'Scripts', 'python.exe'),
+    // System PATH fallbacks
+    'python3',
+    'python'
+  ];
+
+  let pythonExec = 'python3';
+  for (const p of possiblePythonPaths) {
+    if (fs.existsSync(p)) {
+      pythonExec = p;
+      break;
+    }
+  }
+
+  const projectRoot = isDev
+    ? path.resolve(__dirname, '..', '..', '..')
+    : path.join(process.resourcesPath);
+
+  try {
+    backendProcess = spawn(pythonExec, ['-m', 'services.core.app.main'], {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        PYTHONPATH: projectRoot,
+        HOST: '127.0.0.1',
+        PORT: '8000'
+      },
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    backendProcess.stdout?.on('data', (data) => {
+      console.log(`[Core] ${data.toString().trim()}`);
+    });
+
+    backendProcess.stderr?.on('data', (data) => {
+      console.warn(`[Core Warn] ${data.toString().trim()}`);
+    });
+
+    backendProcess.on('exit', (code) => {
+      console.log(`[Core] Backend process exited with code ${code}`);
+      backendProcess = null;
+    });
+
+    // Wait up to 10 seconds for backend to come online
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      if (await isBackendHealthy()) {
+        console.log('✅ FRIDAY Core backend sidecar initialized and healthy!');
+        break;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to spawn backend process:', err);
+  }
+}
+
+/**
  * Read the API token the backend generated.
- *
- * A packaged build loads the UI over file://, which reports an Origin of "null".
- * The backend treats that as untrusted (it has to: a sandboxed iframe and a
- * local HTML file both report "null"), so the renderer cannot authenticate by
- * origin and needs the shared token instead. Main runs as the same user as the
- * server, so it can read the 0600 token file directly.
  */
 function readApiToken(): string {
   if (process.env.FRIDAY_API_TOKEN) return process.env.FRIDAY_API_TOKEN;
@@ -26,11 +113,10 @@ function readApiToken(): string {
   try {
     return fs.readFileSync(tokenFile, 'utf-8').trim();
   } catch {
-    // Not fatal: in dev the renderer runs on an allowlisted origin and does not
-    // need a token at all.
     return '';
   }
 }
+
 
 function createWindow() {
   const apiToken = readApiToken();
@@ -203,7 +289,8 @@ function toggleMainWindow() {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await ensureBackendRunning();
   installPermissionHandlers();
   createWindow();
   createTray();
@@ -221,7 +308,17 @@ app.on('web-contents-created', (_event, contents) => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  if (backendProcess) {
+    console.log('🛑 Shutting down FRIDAY backend sidecar...');
+    try {
+      backendProcess.kill('SIGTERM');
+    } catch {
+      // Process may already have terminated
+    }
+    backendProcess = null;
+  }
 });
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
