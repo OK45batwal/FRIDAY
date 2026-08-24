@@ -145,6 +145,10 @@ class MiniGPT(nn.Module):
         top_k: Optional[int] = 40
     ) -> torch.Tensor:
         """Autoregressively predicts next tokens with Temperature and Top-K sampling."""
+        # temperature is a divisor below; 0 raised ZeroDivisionError and negative
+        # values invert the distribution. Clamp to a small positive value, which
+        # approaches greedy decoding.
+        temperature = max(float(temperature), 1e-5)
         for _ in range(max_new_tokens):
             idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
             logits, _ = self(idx_cond)

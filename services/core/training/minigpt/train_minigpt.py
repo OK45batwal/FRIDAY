@@ -1,6 +1,7 @@
 import os
 import time
 import torch
+from dataclasses import asdict
 from pathlib import Path
 from services.core.training.minigpt.data_cleaner import DataCleaner
 from services.core.training.minigpt.tokenizer import MiniTokenizer
@@ -89,13 +90,24 @@ def train_minigpt_model(
         optimizer.step()
 
         if iter_step % 10 == 0 or iter_step == epochs:
-            print(f"  Step {iter_step:03d}/{epochs} | Loss: {loss.item():.4f}")
+            # Report validation loss too. val_data was computed and then never
+            # used, so there was no signal at all about overfitting — train loss
+            # alone will fall happily while the model memorises the corpus.
+            model.eval()
+            with torch.no_grad():
+                vxb, vyb = get_batch('val')
+                _, val_loss = model(vxb, vyb)
+            model.train()
+            print(f"  Step {iter_step:03d}/{epochs} | train {loss.item():.4f} | val {val_loss.item():.4f}")
 
     # 5. Save Checkpoint
     checkpoint_path = CHECKPOINT_DIR / "minigpt_v0_1_model.pt"
     torch.save({
         "model_state_dict": model.state_dict(),
-        "config": config,
+        # asdict, not the dataclass instance: the loader uses
+        # torch.load(weights_only=True) so that a checkpoint file cannot execute
+        # code, and that unpickler only accepts plain types.
+        "config": asdict(config),
         "vocab_size": tokenizer.vocab_size
     }, checkpoint_path)
 
