@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-const getBaseUrl = () => {
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return (import.meta as any).env?.VITE_API_URL || `http://${host || 'localhost'}:8000`;
-};
+import { getBaseUrl, getToken } from '../services/api';
 
 export const useVoice = (onTranscript: (transcript: string) => void) => {
   const [isListening, setIsListening] = useState(false);
@@ -23,6 +19,7 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const currentBlobUrlRef = useRef<string | null>(null);
 
   // Initialize Audio Player & Global User Interaction Unlock
   useEffect(() => {
@@ -52,6 +49,18 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('keydown', unlockAudio);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      // Stop recognition on unmount. It was left running, so the microphone
+      // indicator stayed on and the recogniser kept firing onresult into a
+      // callback belonging to an unmounted component.
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch { /* already stopped */ }
+        recognitionRef.current = null;
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (currentBlobUrlRef.current) {
+        URL.revokeObjectURL(currentBlobUrlRef.current);
+        currentBlobUrlRef.current = null;
+      }
       stopAcousticAnalyser();
     };
   }, []);
@@ -137,7 +146,10 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     try {
       const response = await fetch(`${getBaseUrl()}/api/voice/speak`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getToken() ? { 'X-FRIDAY-Token': getToken() } : {})
+        },
         body: JSON.stringify({ text: cleanText, voice: selectedVoiceName })
       });
 
@@ -146,10 +158,18 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
         if (blob.size > 200) {
           const blobUrl = URL.createObjectURL(blob);
           if (audioPlayerRef.current) {
+            // Release the previous clip's blob. Each TTS chunk allocated a blob
+            // URL that was never revoked, so a long session leaked the entire
+            // synthesized audio history for the lifetime of the window.
+            const previous = currentBlobUrlRef.current;
+            if (previous) URL.revokeObjectURL(previous);
+            currentBlobUrlRef.current = blobUrl;
+
             audioPlayerRef.current.src = blobUrl;
             await audioPlayerRef.current.play();
             return;
           }
+          URL.revokeObjectURL(blobUrl);
         }
       }
     } catch (err) {

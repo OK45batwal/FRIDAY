@@ -6,11 +6,10 @@ import type { Message } from '../../types';
 
 interface MessageItemProps {
   message: Message;
-  previousUserMessage?: string;
   onSpeak: (text: string) => void;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserMessage, onSpeak }) => {
+export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) => {
   const [copied, setCopied] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(null);
@@ -33,11 +32,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, previousUserM
 
   const handleFeedback = async (type: 'like' | 'dislike') => {
     if (feedbackState === type) return;
-    setFeedbackState(type);
 
-    const promptText = previousUserMessage || "User Query";
+    // Feedback references the stored message by id. Optimistic temp ids from the
+    // streaming path (asst_/user_ prefixes) are not real rows yet, so there is
+    // nothing on the server to rate.
+    if (!message.id || message.id.startsWith('asst_') || message.id.startsWith('user_')) {
+      setFeedbackNotice("Still saving — try again in a moment.");
+      setTimeout(() => setFeedbackNotice(null), 3000);
+      return;
+    }
+
+    setFeedbackState(type);
     try {
-      await api.sendFeedback(promptText, message.content, type);
+      await api.sendFeedback(message.id, type);
       if (type === 'like') {
         setFeedbackNotice("Learned! Policy updated.");
       } else {

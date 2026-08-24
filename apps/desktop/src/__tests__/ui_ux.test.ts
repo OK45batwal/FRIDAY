@@ -1,63 +1,116 @@
 import { describe, test, expect } from 'vitest';
-import type { AssistantState, Message, SystemTelemetry } from '../types';
+import { SSEParser, splitSentence, sanitizeBaseUrl } from '../services/stream';
 
-describe('Google Assistant & Cyber UI/UX System', () => {
-  test('Assistant state machine transitions', () => {
-    const states: AssistantState[] = ['IDLE', 'LISTENING', 'THINKING', 'SPEAKING', 'PROCESSING', 'ERROR', 'OFFLINE'];
-    expect(states).toContain('LISTENING');
-    expect(states).toContain('THINKING');
-    expect(states).toContain('SPEAKING');
+// These exercise the actual shipped parsing/validation used by useFriday and
+// api.ts. The previous version of this file imported only type declarations, so
+// it asserted on literals defined inside the test and could not fail for any
+// change to real behaviour.
+
+describe('SSEParser', () => {
+  test('parses whole frames in one chunk', () => {
+    const p = new SSEParser();
+    const events = p.push('data: {"type":"token","content":"Hi"}\n');
+    expect(events).toEqual([{ type: 'token', content: 'Hi' }]);
   });
 
-  test('Voice and Text message structures', () => {
-    const voiceMsg: Message = {
-      id: 'msg-01',
-      conversation_id: 'conv-01',
-      role: 'user',
-      content: "Hey FRIDAY, what's the weather?",
-      input_type: 'voice',
-      created_at: new Date().toISOString()
-    };
-
-    expect(voiceMsg.input_type).toBe('voice');
-    expect(voiceMsg.role).toBe('user');
+  test('parses multiple frames in one chunk', () => {
+    const p = new SSEParser();
+    const events = p.push(
+      'data: {"type":"token","content":"a"}\n\ndata: {"type":"token","content":"b"}\n\n'
+    );
+    expect(events.map((e: any) => e.content)).toEqual(['a', 'b']);
   });
 
-  test('Wake word keywords validation', () => {
-    const wakePhrases = ['hey friday', 'friday', 'hi friday', 'ok friday', 'hello friday'];
-    const testInput = 'hey friday what is python';
-    const hasWakeWord = wakePhrases.some(p => testInput.includes(p));
-    expect(hasWakeWord).toBe(true);
+  test('REGRESSION: a frame split mid-JSON across reads is not lost', () => {
+    const p = new SSEParser();
+    // First read ends in the middle of the JSON payload.
+    expect(p.push('data: {"type":"token","cont')).toEqual([]);
+    // Second read completes it. The old per-chunk parser dropped this entirely.
+    expect(p.push('ent":"world"}\n')).toEqual([{ type: 'token', content: 'world' }]);
   });
 
-  test('Telemetry data validation', () => {
-    const sampleTelemetry: SystemTelemetry = {
-      cpu_usage_percent: 18.2,
-      memory_usage_percent: 42.1,
-      memory_used_gb: 6.7,
-      memory_total_gb: 16.0,
-      battery: {
-        percent: 88,
-        power_plugged: true
-      },
-      current_time: '2026-08-22 13:00:00'
-    };
-
-    expect(sampleTelemetry.cpu_usage_percent).toBeGreaterThan(0);
-    expect(sampleTelemetry.battery.percent).toBe(88);
+  test('REGRESSION: a frame split byte-by-byte still arrives intact', () => {
+    const p = new SSEParser();
+    const frame = 'data: {"type":"token","content":"xyz"}\n';
+    const collected: any[] = [];
+    for (const ch of frame) collected.push(...p.push(ch));
+    expect(collected).toEqual([{ type: 'token', content: 'xyz' }]);
   });
 
-  test('Dark and Light theme mode validation', () => {
-    const supportedThemes = ['dark', 'light'];
-    expect(supportedThemes).toContain('dark');
-    expect(supportedThemes).toContain('light');
+  test('reassembles a full response across arbitrary chunk boundaries', () => {
+    const frames =
+      'data: {"type":"token","content":"Hello "}\n' +
+      'data: {"type":"token","content":"world"}\n' +
+      'data: {"type":"done","message_id":"m1","full_response":"Hello world"}\n';
+    // Split at every possible point; the result must be identical each time.
+    for (let cut = 1; cut < frames.length; cut++) {
+      const p = new SSEParser();
+      const events = [...p.push(frames.slice(0, cut)), ...p.push(frames.slice(cut))];
+      const tokens = events.filter((e: any) => e.type === 'token').map((e: any) => e.content);
+      const done = events.find((e: any) => e.type === 'done') as any;
+      expect(tokens.join('')).toBe('Hello world');
+      expect(done?.message_id).toBe('m1');
+    }
   });
 
-  test('Multi-platform compatibility configuration', () => {
-    const platforms = ['macOS', 'Android', 'Windows'];
-    expect(platforms).toHaveLength(3);
-    expect(platforms).toContain('Android');
-    expect(platforms).toContain('macOS');
-    expect(platforms).toContain('Windows');
+  test('skips malformed frames without dropping valid ones', () => {
+    const p = new SSEParser();
+    const events = p.push('data: {broken\ndata: {"type":"token","content":"ok"}\n');
+    expect(events).toEqual([{ type: 'token', content: 'ok' }]);
+  });
+
+  test('ignores non-data lines such as SSE comments', () => {
+    const p = new SSEParser();
+    expect(p.push(': keepalive\n\nevent: ping\n')).toEqual([]);
+  });
+});
+
+describe('splitSentence', () => {
+  test('splits at a sentence boundary past the minimum length', () => {
+    expect(splitSentence('This is a full sentence. And more')).toEqual({
+      sentence: 'This is a full sentence.',
+      rest: 'And more',
+    });
+  });
+
+  test('does not split a short fragment', () => {
+    expect(splitSentence('Hi. ok')).toBeNull();
+  });
+
+  test('returns null when no boundary is present', () => {
+    expect(splitSentence('an incomplete clause with no terminator')).toBeNull();
+  });
+
+  test('handles question and exclamation marks', () => {
+    expect(splitSentence('Is this working correctly? yes')?.sentence).toBe(
+      'Is this working correctly?'
+    );
+    expect(splitSentence('That is remarkable! indeed')?.sentence).toBe('That is remarkable!');
+  });
+});
+
+describe('sanitizeBaseUrl', () => {
+  test('accepts http and https', () => {
+    expect(sanitizeBaseUrl('http://localhost:8000')).toBe('http://localhost:8000');
+    expect(sanitizeBaseUrl('https://api.example.com')).toBe('https://api.example.com');
+  });
+
+  test('strips trailing slashes', () => {
+    expect(sanitizeBaseUrl('http://localhost:8000///')).toBe('http://localhost:8000');
+  });
+
+  test('rejects non-http schemes', () => {
+    // The important cases: these would otherwise be concatenated into fetch URLs.
+    expect(sanitizeBaseUrl('javascript:alert(1)')).toBeNull();
+    expect(sanitizeBaseUrl('file:///etc/passwd')).toBeNull();
+    expect(sanitizeBaseUrl('data:text/html,<script>')).toBeNull();
+  });
+
+  test('rejects garbage and empty values', () => {
+    expect(sanitizeBaseUrl('not a url')).toBeNull();
+    expect(sanitizeBaseUrl('')).toBeNull();
+    expect(sanitizeBaseUrl('   ')).toBeNull();
+    expect(sanitizeBaseUrl(null)).toBeNull();
+    expect(sanitizeBaseUrl(undefined)).toBeNull();
   });
 });

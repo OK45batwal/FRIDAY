@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Conversation, Message, AssistantState, SystemTelemetry } from '../types';
-import { api, getBaseUrl } from '../services/api';
+import { api, getBaseUrl, getToken } from '../services/api';
 import { socketService } from '../services/websocket';
+import { SSEParser, splitSentence } from '../services/stream';
 
 export const useFriday = (
   onMessageComplete?: (content: string) => void,
@@ -105,7 +106,7 @@ export const useFriday = (
       // ChatGPT / Gemini style Token Streaming with Sub-250ms Sentence Boundaries
       const res = await fetch(`${getBaseUrl()}/api/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(getToken() ? { 'X-FRIDAY-Token': getToken() } : {}) },
         body: JSON.stringify({
           conversation_id: convId,
           message: content,
@@ -120,6 +121,12 @@ export const useFriday = (
       const decoder = new TextDecoder('utf-8');
       let accumulatedText = '';
       let unspokenBuffer = '';
+      // SSEParser holds any incomplete trailing line between reads. A network
+      // chunk can split an SSE frame anywhere — including mid-JSON — and the
+      // previous code parsed each chunk in isolation, so a split frame was
+      // silently dropped and its tokens lost from the response.
+      const parser = new SSEParser();
+      let streamCompleted = false;
 
       if (reader) {
         setState('SPEAKING');
@@ -127,56 +134,46 @@ export const useFriday = (
         while (!done) {
           const { value, done: streamDone } = await reader.read();
           done = streamDone;
-          if (value) {
-            const rawChunk = decoder.decode(value, { stream: true });
-            const lines = rawChunk.split('\n');
+          if (!value) continue;
 
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const event = JSON.parse(line.slice(6));
-                  if (event.type === 'token') {
-                    accumulatedText += event.content;
-                    unspokenBuffer += event.content;
+          for (const event of parser.push(decoder.decode(value, { stream: true }))) {
+            if (event.type === 'token') {
+              accumulatedText += (event as any).content;
+              unspokenBuffer += (event as any).content;
 
-                    // Sentence boundary split for <250ms Time-To-First-Audio (TTFA)
-                    const sentenceMatch = unspokenBuffer.match(/^(.*?[.!?\n])\s+(.*)$/s);
-                    if (sentenceMatch && sentenceMatch[1].trim().length > 10) {
-                      const completeSentence = sentenceMatch[1].trim();
-                      unspokenBuffer = sentenceMatch[2] || '';
-                      onSentenceChunk?.(completeSentence);
-                    }
+              // Sentence boundary split for <250ms Time-To-First-Audio (TTFA)
+              const split = splitSentence(unspokenBuffer);
+              if (split) {
+                unspokenBuffer = split.rest;
+                onSentenceChunk?.(split.sentence);
+              }
 
-                    setMessages(prev =>
-                      prev.map(m =>
-                        m.id === tempAssistantMsgId
-                          ? { ...m, content: accumulatedText }
-                          : m
-                      )
-                    );
-                  } else if (event.type === 'done') {
-                    const finalReply = event.full_response || accumulatedText;
-                    
-                    // Dispatch any remaining unspoken tail
-                    if (unspokenBuffer.trim().length > 0) {
-                      onSentenceChunk?.(unspokenBuffer.trim());
-                      unspokenBuffer = '';
-                    }
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === tempAssistantMsgId
+                    ? { ...m, content: accumulatedText }
+                    : m
+                )
+              );
+            } else if (event.type === 'done') {
+              streamCompleted = true;
+              const finalReply = (event as any).full_response || accumulatedText;
 
-                    setMessages(prev =>
-                      prev.map(m =>
-                        m.id === tempAssistantMsgId
-                          ? { ...m, content: finalReply, id: event.message_id || tempAssistantMsgId }
-                          : m
-                      )
-                    );
-                    if (finalReply) {
-                      onMessageComplete?.(finalReply);
-                    }
-                  }
-                } catch {
-                  // Non-JSON line
-                }
+              // Dispatch any remaining unspoken tail
+              if (unspokenBuffer.trim().length > 0) {
+                onSentenceChunk?.(unspokenBuffer.trim());
+                unspokenBuffer = '';
+              }
+
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === tempAssistantMsgId
+                    ? { ...m, content: finalReply, id: (event as any).message_id || tempAssistantMsgId }
+                    : m
+                )
+              );
+              if (finalReply) {
+                onMessageComplete?.(finalReply);
               }
             }
           }
@@ -184,6 +181,12 @@ export const useFriday = (
       }
 
       setState('IDLE');
+      // The server already persisted this turn. Only retry over REST if the
+      // stream produced nothing at all — otherwise the REST call would run the
+      // whole request a second time and store a duplicate exchange.
+      if (!streamCompleted && !accumulatedText) {
+        throw new Error('Stream closed without producing a response');
+      }
       loadConversations();
     } catch (err) {
       console.warn("SSE Stream fallback, invoking standard REST:", err);

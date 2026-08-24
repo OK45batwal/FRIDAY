@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content Security Policy. There was none, so any injected markup could load
+      remote scripts or exfiltrate to an arbitrary host. This restricts scripts
+      to the app's own bundle, permits the localhost API/WebSocket and the Google
+      Fonts already used below, and blocks plugins and framing outright.
+      'unsafe-inline' for styles is required by the app's inline style props;
+      scripts are NOT allowed inline.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src 'self' https://fonts.gstatic.com;
+               img-src 'self' data: blob:;
+               media-src 'self' blob:;
+               connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 ws://localhost:8000 ws://127.0.0.1:8000 http://localhost:5173 ws://localhost:5173;
+               object-src 'none';
+               frame-ancestors 'none';
+               base-uri 'self';
+               form-action 'self'" />
     <title>FRIDAY — AI Operating Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

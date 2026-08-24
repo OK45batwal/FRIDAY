@@ -1,10 +1,13 @@
 import type { AssistantState, SystemTelemetry } from '../types';
-import { getBaseUrl } from './api';
+import { getBaseUrl, getToken } from './api';
 
 type MessageHandler = (data: any) => void;
 type StateHandler = (state: AssistantState) => void;
 type TelemetryHandler = (data: SystemTelemetry) => void;
 type ConnectionHandler = (connected: boolean) => void;
+
+const BASE_RECONNECT_MS = 2500;
+const MAX_RECONNECT_MS = 30000;
 
 export class WebSocketService {
   private socket: WebSocket | null = null;
@@ -13,8 +16,13 @@ export class WebSocketService {
   private onStateChange: StateHandler | null = null;
   private onTelemetry: TelemetryHandler | null = null;
   private onConnectionChange: ConnectionHandler | null = null;
-  private reconnectInterval: number = 2500;
   private reconnectTimeout: any = null;
+  // Exponential backoff with a ceiling. A fixed 2.5s retry hammered an
+  // unreachable backend forever; attempts now back off to at most 30s.
+  private reconnectAttempts: number = 0;
+  // Set when disconnect() is called so an intentional close does not immediately
+  // schedule a reconnect.
+  private manualClose: boolean = false;
 
   connect(handlers: {
     onMessageResponse?: MessageHandler;
@@ -28,17 +36,22 @@ export class WebSocketService {
     this.onStateChange = handlers.onStateChange || null;
     this.onTelemetry = handlers.onTelemetry || null;
     this.onConnectionChange = handlers.onConnectionChange || null;
+    this.manualClose = false;
 
     this.isConnecting = true;
     const httpUrl = getBaseUrl();
-    const wsUrl = `${httpUrl.replace(/^http/, 'ws')}/ws`;
+    // The WS handshake carries no Origin for native clients, so authenticate
+    // with the token as a query param (browsers cannot set WS headers).
+    const token = getToken();
+    const wsBase = `${httpUrl.replace(/^http/, 'ws')}/ws`;
+    const wsUrl = token ? `${wsBase}?token=${encodeURIComponent(token)}` : wsBase;
 
     try {
       this.socket = new WebSocket(wsUrl);
 
-
       this.socket.onopen = () => {
         this.isConnecting = false;
+        this.reconnectAttempts = 0;
         this.onConnectionChange?.(true);
         if (this.reconnectTimeout) {
           clearTimeout(this.reconnectTimeout);
@@ -49,7 +62,7 @@ export class WebSocketService {
       this.socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
+
           if (data.type === 'assistant_response' || data.type === 'chat_response') {
             const payload = data.data ? { ...data.data, ...data } : data;
             this.onMessageResponse?.(payload);
@@ -66,31 +79,37 @@ export class WebSocketService {
       this.socket.onclose = () => {
         this.isConnecting = false;
         this.onConnectionChange?.(false);
-        this.scheduleReconnect();
+        if (!this.manualClose) this.scheduleReconnect();
       };
 
       this.socket.onerror = () => {
         this.isConnecting = false;
         this.onConnectionChange?.(false);
+        // Do not schedule here: onerror is always followed by onclose, and
+        // scheduling in both produced two overlapping reconnect timers.
       };
     } catch (err) {
       this.isConnecting = false;
-      this.scheduleReconnect();
+      if (!this.manualClose) this.scheduleReconnect();
     }
   }
 
   private scheduleReconnect() {
-    if (!this.reconnectTimeout) {
-      this.reconnectTimeout = setTimeout(() => {
-        this.reconnectTimeout = null;
-        this.connect({
-          onMessageResponse: this.onMessageResponse || undefined,
-          onStateChange: this.onStateChange || undefined,
-          onTelemetry: this.onTelemetry || undefined,
-          onConnectionChange: this.onConnectionChange || undefined
-        });
-      }, this.reconnectInterval);
-    }
+    if (this.reconnectTimeout) return;
+    const delay = Math.min(
+      BASE_RECONNECT_MS * 2 ** this.reconnectAttempts,
+      MAX_RECONNECT_MS
+    );
+    this.reconnectAttempts += 1;
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.connect({
+        onMessageResponse: this.onMessageResponse || undefined,
+        onStateChange: this.onStateChange || undefined,
+        onTelemetry: this.onTelemetry || undefined,
+        onConnectionChange: this.onConnectionChange || undefined
+      });
+    }, delay);
   }
 
   sendChatMessage(conversationId: string, message: string, inputType: string = 'text', agentMode: string = 'general'): boolean {
@@ -108,10 +127,19 @@ export class WebSocketService {
   }
 
   disconnect() {
+    this.manualClose = true;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
     }
+    this.reconnectAttempts = 0;
     if (this.socket) {
+      // Drop handlers before close so the onclose above does not fire a
+      // reconnect or a spurious disconnected event after teardown.
+      this.socket.onclose = null;
+      this.socket.onerror = null;
+      this.socket.onmessage = null;
+      this.socket.onopen = null;
       this.socket.close();
       this.socket = null;
     }
@@ -120,3 +148,4 @@ export class WebSocketService {
 }
 
 export const socketService = new WebSocketService();
+
