@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Volume2, User, Sparkles, Mic, Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { SmartCard } from './SmartCard';
+import { MarkdownContent } from './MarkdownContent';
 import { api } from '../../services/api';
 import type { Message } from '../../types';
 
@@ -126,9 +127,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) =>
         </div>
 
         {/* Message Content */}
-        <div style={{ fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
+        <div>
           {message.content ? (
-            message.content
+            <MarkdownContent content={message.content} />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-rose)', fontSize: '13px', padding: '4px 0' }}>
               <span className="audio-bar" style={{ background: 'var(--accent-rose)', height: '8px', animation: 'wave 0.6s infinite alternate' }} />
@@ -141,6 +142,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onSpeak }) =>
 
         {/* Smart Response Card */}
         {!isUser && message.content && message.content.length > 5 && <SmartCard content={message.content} />}
+
 
         {/* Footer Actions */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>

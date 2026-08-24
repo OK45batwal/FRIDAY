@@ -26,15 +26,22 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
 }) => {
   const [text, setText] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!text.trim()) return;
     onSendMessage(text.trim(), 'text', selectedAgent);
     setText('');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
-    <div style={{ width: '100%', maxWidth: '860px', margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: '860px', margin: '0 auto', padding: '0 12px' }}>
       {/* Live Acoustic Audio Orb Visualizer */}
       <VoiceVisualizer
         isListening={isListening}
@@ -47,14 +54,15 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
         className="input-dock"
         style={{
           border: isListening ? '1px solid var(--accent-rose)' : '1px solid var(--border-subtle)',
-          boxShadow: isListening ? '0 0 25px rgba(244, 63, 94, 0.25)' : 'var(--card-shadow)',
-          padding: '12px 18px',
+          boxShadow: isListening ? '0 0 25px rgba(244, 63, 94, 0.3)' : 'var(--card-shadow)',
+          padding: '10px 16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px'
+          gap: '6px',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
           {/* Neural AI Icon */}
           <div style={{ color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', opacity: 0.9 }}>
             <Sparkles size={18} />
@@ -65,7 +73,12 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={isListening ? "Listening to your voice (Zero-Click VAD)..." : "Ask FRIDAY anything, write code, run math, or control your Mac..."}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isListening
+                ? "Listening (Zero-Click VAD)..."
+                : "Ask FRIDAY anything, generate code, solve calculus, or control your OS..."
+            }
             style={{
               flex: 1,
               background: 'transparent',
@@ -73,12 +86,13 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
               color: 'var(--text-primary)',
               fontSize: '14px',
               outline: 'none',
-              fontFamily: 'inherit'
+              fontFamily: 'inherit',
+              minWidth: 0
             }}
           />
 
           {/* Right Controls: Hands-Free Toggle, STT Mic & Send */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Hands-Free Mode Toggle */}
             {onToggleHandsFree && (
               <button
@@ -87,8 +101,8 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                 className="btn-action-icon"
                 style={{
                   color: isHandsFree ? '#ffffff' : 'var(--text-muted)',
-                  background: isHandsFree ? 'var(--accent-emerald)' : 'transparent',
-                  border: '1px solid var(--border-subtle)',
+                  background: isHandsFree ? 'var(--accent-emerald)' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${isHandsFree ? 'var(--accent-emerald)' : 'var(--border-subtle)'}`,
                   borderRadius: '9999px',
                   padding: '6px 10px',
                   fontSize: '11px',
@@ -99,7 +113,7 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                 title={isHandsFree ? "Hands-Free Auto Turn-Taking Active" : "Enable Hands-Free Continuous Voice Mode"}
               >
                 <Zap size={12} color={isHandsFree ? '#ffffff' : 'var(--text-muted)'} />
-                <span>{isHandsFree ? 'Hands-Free' : 'Hands-Free'}</span>
+                <span className="dock-btn-label">{isHandsFree ? 'Hands-Free' : 'Hands-Free'}</span>
               </button>
             )}
 
@@ -114,7 +128,7 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
               {isListening ? (
                 <>
                   <MicOff size={14} />
-                  <span>LISTENING...</span>
+                  <span>LISTENING</span>
                 </>
               ) : (
                 <>
@@ -138,8 +152,11 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
                   justifyContent: 'center',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)'
+                  boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)',
+                  transition: 'transform 0.15s ease'
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
                 <Send size={14} />
               </button>
@@ -150,3 +167,4 @@ export const FloatingInputDock: React.FC<FloatingInputDockProps> = ({
     </div>
   );
 };
+
