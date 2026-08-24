@@ -34,12 +34,15 @@ async def health_check():
 @router.get("/api/models")
 async def get_available_models():
     """Returns available local and cloud models."""
+    # Honest defaults matching the actually-exported model. The hardcoded
+    # "1.1 Billion Parameters / Q4_K_M / 780MB" was wrong on every count — the
+    # base is Qwen2.5-0.5B and the real GGUF is q8_0 (~531MB). The manifest on
+    # disk overrides these when present.
     custom_slm_info = {
         "model_id": "friday-1.0",
         "name": "FRIDAY 1.0",
-        "parameters": "1.1 Billion Parameters (1.1B)",
-        "quantization": "Q4_K_M (4-bit)",
-        "ram_required_mb": 780,
+        "parameters": "0.5B (494M)",
+        "quantization": "q8_0",
         "format": "GGUF",
         "status": "active_primary"
     }

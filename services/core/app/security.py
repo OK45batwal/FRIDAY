@@ -45,13 +45,16 @@ TOKEN_QUERY_PARAM = "token"
 # the client's connectivity check; downloads are plain static release binaries
 # with hardcoded filenames and are meant to be clickable links.
 PUBLIC_PATH_PREFIXES: tuple[str, ...] = (
+    "/health",
     "/api/health",
+    "/api/models",
     "/api/model/info",
     "/api/download",
     "/docs",
     "/redoc",
     "/openapi.json",
 )
+
 
 _CACHED_TOKEN: str | None = None
 

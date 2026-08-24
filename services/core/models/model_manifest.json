@@ -1,20 +1,13 @@
 {
-  "model_id": "friday-1.0",
-  "name": "FRIDAY 1.0",
-  "parameters": "1.1 Billion Parameters (1.1B)",
-  "quantization": "Q4_K_M (4-bit Linear Quantization)",
-  "ram_required_mb": 780,
+  "model_id": "friday-1.0-q8_0",
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "source_adapter": "friday_1_0_dpo_aligned",
+  "parameters": "0.5B (494M)",
   "format": "GGUF",
-  "target_platforms": [
-    "macOS (Apple Silicon Metal GPU)",
-    "Android (ARM64 / ExecuTorch)"
-  ],
-  "domains": [
-    "Desktop OS Automation (Spotify, VS Code, Terminal, Telemetry)",
-    "Full-Stack Software Architecture (Python, FastAPI, React, TypeScript, SQL)",
-    "Indian English Conversational Cadence (Tara / Neerja)"
-  ],
-  "context_length": "4,096 tokens",
-  "created_at": "2026-08-22 13:33:00",
-  "status": "active_primary"
+  "quantization": "q8_0",
+  "gguf_file": "friday-1.0-q8_0.gguf",
+  "gguf_bytes": 531067712,
+  "runtime": "llama.cpp / Ollama",
+  "status": "gguf_exported",
+  "created_at": "2026-08-24 21:23:18"
 }
