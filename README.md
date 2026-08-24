@@ -7,9 +7,9 @@
 # FRIDAY 1.0
 ### Private On-Device Neural Intelligence • Cyber Voice HUD • Multi-Platform
 
-[![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/tag/v0.1.0)
-[![Mac DMG](https://img.shields.io/badge/macOS-Direct%20DMG%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg)
-[![Android APK](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk)
+[![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/latest)
+[![Mac DMG](https://img.shields.io/badge/macOS-Direct%20DMG%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/latest)
+[![Android APK](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **FRIDAY** is a lightweight, low-latency AI Operating Assistant built for **macOS**, **Android**, and **Windows**. It combines an on-device fine-tuned neural model (<380MB RAM footprint) with autonomous OS agent tools and a real-time speech HUD.
@@ -27,8 +27,9 @@ Clicking any button below starts the download immediately:
 | 🍏 macOS Desktop | 📱 Android Mobile | 🪟 Windows Desktop |
 |:---:|:---:|:---:|
 | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/public/favicon.svg" width="52" height="52" /><br>**macOS DMG** | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="52" height="52" /><br>**Android APK** | 🪟<br>**Windows Client** |
-| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download (Windows)**](https://github.com/OK45batwal/FRIDAY/releases/latest) |
-| *Standalone Apple Disk Image (123 MB)* | *Direct Android Package (4.1 MB)* | *Windows Installer / Portable Package* |
+| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download (Windows)**](https://github.com/OK45batwal/FRIDAY/releases/latest) |
+| *Self-Contained Installer (macOS)* | *Direct Android Package (APK)* | *Windows NSIS / Portable Package* |
+
 
 
 </div>

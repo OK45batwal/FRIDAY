@@ -1,8 +1,9 @@
 {
   "name": "friday-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
+
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite --host",

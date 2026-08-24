@@ -15,8 +15,9 @@ function readTokenArg(): string {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
-  version: '0.1.0',
+  version: '1.0.0',
   // A packaged renderer loads over file:// and so has no allowlisted Origin;
   // this token is how it authenticates to the local API instead.
   apiToken: readTokenArg()
 });
+
