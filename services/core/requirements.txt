@@ -1,13 +1,23 @@
-fastapi>=0.100.0
-uvicorn[standard]>=0.22.0
-websockets>=11.0.3
-pydantic>=2.0.0
-psutil>=5.9.5
-httpx>=0.24.1
-python-dotenv>=1.0.0
-sqlalchemy>=2.0.0
-aiosqlite>=0.19.0
-greenlet>=3.0.0
-python-multipart>=0.0.6
+# FRIDAY Core — runtime dependencies (API server).
+#
+# Pinned with compatible-release (~=) operators: patch/minor updates are allowed,
+# but a major bump that could break the API is not pulled in silently on a fresh
+# `pip install`. The previous file used only `>=`, so two installs weeks apart
+# could resolve to different, incompatible majors.
+#
+# Training/fine-tuning dependencies (torch, transformers, peft, datasets, trl)
+# are NOT here — they are heavy and only needed to (re)build the model. See
+# requirements-training.txt. The server runs without them; the local neural
+# engine degrades gracefully when torch is absent.
 
-
+fastapi~=0.141.1
+uvicorn[standard]~=0.52.4
+websockets~=17.0.1
+pydantic~=2.13.4
+psutil~=7.2.2
+httpx~=0.28.1
+python-dotenv~=1.2.3
+sqlalchemy~=2.0.52
+aiosqlite~=0.22.1
+greenlet~=3.5.5
+python-multipart~=0.0.32

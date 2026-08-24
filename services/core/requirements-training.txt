@@ -1,0 +1,26 @@
+# FRIDAY Core — training / fine-tuning dependencies.
+#
+# These were imported by services/core/training/**, services/core/training/minigpt/**
+# and core/ai/providers/local_llm_engine.py but declared NOWHERE, so a fresh
+# clone could not run any of the training or local-inference code — the imports
+# failed and the engine silently fell back to canned responses.
+#
+# Install on top of requirements.txt:
+#   pip install -r requirements.txt -r requirements-training.txt
+#
+# torch on Apple Silicon uses the MPS backend from the default wheel; no extra
+# index URL is needed. For CUDA, install torch separately per pytorch.org.
+
+torch~=2.13.0
+transformers~=5.15.1
+peft~=0.20.0
+datasets~=5.0.1
+trl~=1.10.0
+accelerate~=1.14.0
+safetensors~=0.8.0
+sentencepiece~=0.2.2
+protobuf~=7.36.0
+
+# GGUF writing for export_gguf.py. The llama.cpp conversion script also needs
+# this; see docs in services/core/training/export_gguf.py.
+gguf~=0.19.0
