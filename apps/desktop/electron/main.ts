@@ -116,10 +116,10 @@ function readApiToken(): string {
     return '';
   }
 }
-
-
 function createWindow() {
   const apiToken = readApiToken();
+  const iconPath = path.join(__dirname, '../public/icon.png');
+
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -127,6 +127,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 680,
     title: 'FRIDAY — AI Operating Assistant',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     backgroundColor: '#060913',
     // Native macOS Glassmorphism & Frameless Traffic Lights
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
@@ -134,6 +135,7 @@ function createWindow() {
     vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
     visualEffectState: 'active',
     show: false,
+
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

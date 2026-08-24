@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Search Conversations Input */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <Search size={14} color="#64748b" style={{ position: 'absolute', left: '12px' }} />
+        <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '12px' }} />
         <input
           type="text"
           value={search}
@@ -73,23 +73,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: '100%',
             padding: '8px 12px 8px 32px',
             borderRadius: '10px',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
             fontSize: '12px',
-            outline: 'none'
+            outline: 'none',
+            fontFamily: 'inherit'
           }}
         />
       </div>
 
-      <div style={{ fontSize: '11px', fontFamily: 'Orbitron, sans-serif', color: '#94a3b8', marginTop: '4px', letterSpacing: '1px' }}>
+      <div style={{ fontSize: '11px', fontFamily: 'var(--font-display)', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '1px' }}>
         SAVED SESSIONS ({filtered.length})
       </div>
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {filtered.length === 0 ? (
-          <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>
             No matching sessions
           </div>
         ) : (
@@ -101,9 +102,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                   padding: '10px 12px',
                   borderRadius: '10px',
-                  background: isActive ? 'rgba(239, 68, 68, 0.22)' : 'rgba(255, 255, 255, 0.03)',
-                  border: isActive ? '1px solid rgba(239, 68, 68, 0.55)' : '1px solid transparent',
-                  color: isActive ? '#ffffff' : '#94a3b8',
+                  background: isActive ? 'rgba(244, 63, 94, 0.18)' : 'var(--bg-card)',
+                  border: isActive ? '1px solid var(--accent-rose)' : '1px solid var(--border-subtle)',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   fontSize: '13px',
                   display: 'flex',
@@ -117,14 +118,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectConversation(c.id)}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}
                 >
-                  <MessageSquare size={14} color={isActive ? '#ef4444' : '#64748b'} style={{ flexShrink: 0 }} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isActive ? 600 : 400 }}>
+                  <MessageSquare size={14} color={isActive ? 'var(--accent-rose)' : 'var(--text-muted)'} style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isActive ? 700 : 400 }}>
                     {c.title || 'Conversation'}
                   </span>
                 </div>
 
                 {c.message_count ? (
-                  <span style={{ fontSize: '10px', background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '10px', background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px' }}>
                     {c.message_count}
                   </span>
                 ) : null}
@@ -147,3 +148,4 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </aside>
   );
 };
+
