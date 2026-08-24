@@ -5,10 +5,11 @@ import psutil
 import datetime
 import subprocess
 import urllib.parse
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from pathlib import Path
+from services.core.app.config import settings
 
-WORKSPACE_ROOT = Path("/Users/omkar/FRIDAY").resolve()
+WORKSPACE_ROOT = settings.PROJECT_ROOT.resolve()
 
 class AgentToolRegistry:
     """
@@ -16,7 +17,7 @@ class AgentToolRegistry:
     Capabilities:
     1. System Telemetry & Mac Diagnostics
     2. Web Search & Browser Navigation
-    3. File System Management (Read, Write, List, Search)
+    3. File System Management (Read, Write, List, Search - Sandbox Protected)
     4. macOS Reminders & Calendar Management (via AppleScript)
     5. Desktop App Launching
     """
@@ -78,11 +79,24 @@ class AgentToolRegistry:
         except Exception as e:
             return {"status": "failed", "error": str(e)}
 
-    # ---------------- 3. File System Management ----------------
+    # ---------------- 3. File System Management (Sandbox Enforced) ----------------
+    @staticmethod
+    def _is_safe_workspace_path(target_path: Path) -> bool:
+        """Ensures the resolved path is strictly contained within the workspace root sandbox."""
+        try:
+            target_path.resolve().relative_to(WORKSPACE_ROOT)
+            return True
+        except ValueError:
+            return False
+
     @staticmethod
     def list_directory_contents(target_dir: str = ".") -> Dict[str, Any]:
-        """Lists files and folders inside a given workspace directory."""
+        """Lists files and folders inside a given workspace directory safely."""
         path = (WORKSPACE_ROOT / target_dir).resolve() if not os.path.isabs(target_dir) else Path(target_dir).resolve()
+        
+        if not AgentToolRegistry._is_safe_workspace_path(path):
+            return {"status": "error", "message": "Access denied: Target path is outside workspace sandbox."}
+
         if not path.exists() or not path.is_dir():
             return {"status": "error", "message": f"Directory '{target_dir}' does not exist."}
 
@@ -102,8 +116,12 @@ class AgentToolRegistry:
 
     @staticmethod
     def read_file_snippet(file_path: str, max_lines: int = 100) -> Dict[str, Any]:
-        """Reads content from a text file within workspace."""
+        """Reads content from a text file within workspace safely."""
         path = (WORKSPACE_ROOT / file_path).resolve() if not os.path.isabs(file_path) else Path(file_path).resolve()
+        
+        if not AgentToolRegistry._is_safe_workspace_path(path):
+            return {"status": "error", "message": "Access denied: Target file is outside workspace sandbox."}
+
         if not path.exists() or not path.is_file():
             return {"status": "error", "message": f"File '{file_path}' not found."}
 
@@ -119,29 +137,41 @@ class AgentToolRegistry:
     def search_workspace_files(pattern: str) -> Dict[str, Any]:
         """Finds files in workspace matching a glob pattern."""
         try:
-            search_str = str(WORKSPACE_ROOT / "**" / pattern)
+            clean_pattern = pattern.strip().lstrip("/")
+            search_str = str(WORKSPACE_ROOT / "**" / clean_pattern)
             matches = glob.glob(search_str, recursive=True)
-            rel_matches = [os.path.relpath(m, WORKSPACE_ROOT) for m in matches if not "/." in m]
+            rel_matches = [
+                os.path.relpath(m, WORKSPACE_ROOT) 
+                for m in matches 
+                if "/." not in m and AgentToolRegistry._is_safe_workspace_path(Path(m))
+            ]
             return {"status": "success", "matches": rel_matches[:20]}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    # ---------------- 4. macOS Reminders (AppleScript) ----------------
+    # ---------------- 4. macOS Reminders (AppleScript with safe parameters) ----------------
     @staticmethod
     def create_macos_reminder(title: str, notes: str = "") -> Dict[str, Any]:
-        """Creates a reminder in native macOS Reminders app using AppleScript."""
+        """Creates a reminder in native macOS Reminders app using parameterized AppleScript."""
         if sys.platform != "darwin":
             return {"status": "unsupported", "platform": sys.platform}
 
-        escaped_title = title.replace('"', '\\"')
-        escaped_notes = notes.replace('"', '\\"')
-        script = f'''
-        tell application "Reminders"
-            make new reminder at end of default list with properties {{name:"{escaped_title}", body:"{escaped_notes}"}}
-        end tell
+        # Safe AppleScript taking parameters as argv to prevent arbitrary code injection
+        script = '''
+        on run {reminderTitle, reminderNotes}
+            tell application "Reminders"
+                make new reminder at end of default list with properties {name:reminderTitle, body:reminderNotes}
+            end tell
+        end run
         '''
         try:
-            subprocess.run(["osascript", "-e", script], capture_output=True, text=True, check=True)
+            subprocess.run(
+                ["osascript", "-e", script, str(title)[:200], str(notes)[:500]],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5
+            )
             return {"status": "success", "reminder": title}
         except Exception as e:
             return {"status": "failed", "error": str(e)}
@@ -195,3 +225,4 @@ class AgentToolRegistry:
             return {"status": "failed", "error": str(e)}
 
 agent_tools = AgentToolRegistry()
+

@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent.parent
+RELEASE_DIR = PROJECT_ROOT / "release"
 
 class Settings:
     HOST: str = os.getenv("HOST", "0.0.0.0")
@@ -26,7 +28,12 @@ class Settings:
     OLLAMA_MODEL: str = "friday-1.0"
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
+    # Paths & Dirs
+    PROJECT_ROOT: Path = PROJECT_ROOT
+    RELEASE_DIR: Path = RELEASE_DIR
+
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR}/friday.db")
 
 settings = Settings()
+

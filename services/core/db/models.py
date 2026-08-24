@@ -7,13 +7,16 @@ from services.core.db.database import Base
 def generate_uuid() -> str:
     return str(uuid.uuid4())
 
+def now_utc():
+    return datetime.datetime.now(datetime.timezone.utc)
+
 class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(String, primary_key=True, default=generate_uuid)
     title = Column(String(255), nullable=False, default="New Conversation")
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=now_utc)
+    updated_at = Column(DateTime, default=now_utc, onupdate=now_utc)
 
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", lazy="selectin")
 
@@ -34,8 +37,9 @@ class Message(Base):
     role = Column(String(50), nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
     input_type = Column(String(50), default="text")  # text, voice, system
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=now_utc)
     metadata_json = Column(JSON, nullable=True)
+
 
     conversation = relationship("Conversation", back_populates="messages")
 

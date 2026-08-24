@@ -1,4 +1,5 @@
 import type { AssistantState, SystemTelemetry } from '../types';
+import { getBaseUrl } from './api';
 
 type MessageHandler = (data: any) => void;
 type StateHandler = (state: AssistantState) => void;
@@ -29,11 +30,12 @@ export class WebSocketService {
     this.onConnectionChange = handlers.onConnectionChange || null;
 
     this.isConnecting = true;
-    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    const wsUrl = `ws://${host || 'localhost'}:8000/ws`;
+    const httpUrl = getBaseUrl();
+    const wsUrl = `${httpUrl.replace(/^http/, 'ws')}/ws`;
 
     try {
       this.socket = new WebSocket(wsUrl);
+
 
       this.socket.onopen = () => {
         this.isConnecting = false;

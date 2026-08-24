@@ -1,7 +1,9 @@
 from typing import List, Optional, Dict, Any
+from sqlalchemy import func
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.core.db.models import Conversation, Message
+
 
 class ConversationManager:
     async def create_conversation(self, db: AsyncSession, title: str = "New Conversation") -> Conversation:
@@ -17,16 +19,17 @@ class ConversationManager:
         return result.scalar_one_or_none()
 
     async def list_conversations(self, db: AsyncSession, limit: int = 50) -> List[Dict[str, Any]]:
-        stmt = select(Conversation).order_by(Conversation.updated_at.desc()).limit(limit)
+        # Efficient query with subquery/aggregation to prevent N+1 query loop
+        stmt = (
+            select(Conversation, func.count(Message.id).label("msg_count"))
+            .outerjoin(Message, Conversation.id == Message.conversation_id)
+            .group_by(Conversation.id)
+            .order_by(Conversation.updated_at.desc())
+            .limit(limit)
+        )
         result = await db.execute(stmt)
-        convs = list(result.scalars().all())
-        output = []
-        for c in convs:
-            msg_stmt = select(Message).where(Message.conversation_id == c.id)
-            msg_res = await db.execute(msg_stmt)
-            count = len(list(msg_res.scalars().all()))
-            output.append(c.to_dict(count=count))
-        return output
+        rows = result.all()
+        return [conv.to_dict(count=count) for conv, count in rows]
 
     async def rename_conversation(self, db: AsyncSession, conversation_id: str, new_title: str) -> Optional[Conversation]:
         conv = await self.get_conversation(db, conversation_id)
@@ -41,13 +44,10 @@ class ConversationManager:
         conv = await self.get_conversation(db, conversation_id)
         if not conv:
             return False
-        msg_stmt = select(Message).where(Message.conversation_id == conversation_id)
-        msg_res = await db.execute(msg_stmt)
-        for msg in msg_res.scalars().all():
-            await db.delete(msg)
         await db.delete(conv)
         await db.commit()
         return True
+
 
     async def add_message(
         self,

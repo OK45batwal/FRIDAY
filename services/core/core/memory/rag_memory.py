@@ -7,12 +7,15 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+from services.core.app.config import settings
+
 MEMORY_DIR = Path(__file__).resolve().parent.parent.parent / "memory_data"
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 DOCS_STORE = MEMORY_DIR / "documents.json"
 USER_FACTS_STORE = MEMORY_DIR / "user_memory.json"
 EPISODIC_STORE = MEMORY_DIR / "episodic_memory.jsonl"
-WORKSPACE_DIR = Path("/Users/omkar/FRIDAY").resolve()
+WORKSPACE_DIR = settings.PROJECT_ROOT.resolve()
+
 
 def re_tokenize(text: str) -> List[str]:
     return re.findall(r'\b[a-zA-Z0-9_-]{2,}\b', text)
