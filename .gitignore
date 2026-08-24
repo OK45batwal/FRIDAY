@@ -42,7 +42,13 @@ dist-electron/
 *.safetensors
 *.bin
 *.gguf
+*.pt
+*.pth
 services/core/training/output/
-services/core/training/checkpoints/
+services/core/training/**/checkpoints/
 services/core/training/data/*.jsonl
 release/
+
+# Runtime user data (conversations, embeddings, RLHF traces — never commit)
+services/core/memory_data/
+services/core/learning_data/
