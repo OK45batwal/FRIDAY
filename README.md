@@ -27,8 +27,9 @@ Clicking any button below starts the download immediately:
 | 🍏 macOS Desktop | 📱 Android Mobile | 🪟 Windows Desktop |
 |:---:|:---:|:---:|
 | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/public/favicon.svg" width="52" height="52" /><br>**macOS DMG** | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="52" height="52" /><br>**Android APK** | 🪟<br>**Windows Client** |
-| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download Windows**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-macOS-Universal.tar.gz) |
-| *Standalone Apple Disk Image (123 MB)* | *Direct Android Package (4.1 MB)* | *Windows / Portable Package* |
+| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-0.1.0-arm64.dmg) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/download/v0.1.0/FRIDAY-Android-v0.1.0.apk) | [⬇️ **Download (Windows)**](https://github.com/OK45batwal/FRIDAY/releases/latest) |
+| *Standalone Apple Disk Image (123 MB)* | *Direct Android Package (4.1 MB)* | *Windows Installer / Portable Package* |
+
 
 </div>
 

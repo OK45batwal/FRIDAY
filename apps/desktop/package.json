@@ -19,6 +19,7 @@
   "build": {
     "appId": "com.friday.assistant",
     "productName": "FRIDAY",
+    "copyright": "Copyright © 2026 Omkar. All rights reserved.",
     "directories": {
       "output": "../../release"
     },
@@ -27,14 +28,65 @@
       "dist-electron/**/*",
       "package.json"
     ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "mac": {
-      "target": ["dmg", "zip"],
-      "category": "public.app-category.productivity"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "${productName} ${version} Installer",
+      "iconSize": 110,
+      "contents": [
+        {
+          "x": 130,
+          "y": 180
+        },
+        {
+          "x": 410,
+          "y": 180,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
-      "target": ["nsis", "portable"]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "FRIDAY"
     }
   },
+
   "dependencies": {
     "@capacitor/android": "8.5.0",
     "@capacitor/cli": "7.6.8",

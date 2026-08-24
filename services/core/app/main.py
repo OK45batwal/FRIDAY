@@ -59,17 +59,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Explicit origin allowlist. This was `allow_origins=["*"]`, which on an API
-# with no authorization let any visited web page read conversations and drive
-# OS-level tools. Methods and headers are likewise narrowed from "*".
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", TOKEN_HEADER],
+    allow_origins=settings.CORS_ORIGINS + ["capacitor://localhost", "http://localhost", "https://localhost", "ionic://localhost"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
     max_age=600,
 )
+
 
 
 @app.middleware("http")

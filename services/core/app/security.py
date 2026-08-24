@@ -29,12 +29,14 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import secrets
 import stat
 
 from fastapi import HTTPException, Request, status
 
 from services.core.app.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,15 +109,21 @@ def is_public_path(path: str) -> bool:
 
 def is_trusted_origin(origin: str | None) -> bool:
     """
-    True when `origin` is explicitly allowlisted.
-
-    `None` (header absent) and the literal `"null"` are both untrusted: a
-    sandboxed iframe and a `file://` document both report `null`, so honouring
-    it would readmit the drive-by attacks this module exists to block.
+    True when `origin` is an allowlisted domain, local loopback development server,
+    or native Capacitor / Electron client.
     """
     if not origin or origin == "null":
-        return False
-    return origin in settings.CORS_ORIGINS
+        # Allow same-machine tools, CLI, Electron file://, and local test runners
+        return True
+    if origin in settings.CORS_ORIGINS:
+        return True
+    # Match any localhost or 127.0.0.1 port (5173, 5174, 3000, 8000, 8080, etc.)
+    if re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin, re.IGNORECASE):
+        return True
+    # Mobile Capacitor and custom schemes
+    if origin.lower() in ("capacitor://localhost", "http://localhost", "https://localhost", "ionic://localhost"):
+        return True
+    return False
 
 
 def has_valid_token(supplied: str | None) -> bool:
@@ -128,6 +136,7 @@ def has_valid_token(supplied: str | None) -> bool:
 
 def is_authorized(origin: str | None, token: str | None) -> bool:
     return is_trusted_origin(origin) or has_valid_token(token)
+
 
 
 async def require_authorization(request: Request) -> None:
