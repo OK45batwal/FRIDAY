@@ -1,9 +1,12 @@
+import logging
 import re
 from typing import Dict, List, Any, Optional, Tuple
-from services.core.core.ai.provider import BaseAIProvider
+from services.core.core.ai.provider import BaseAIProvider, ProviderError
 from services.core.core.ai.providers.local_llm_engine import LocalLLMEngine
 from services.core.core.ai.providers.openrouter_provider import OpenRouterProvider
 from services.core.app.config import settings
+
+logger = logging.getLogger(__name__)
 
 class AIManager:
     """
@@ -79,15 +82,37 @@ class AIManager:
         api_key: Optional[str] = None,
         model: Optional[str] = None
     ):
+        """
+        Update the active provider at runtime.
+
+        `provider` is validated against the supported set: it was previously
+        assigned verbatim, so an arbitrary string silently disabled cloud routing
+        (get_active_provider only matches "openrouter") with a success response.
+        """
         if provider:
+            if provider not in settings.SUPPORTED_PROVIDERS:
+                raise ValueError(
+                    f"Unsupported provider '{provider}'. "
+                    f"Expected one of: {', '.join(sorted(settings.SUPPORTED_PROVIDERS))}."
+                )
             settings.AI_PROVIDER = provider
         if api_key is not None:
-            settings.OPENROUTER_API_KEY = api_key
+            # An empty string is a deliberate "clear the key" request; anything
+            # else must look like a key rather than a pasted URL or shell snippet.
+            candidate = api_key.strip()
+            if candidate and not re.fullmatch(r"[A-Za-z0-9_\-.]{16,256}", candidate):
+                raise ValueError("API key format is invalid.")
+            settings.OPENROUTER_API_KEY = candidate
         if model:
+            candidate = model.strip()
+            # Model ids are "vendor/name[:tag]". Rejecting everything else keeps
+            # this value out of the URL path and headers it eventually reaches.
+            if not re.fullmatch(r"[A-Za-z0-9_\-./:]{1,128}", candidate):
+                raise ValueError("Model identifier format is invalid.")
             if provider == "openrouter":
-                settings.OPENROUTER_MODEL = model
+                settings.OPENROUTER_MODEL = candidate
             else:
-                settings.OLLAMA_MODEL = model
+                settings.OLLAMA_MODEL = candidate
 
     async def generate(
         self,
@@ -97,17 +122,18 @@ class AIManager:
     ) -> str:
         """Generates response using hybrid cascading router with graceful edge fallback."""
         tier, reason = self.evaluate_routing_target(prompt)
-        
-        # Try cloud first if routed to cloud
+
+        # Try cloud first if routed to cloud.
         if tier == "cloud" and settings.OPENROUTER_API_KEY.strip():
             try:
-                res = await self.openrouter_provider.generate_response(prompt, system_prompt, history)
-                if res and not res.startswith("Error from Cloud Provider"):
-                    return res
+                return await self.openrouter_provider.generate_response(prompt, system_prompt, history)
+            except ProviderError as e:
+                # Expected failure path: log why and fall through to local.
+                logger.info("Cloud provider unavailable, falling back to local: %s", e)
             except Exception:
-                pass
+                logger.exception("Unexpected cloud provider error, falling back to local")
 
-        # Fallback to local on-device neural engine (<25ms)
+        # Fallback to local on-device neural engine.
         return await self.local_provider.generate_response(prompt, system_prompt, history)
 
 ai_manager = AIManager()

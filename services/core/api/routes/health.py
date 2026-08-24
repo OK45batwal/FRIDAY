@@ -1,20 +1,25 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 import json
+import logging
 from services.core.core.ai.manager import ai_manager
 from services.core.app.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 MODELS_DIR = Path(__file__).resolve().parent.parent.parent / "models"
 MANIFEST_FILE = MODELS_DIR / "model_manifest.json"
 
+
 class UpdateConfigRequest(BaseModel):
-    provider: Optional[str] = "local_llm"
-    api_key: Optional[str] = None
-    model: Optional[str] = None
+    # Bounded so an oversized body cannot be parsed into settings.
+    provider: Optional[str] = Field(default="local_llm", max_length=64)
+    api_key: Optional[str] = Field(default=None, max_length=256)
+    model: Optional[str] = Field(default=None, max_length=128)
 
 @router.get("/health")
 async def health_check():
@@ -44,7 +49,7 @@ async def get_available_models():
             with open(MANIFEST_FILE, "r") as f:
                 custom_slm_info = json.load(f)
         except Exception:
-            pass
+            logger.warning("Could not read model manifest at %s", MANIFEST_FILE, exc_info=True)
 
     return {
         "active_provider": settings.AI_PROVIDER,
@@ -66,13 +71,20 @@ async def get_available_models():
 
 @router.post("/api/config")
 async def update_config(payload: UpdateConfigRequest):
-    ai_manager.update_config(
-        provider=payload.provider or "local_llm",
-        api_key=payload.api_key,
-        model=payload.model
-    )
+    try:
+        ai_manager.update_config(
+            provider=payload.provider or "local_llm",
+            api_key=payload.api_key,
+            model=payload.model
+        )
+    except ValueError as e:
+        # Reject bad input instead of reporting success for a config change that
+        # silently broke routing.
+        raise HTTPException(status_code=422, detail=str(e))
     return {
         "status": "success",
         "active_provider": settings.AI_PROVIDER,
+        # Never echo the key back, not even masked.
+        "has_cloud_key": bool(settings.OPENROUTER_API_KEY),
         "model": settings.OPENROUTER_MODEL if settings.AI_PROVIDER == "openrouter" else "FRIDAY 1.0"
     }

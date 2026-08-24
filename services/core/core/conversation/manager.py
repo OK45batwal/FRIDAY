@@ -102,6 +102,49 @@ class ConversationManager:
         await db.refresh(msg)
         return msg
 
+    async def get_message(self, db: AsyncSession, message_id: str) -> Optional[Message]:
+        stmt = select(Message).where(Message.id == message_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_exchange(self, db: AsyncSession, message_id: str) -> Optional[Dict[str, str]]:
+        """
+        Given an assistant message id, return the {prompt, response} pair as it
+        was actually stored.
+
+        The feedback endpoint used to accept both the prompt and the response
+        text from the client and write them straight into the learned-response
+        store, which is consulted before inference. That let any caller pin
+        arbitrary output to any prompt permanently. Reconstructing the exchange
+        from the database means feedback can only ever reference something FRIDAY
+        genuinely said.
+        """
+        msg = await self.get_message(db, message_id)
+        if msg is None or msg.role != "assistant":
+            return None
+
+        # The user turn immediately preceding this assistant message.
+        stmt = (
+            select(Message)
+            .where(
+                Message.conversation_id == msg.conversation_id,
+                Message.role == "user",
+                Message.created_at <= msg.created_at,
+                Message.id != msg.id,
+            )
+            .order_by(Message.created_at.desc(), Message.id.desc())
+            .limit(1)
+        )
+        result = await db.execute(stmt)
+        prompt_msg = result.scalar_one_or_none()
+        if prompt_msg is None:
+            return None
+        return {
+            "conversation_id": msg.conversation_id,
+            "prompt": prompt_msg.content,
+            "response": msg.content,
+        }
+
     async def get_recent_history(self, db: AsyncSession, conversation_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         # Order/limit in the database. This used to load every message in the
         # conversation into memory and slice in Python.

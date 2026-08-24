@@ -1,7 +1,7 @@
 import httpx
 import logging
 from typing import List, Dict, Any, Optional
-from services.core.core.ai.provider import BaseAIProvider
+from services.core.core.ai.provider import BaseAIProvider, ProviderError
 from services.core.app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class OpenRouterProvider(BaseAIProvider):
         model = settings.OPENROUTER_MODEL or "meta-llama/llama-3.3-70b-instruct:free"
 
         if not api_key:
-            return "Please provide your OpenRouter API Key in the Settings dialog to activate deep 70B+ frontier models (DeepSeek R1, Llama 3.3 70B, Claude 3.5)."
+            raise ProviderError("No OpenRouter API key configured.")
 
         messages = [{"role": "system", "content": system_prompt}]
         for h in history[-10:]:
@@ -61,12 +61,27 @@ class OpenRouterProvider(BaseAIProvider):
                         "max_tokens": 4096
                     }
                 )
-                if res.status_code == 200:
-                    data = res.json()
-                    return data["choices"][0]["message"]["content"].strip()
-                else:
-                    logger.warning(f"OpenRouter API Error: {res.status_code} - {res.text}")
-                    return f"Error from Cloud Provider ({res.status_code}): {res.text}"
         except Exception as e:
-            logger.error(f"OpenRouter Connection Error: {e}")
-            return f"Cloud connection timeout: {str(e)}"
+            logger.error("OpenRouter connection error: %s", e)
+            raise ProviderError(f"Cloud connection failed: {e}") from e
+
+        if res.status_code != 200:
+            # Log the body, do not return it. The upstream response can echo
+            # request details and provider metadata, and it was previously
+            # rendered straight into the chat transcript.
+            logger.warning("OpenRouter API error %s: %s", res.status_code, res.text[:500])
+            raise ProviderError(f"Cloud provider returned HTTP {res.status_code}.")
+
+        try:
+            data = res.json()
+            content = data["choices"][0]["message"]["content"]
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            # A 200 with an unexpected shape used to raise deep inside the
+            # manager's bare `except`, silently degrading to local with no log.
+            logger.warning("Malformed OpenRouter payload: %s", e)
+            raise ProviderError("Cloud provider returned a malformed response.") from e
+
+        content = (content or "").strip()
+        if not content:
+            raise ProviderError("Cloud provider returned an empty response.")
+        return content
