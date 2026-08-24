@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import re
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +8,9 @@ from services.core.core.conversation.manager import conversation_manager
 from services.core.core.agent.tools import agent_tools
 from services.core.core.memory.rag_memory import rag_memory
 from services.core.core.assistant.rules import core_rules, UserIntent
+
+logger = logging.getLogger(__name__)
+
 
 class AssistantOrchestrator:
     """
@@ -38,7 +43,15 @@ class AssistantOrchestrator:
                 "executed_tool": None
             }
 
-        # 2. Save user message to database
+        # 2. Resolve the conversation ONCE, up front.
+        # Clients legitimately send a sentinel id such as "default" on a fresh
+        # session. Resolving per-add_message call meant the user turn and the
+        # assistant turn each created their own conversation, so history was
+        # always empty and the id returned to the client did not exist.
+        conv = await conversation_manager.resolve_or_create(db, conversation_id, seed_title=clean_message)
+        conversation_id = conv.id
+
+        # 3. Save user message to database
         await conversation_manager.add_message(
             db=db,
             conversation_id=conversation_id,
@@ -74,25 +87,39 @@ class AssistantOrchestrator:
 
         # 4. Native OS & Agent Tool Execution
         # A. Desktop App Launching
+        app_request = None
         if "open spotify" in msg_lower or "launch spotify" in msg_lower:
-            tool_res = agent_tools.launch_desktop_app("Spotify")
-            executed_tool = {"tool": "launch_app", "target": "Spotify", "result": tool_res}
-            direct_tool_response = "Launching **Spotify** on your Mac."
+            app_request = ("Spotify", "Launching **Spotify** on your Mac.")
         elif "open vscode" in msg_lower or "open code" in msg_lower:
-            tool_res = agent_tools.launch_desktop_app("Visual Studio Code")
-            executed_tool = {"tool": "launch_app", "target": "VS Code", "result": tool_res}
-            direct_tool_response = "Opening **Visual Studio Code** in your workspace."
+            app_request = ("Visual Studio Code", "Opening **Visual Studio Code** in your workspace.")
         elif "open terminal" in msg_lower:
-            tool_res = agent_tools.launch_desktop_app("Terminal")
-            executed_tool = {"tool": "launch_app", "target": "Terminal", "result": tool_res}
-            direct_tool_response = "Opening a new **Terminal** session."
+            app_request = ("Terminal", "Opening a new **Terminal** session.")
+
+        if app_request:
+            app_name, success_text = app_request
+            tool_res = agent_tools.launch_desktop_app(app_name)
+            executed_tool = {"tool": "launch_app", "target": app_name, "result": tool_res}
+            # Report what actually happened. Previously success was announced
+            # unconditionally, so a missing app or a denied permission still
+            # rendered as "Launching ...".
+            direct_tool_response = (
+                success_text
+                if tool_res.get("status") == "success"
+                else f"\u26a0\ufe0f I could not launch **{app_name}**: {tool_res.get('error') or tool_res.get('status')}"
+            )
 
         # B. Web Search & Browser Navigation
         elif intent == UserIntent.WEB_SEARCH:
-            query = re.sub(r'^(search web for|search web|search google for|google for|search for|look up)\s*', '', msg_lower, flags=re.I).strip()
+            # Strip the command prefix from the ORIGINAL message, not the
+            # lowercased copy, so search terms keep their capitalisation.
+            query = re.sub(r'^(search web for|search web|search google for|google for|search for|look up)\s*', '', clean_message, flags=re.I).strip()
             tool_res = agent_tools.search_web(query or clean_message)
             executed_tool = {"tool": "web_search", "query": query, "result": tool_res}
-            direct_tool_response = f"I have initiated a web search for **\"{query}\"** in your browser."
+            direct_tool_response = (
+                f"I have initiated a web search for **\"{query}\"** in your browser."
+                if tool_res.get("status") == "success"
+                else f"\u26a0\ufe0f I could not open the browser: {tool_res.get('error') or tool_res.get('status')}"
+            )
 
         # C. macOS Reminders
         elif intent == UserIntent.REMINDERS:
@@ -109,7 +136,14 @@ class AssistantOrchestrator:
                 reminder_text = re.sub(r'^(remind me to|create reminder to|add reminder|set reminder for)\s*', '', clean_message, flags=re.I).strip()
                 tool_res = agent_tools.create_macos_reminder(reminder_text or clean_message)
                 executed_tool = {"tool": "create_reminder", "reminder": reminder_text, "result": tool_res}
-                direct_tool_response = f"✅ Created macOS reminder: **\"{reminder_text}\"** in your Reminders app."
+                # Only claim success when the tool actually succeeded. This
+                # previously showed the checkmark even when AppleScript raised,
+                # which also made an injection attempt look like it worked.
+                if tool_res.get("status") == "success":
+                    direct_tool_response = f"✅ Created macOS reminder: **\"{reminder_text}\"** in your Reminders app."
+                else:
+                    reason = tool_res.get("error") or tool_res.get("status")
+                    direct_tool_response = f"⚠️ I could not create that reminder: {reason}"
 
         # D. File System Management
         elif intent == UserIntent.FILE_SYSTEM:
@@ -117,17 +151,35 @@ class AssistantOrchestrator:
                 res = agent_tools.list_directory_contents(".")
                 executed_tool = {"tool": "list_files", "result": res}
                 entries = res.get("entries", [])
-                lines = [f"- `{'📁' if e['type'] == 'directory' else '📄'}` **{e['name']}**" for e in entries[:25]]
-                direct_tool_response = f"### 📂 Project Workspace Files\n" + "\n".join(lines)
-            elif "read" in msg_lower:
-                match = re.search(r'read\s+([a-zA-Z0-9_\-\.\/]+)', msg_lower)
-                target_file = match.group(1) if match else "package.json"
-                res = agent_tools.read_file_snippet(target_file, max_lines=40)
-                executed_tool = {"tool": "read_file", "file": target_file, "result": res}
-                if res.get("status") == "success":
-                    direct_tool_response = f"### 📄 File: `{target_file}`\n```\n{res['content']}\n```"
+                if res.get("status") != "success":
+                    direct_tool_response = f"⚠️ Could not list the workspace: {res.get('message', 'unknown error')}"
+                elif not entries:
+                    direct_tool_response = "The workspace directory is empty."
                 else:
-                    direct_tool_response = f"⚠️ Could not read file `{target_file}`: {res.get('message', 'File error')}"
+                    lines = [f"- `{'📁' if e['type'] == 'directory' else '📄'}` **{e['name']}**" for e in entries[:25]]
+                    direct_tool_response = "### 📂 Project Workspace Files\n" + "\n".join(lines)
+            elif "read" in msg_lower:
+                # Match the ORIGINAL message so case survives (README.md), and
+                # skip the optional literal word "file". classify_intent requires
+                # the phrase "read file" to reach this branch, so the old pattern
+                # captured "file" as the filename on every single request.
+                match = re.search(r'read\s+(?:the\s+)?(?:file\s+)?([A-Za-z0-9_\-./]+)', clean_message, flags=re.I)
+                target_file = match.group(1) if match else None
+                if not target_file:
+                    direct_tool_response = "Which file should I read? Give me a path inside the workspace."
+                else:
+                    res = agent_tools.read_file_snippet(target_file, max_lines=40)
+                    executed_tool = {"tool": "read_file", "file": target_file, "result": res}
+                    if res.get("status") == "success":
+                        # Pick a fence longer than any backtick run in the content
+                        # so a file containing ``` cannot break out of the block.
+                        runs = [len(r) for r in re.findall(r"`+", res["content"])]
+                        fence = "`" * max(3, (max(runs) + 1) if runs else 3)
+                        direct_tool_response = (
+                            f"### 📄 File: `{target_file}`\n{fence}\n{res['content']}\n{fence}"
+                        )
+                    else:
+                        direct_tool_response = f"⚠️ Could not read file `{target_file}`: {res.get('message', 'File error')}"
 
         if direct_tool_response:
             ai_response = direct_tool_response
@@ -170,9 +222,9 @@ class AssistantOrchestrator:
 
         # 9. Auto-Index Episodic Vector Memory (Pillar 4)
         try:
-            rag_memory.add_episodic_memory(prompt=clean_message, response=ai_response)
+            await asyncio.to_thread(rag_memory.add_episodic_memory, clean_message, ai_response)
         except Exception:
-            pass
+            logger.warning("Failed to index episodic memory", exc_info=True)
 
         return {
             "conversation_id": conversation_id,

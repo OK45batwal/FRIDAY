@@ -15,10 +15,22 @@ class Conversation(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     title = Column(String(255), nullable=False, default="New Conversation")
-    created_at = Column(DateTime, default=now_utc)
-    updated_at = Column(DateTime, default=now_utc, onupdate=now_utc)
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", lazy="selectin")
+    # lazy="raise" + passive_deletes: nothing in the codebase reads
+    # conversation.messages, but the previous lazy="selectin" meant every
+    # conversation query eagerly fetched all of its messages — so listing 50
+    # conversations pulled the entire message table into memory. Deletion now
+    # relies on the database's ON DELETE CASCADE (enabled by the foreign_keys
+    # pragma in database.py) instead of loading children just to delete them.
+    messages = relationship(
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
 
     def to_dict(self, count: int = 0):
         return {
@@ -33,15 +45,19 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    conversation_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(
+        String,
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     role = Column(String(50), nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
     input_type = Column(String(50), default="text")  # text, voice, system
-    created_at = Column(DateTime, default=now_utc)
+    created_at = Column(DateTime(timezone=True), default=now_utc, index=True)
     metadata_json = Column(JSON, nullable=True)
 
-
-    conversation = relationship("Conversation", back_populates="messages")
+    conversation = relationship("Conversation", back_populates="messages", lazy="raise")
 
     def to_dict(self):
         return {

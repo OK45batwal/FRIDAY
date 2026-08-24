@@ -28,34 +28,79 @@ SAFE_OPERATORS = {
     ast.UAdd: operator.pos,
 }
 
-def safe_eval_ast(node: ast.AST) -> Union[int, float]:
+# Bounds for exponentiation. Python integers are arbitrary-precision, so an
+# unbounded pow is a denial-of-service primitive rather than an overflow: the
+# request "9^9^9^9" parses to 9**(9**387420489) and simply never returns. It
+# raises nothing, so the surrounding try/except cannot catch it, and because the
+# caller is async with no executor it freezes the entire event loop — every
+# request, every WebSocket, and the healthcheck.
+MAX_EXPONENT = 128
+MAX_POW_RESULT_DIGITS = 256
+MAX_MATH_EXPR_CHARS = 200
+
+
+def _guarded_pow(left, right):
+    if abs(right) > MAX_EXPONENT:
+        raise ValueError(f"Exponent too large (limit {MAX_EXPONENT}).")
+    # Estimate the digit count before computing it: log10(left**right).
+    if left not in (0, 1, -1) and right > 0:
+        try:
+            digits = abs(right) * math.log10(abs(left)) if left else 0
+        except ValueError:
+            digits = 0
+        if digits > MAX_POW_RESULT_DIGITS:
+            raise ValueError("Result magnitude too large.")
+    return operator.pow(left, right)
+
+
+def safe_eval_ast(node: ast.AST, depth: int = 0) -> Union[int, float]:
     """Recursively evaluate an AST expression safely with zero arbitrary code execution risk."""
+    # Bound recursion so a deeply nested expression cannot exhaust the C stack.
+    if depth > 32:
+        raise ValueError("Expression nested too deeply.")
     if isinstance(node, ast.Expression):
-        return safe_eval_ast(node.body)
+        return safe_eval_ast(node.body, depth + 1)
     elif isinstance(node, ast.Constant):
+        if isinstance(node.value, bool):
+            raise ValueError("Non-numeric constant detected.")
         if isinstance(node.value, (int, float)):
             return node.value
         raise ValueError("Non-numeric constant detected.")
     elif isinstance(node, ast.BinOp):
-        left = safe_eval_ast(node.left)
-        right = safe_eval_ast(node.right)
+        left = safe_eval_ast(node.left, depth + 1)
+        right = safe_eval_ast(node.right, depth + 1)
         op_type = type(node.op)
+        if op_type is ast.Pow:
+            return _guarded_pow(left, right)
         if op_type in SAFE_OPERATORS:
             return SAFE_OPERATORS[op_type](left, right)
         raise ValueError(f"Unsupported binary operator: {op_type}")
     elif isinstance(node, ast.UnaryOp):
-        operand = safe_eval_ast(node.operand)
+        operand = safe_eval_ast(node.operand, depth + 1)
         op_type = type(node.op)
         if op_type in SAFE_OPERATORS:
             return SAFE_OPERATORS[op_type](operand)
         raise ValueError(f"Unsupported unary operator: {op_type}")
     elif isinstance(node, ast.Call):
         if isinstance(node.func, ast.Name) and node.func.id == "sqrt" and len(node.args) == 1:
-            arg = safe_eval_ast(node.args[0])
+            arg = safe_eval_ast(node.args[0], depth + 1)
             return math.sqrt(arg)
         raise ValueError("Unsupported function call.")
     else:
         raise ValueError(f"Unsupported AST node: {type(node)}")
+
+
+def fence_untrusted(text: str, label: str) -> str:
+    """
+    Wrap retrieved content so it reads as data, not as instructions.
+
+    Episodic memory is written from previous turns, which include the user's own
+    words, and it was previously concatenated raw into the *system* prompt. That
+    is a stored prompt-injection channel: text saved in one turn became system
+    instructions in a later one.
+    """
+    cleaned = str(text).replace("<<<", "").replace(">>>", "")
+    return f"<<<{label}\n{cleaned}\n{label}>>>"
 
 
 class FridayNeuralInference:
@@ -229,7 +274,11 @@ class LocalLLMEngine(BaseAIProvider):
         expr_str = re.sub(r'(?<=\d)\s*x\s*(?=\d)', '*', expr_str, flags=re.I)
         expr_str = re.sub(r'(?<=\))\s*x\s*(?=\d|\()', '*', expr_str, flags=re.I)
 
-        if re.search(r'[\d]', expr_str) and any(op in expr_str for op in ['+', '-', '*', '/', '%', 'sqrt']):
+        if (
+            len(expr_str) <= MAX_MATH_EXPR_CHARS
+            and re.search(r'[\d]', expr_str)
+            and any(op in expr_str for op in ['+', '-', '*', '/', '%', 'sqrt'])
+        ):
             try:
                 parsed_ast = ast.parse(expr_str.strip(), mode='eval')
                 res = safe_eval_ast(parsed_ast)
@@ -238,7 +287,12 @@ class LocalLLMEngine(BaseAIProvider):
                 elif isinstance(res, float):
                     res = round(res, 4)
                 return f"**{cleaned_no_prefix}** = **{res}**"
+            except ValueError as e:
+                # Bounds rejection (huge exponent, deep nesting). Say so instead
+                # of falling through to the LLM, which would invent an answer.
+                return f"I can't evaluate **{cleaned_no_prefix}**: {e}"
             except Exception:
+                # Not a math expression after all; let the model handle it.
                 pass
         return None
 

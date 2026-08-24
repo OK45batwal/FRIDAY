@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy import func
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.core.db.models import Conversation, Message
+from services.core.db.models import Conversation, Message, now_utc
 
 
 class ConversationManager:
@@ -49,6 +49,26 @@ class ConversationManager:
         return True
 
 
+    async def resolve_or_create(self, db: AsyncSession, conversation_id: Optional[str], seed_title: str = "") -> Conversation:
+        """
+        Return the conversation for `conversation_id`, creating one if it is
+        missing or unknown.
+
+        This exists because callers previously passed a sentinel id such as
+        "default" that never existed in the database. add_message would create a
+        replacement conversation and rebind its *local* variable, so the caller
+        kept using the stale id: every turn produced two orphan conversations,
+        the user and assistant messages landed in different rows, and
+        get_recent_history always returned empty. Resolving once, up front, and
+        handing the real object back is what makes history work at all.
+        """
+        if conversation_id:
+            conv = await self.get_conversation(db, conversation_id)
+            if conv:
+                return conv
+        title = (seed_title or "").strip()[:35] or "New Conversation"
+        return await self.create_conversation(db, title=title)
+
     async def add_message(
         self,
         db: AsyncSession,
@@ -58,16 +78,20 @@ class ConversationManager:
         input_type: str = "text",
         metadata: Optional[Dict[str, Any]] = None
     ) -> Message:
-        conv = await self.get_conversation(db, conversation_id)
-        if not conv:
-            conv = await self.create_conversation(db, title=content[:30] if content else "Conversation")
-            conversation_id = conv.id
+        conv = await self.resolve_or_create(db, conversation_id, seed_title=content)
 
-        if conv.title == "New Conversation" and role == "user":
+        if conv.title == "New Conversation" and role == "user" and content:
             conv.title = content[:35] + ("..." if len(content) > 35 else "")
 
+        # Touch the parent so list_conversations' ORDER BY updated_at DESC means
+        # something. Adding a message does not modify the Conversation row, so
+        # `onupdate` never fired and the sidebar was permanently ordered by
+        # creation time — an active conversation stayed buried under new empty ones.
+        conv.updated_at = now_utc()
+
         msg = Message(
-            conversation_id=conversation_id,
+            # Always the resolved id, never the caller's possibly-stale one.
+            conversation_id=conv.id,
             role=role,
             content=content,
             input_type=input_type,
@@ -79,11 +103,17 @@ class ConversationManager:
         return msg
 
     async def get_recent_history(self, db: AsyncSession, conversation_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        stmt = select(Message).where(Message.conversation_id == conversation_id).order_by(Message.created_at.asc())
+        # Order/limit in the database. This used to load every message in the
+        # conversation into memory and slice in Python.
+        stmt = (
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .order_by(Message.created_at.desc(), Message.id.desc())
+            .limit(limit)
+        )
         result = await db.execute(stmt)
         msgs = list(result.scalars().all())
-        if limit:
-            msgs = msgs[-limit:]
+        msgs.reverse()
         return [m.to_dict() for m in msgs]
 
 conversation_manager = ConversationManager()

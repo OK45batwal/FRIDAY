@@ -227,18 +227,30 @@ class AgentToolRegistry:
         if sys.platform != "darwin":
             return {"status": "unsupported", "reminders": []}
 
+        # Emit one reminder per line: AppleScript renders a list as a
+        # comma-separated string, so splitting on "," shredded any reminder
+        # title that itself contained a comma.
         script = '''
+        set output to ""
         tell application "Reminders"
-            set reminderList to {}
             repeat with r in (reminders of default list whose completed is false)
-                set end of reminderList to name of r
+                set output to output & (name of r) & linefeed
             end repeat
-            return reminderList
         end tell
+        return output
         '''
         try:
             res = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=5)
-            names = [n.strip() for n in res.stdout.strip().split(",") if n.strip()]
+            if res.returncode != 0:
+                # Without this check a denied Automation permission produced
+                # empty stdout and status "success", so FRIDAY confidently
+                # told the user they had no reminders.
+                return {
+                    "status": "failed",
+                    "error": (res.stderr or "osascript failed").strip(),
+                    "reminders": [],
+                }
+            names = [line.strip() for line in res.stdout.splitlines() if line.strip()]
             return {"status": "success", "reminders": names[:10]}
         except Exception as e:
             return {"status": "failed", "error": str(e), "reminders": []}
@@ -262,9 +274,23 @@ class AgentToolRegistry:
             "calendar": "Calendar",
             "notes": "Notes"
         }
-        resolved = app_map.get(app_name.lower(), app_name)
+        resolved = app_map.get(app_name.lower())
+        if resolved is None:
+            # Previously this fell through to `open -a <arbitrary>`. No current
+            # caller reaches it with untrusted input, but the moment the LLM is
+            # allowed to name the app that becomes an arbitrary-app launcher, so
+            # restrict it to the allowlist now.
+            return {
+                "status": "failed",
+                "error": f"'{app_name}' is not an allowed application.",
+                "allowed": sorted(set(app_map.values())),
+            }
         try:
-            subprocess.Popen(["open", "-a", resolved])
+            # Wait briefly: `open` exits non-zero when the app is missing, and
+            # Popen alone reported success for an app that never launched.
+            res = subprocess.run(["open", "-a", resolved], capture_output=True, text=True, timeout=10)
+            if res.returncode != 0:
+                return {"status": "failed", "error": (res.stderr or "open failed").strip()}
             return {"status": "success", "launched_app": resolved}
         except Exception as e:
             return {"status": "failed", "error": str(e)}
