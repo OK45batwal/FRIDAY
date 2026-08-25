@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Sun, Moon, Mic, MessageSquare } from 'lucide-react';
+import { Plus, Search, Settings, Volume2, VolumeX, Sun, Moon, Mic, MessageSquare, Box } from 'lucide-react';
+
+
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
@@ -134,15 +136,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>New chat</span>
         </button>
 
-        <button onClick={onOpenLibrary} className="nav-pill">
-          <BookOpen size={14} color="var(--text-secondary)" />
-          <span>Tools & Agents</span>
+        <button onClick={onOpenLibrary} className="nav-pill" title="FRIDAY Store — All Packages, Tools, Agents, and Models">
+          <Box size={14} color="var(--accent-rose)" />
+          <span>Store & Hub</span>
         </button>
 
         <button onClick={onOpenConfig} className="nav-pill">
           <Settings size={14} color="var(--text-secondary)" />
           <span>Config</span>
         </button>
+
 
         {/* User Avatar */}
         <div

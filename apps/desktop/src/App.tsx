@@ -4,7 +4,7 @@ import { Sidebar } from './components/chat/Sidebar';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { FloatingInputDock } from './components/chat/FloatingInputDock';
 import { SettingsDialog } from './components/settings/SettingsDialog';
-import { ToolsModal } from './components/library/ToolsModal';
+import { FridayStoreModal } from './components/library/FridayStoreModal';
 import { VoiceAssistantModal } from './components/voice/VoiceAssistantModal';
 import { ArtifactCanvas, type ArtifactItem } from './components/canvas/ArtifactCanvas';
 import { SpotlightOverlay } from './components/spotlight/SpotlightOverlay';
@@ -14,7 +14,7 @@ import { useVoice } from './hooks/useVoice';
 export const App: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState('general');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [storeOpen, setStoreOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceAssistantOpen, setVoiceAssistantOpen] = useState(false);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
@@ -98,7 +98,7 @@ export const App: React.FC = () => {
         onToggleAutoSpeak={() => setAutoSpeak(!autoSpeak)}
         onNewChat={startNewConversation}
         onOpenConfig={() => setSettingsOpen(true)}
-        onOpenLibrary={() => setToolsOpen(true)}
+        onOpenLibrary={() => setStoreOpen(true)}
         onToggleSearch={() => setSidebarOpen(!sidebarOpen)}
         onOpenVoiceAssistant={() => setVoiceAssistantOpen(true)}
         onOpenSpotlight={() => setSpotlightOpen(true)}
@@ -201,13 +201,13 @@ export const App: React.FC = () => {
         onTestVoice={speak}
       />
 
-      {/* Tools & Agents Library Modal */}
-      <ToolsModal
-        isOpen={toolsOpen}
-        onClose={() => setToolsOpen(false)}
+      {/* FRIDAY All-in-One Package & Store Modal */}
+      <FridayStoreModal
+        isOpen={storeOpen}
+        onClose={() => setStoreOpen(false)}
         onSelectAgent={(agent) => {
           setSelectedAgent(agent);
-          setToolsOpen(false);
+          setStoreOpen(false);
         }}
       />
     </div>
@@ -215,4 +215,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-
