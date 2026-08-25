@@ -1,0 +1,61 @@
+# =====================================================================
+# 🥣 FRIDAY Soup Layer-Streaming Fine-Tuning & Alignment Recipe
+# Powered by Soup (https://github.com/MakazhanAlpamys/Soup)
+# =====================================================================
+
+model:
+  # Base foundation model (Qwen 2.5 1.5B / 7B or Llama 3.1 8B)
+  name: "Qwen/Qwen2.5-1.5B-Instruct"
+  fallback: "Qwen/Qwen2.5-0.5B-Instruct"
+  torch_dtype: "bfloat16"
+
+dataset:
+  # Path to generated ChatML multi-turn dataset
+  train_file: "services/core/training/data/friday_dataset.jsonl"
+  format: "chatml"
+  val_split: 0.1
+
+training:
+  # Layer streaming keeps frozen base out of VRAM, allowing 8B on 4GB GPUs
+  stream_layers: true
+  stream_source: "auto" # RAM when it fits, NVMe disk when it does not
+  quantization: "4bit"  # NF4 quantization
+  
+  # LoRA Configuration
+  lora_r: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  
+  # Hyperparameters
+  batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 2.0e-4
+  lr_scheduler: "cosine"
+  warmup_ratio: 0.05
+  epochs: 3
+  seed: 1234
+  max_seq_length: 2048
+  assistant_only_loss: true # Mask user/system prompt tokens in loss
+  output_dir: "services/core/training/output/soup_friday"
+
+alignment:
+  # DPO / SimPO Direct Preference Alignment
+  method: "dpo"
+  dataset: "services/core/training/data/friday_dpo.jsonl"
+  beta: 0.1
+  epochs: 2
+  learning_rate: 5.0e-6
+
+export:
+  # GGUF Export for On-Device Offline Inference
+  format: "gguf"
+  quantization: "q4_k_m"
+  output_file: "services/core/models/friday-soup-q4_k_m.gguf"
