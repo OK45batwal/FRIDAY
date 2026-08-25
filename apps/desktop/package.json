@@ -58,9 +58,11 @@
       ],
       "category": "public.app-category.productivity",
       "darkModeSupport": true,
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null
     },
+
     "dmg": {
       "title": "${productName} ${version} Installer",
       "iconSize": 110,
