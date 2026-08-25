@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Sun, Moon } from 'lucide-react';
+import { Plus, Search, BookOpen, Settings, Volume2, VolumeX, Sun, Moon, Mic, MessageSquare } from 'lucide-react';
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
@@ -9,6 +9,8 @@ interface NavbarProps {
   onOpenConfig: () => void;
   onOpenLibrary: () => void;
   onToggleSearch: () => void;
+  onOpenVoiceAssistant?: () => void;
+  onOpenSpotlight?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,7 +19,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewChat,
   onOpenConfig,
   onOpenLibrary,
-  onToggleSearch
+  onToggleSearch,
+  onOpenVoiceAssistant,
+  onOpenSpotlight
 }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -54,8 +58,48 @@ export const Navbar: React.FC<NavbarProps> = ({
       <FridayLogo size={34} fontSize={17} showText={true} />
 
       {/* Action Navigation Pills */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         
+        {/* Fullscreen Voice Assistant Cockpit (Siri / Google Assistant Mode) */}
+        {onOpenVoiceAssistant && (
+          <button
+            onClick={onOpenVoiceAssistant}
+            className="nav-pill"
+            style={{
+              background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
+              border: '1px solid rgba(244, 63, 94, 0.5)',
+              color: 'var(--text-primary)',
+              boxShadow: '0 0 12px rgba(244, 63, 94, 0.25)'
+            }}
+            title="Open Siri / Google Assistant Fullscreen Voice Cockpit"
+          >
+            <Mic size={14} color="var(--accent-rose)" />
+            <span>Voice Assistant</span>
+          </button>
+        )}
+
+        {/* Global Spotlight / Command Palette Button */}
+        {onOpenSpotlight && (
+          <button
+            onClick={onOpenSpotlight}
+            className="nav-pill"
+            title="Summon Spotlight Command Palette (⌘K)"
+          >
+            <Search size={14} color="var(--accent-cyan)" />
+            <span>Spotlight (⌘K)</span>
+          </button>
+        )}
+
+        {/* Search / History Toggle */}
+        <button
+          onClick={onToggleSearch}
+          className="nav-pill"
+          title="Search conversation history"
+        >
+          <MessageSquare size={14} color="var(--text-secondary)" />
+          <span>History</span>
+        </button>
+
         {/* Theme Toggle (Dark / Light Mode) */}
         <button
           onClick={toggleTheme}
@@ -68,6 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {theme === 'dark' ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#6366f1" />}
           <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
+
 
         {/* Voice Auto-Speak Toggle */}
         <button
@@ -87,11 +132,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button onClick={onNewChat} className="nav-pill">
           <Plus size={14} color="#f43f5e" />
           <span>New chat</span>
-        </button>
-
-        <button onClick={onToggleSearch} className="nav-pill">
-          <Search size={14} color="var(--text-secondary)" />
-          <span>Search chats</span>
         </button>
 
         <button onClick={onOpenLibrary} className="nav-pill">
@@ -128,3 +168,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

@@ -1,10 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Navbar } from './components/header/Navbar';
 import { Sidebar } from './components/chat/Sidebar';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { FloatingInputDock } from './components/chat/FloatingInputDock';
 import { SettingsDialog } from './components/settings/SettingsDialog';
 import { ToolsModal } from './components/library/ToolsModal';
+import { VoiceAssistantModal } from './components/voice/VoiceAssistantModal';
+import { ArtifactCanvas, type ArtifactItem } from './components/canvas/ArtifactCanvas';
+import { SpotlightOverlay } from './components/spotlight/SpotlightOverlay';
 import { useFriday } from './hooks/useFriday';
 import { useVoice } from './hooks/useVoice';
 
@@ -13,6 +16,11 @@ export const App: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [voiceAssistantOpen, setVoiceAssistantOpen] = useState(false);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [activeArtifact, setActiveArtifact] = useState<ArtifactItem | null>(null);
+  const [artifactOpen, setArtifactOpen] = useState(false);
+  const [lastUserTranscript, setLastUserTranscript] = useState<string>('');
 
   const {
     isListening,
@@ -27,6 +35,7 @@ export const App: React.FC = () => {
     enqueueChunk
   } = useVoice((transcript) => {
     if (transcript.trim()) {
+      setLastUserTranscript(transcript.trim());
       sendMessage(transcript.trim(), 'voice', selectedAgent);
     }
   });
@@ -50,7 +59,36 @@ export const App: React.FC = () => {
   const handleSendMessage = (text: string, inputType: 'text' | 'voice' = 'text', agentMode?: string) => {
     sendMessage(text, inputType, agentMode || selectedAgent);
     if (agentMode) setSelectedAgent(agentMode);
+
+    // Auto-detect code block generation for Claude-style Artifact canvas
+    setTimeout(() => {
+      const codeBlockMatch = text.match(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        setActiveArtifact({
+          id: String(Date.now()),
+          title: "Generated Code Artifact",
+          language: codeBlockMatch[1] || "python",
+          content: codeBlockMatch[2].trim(),
+          type: "code"
+        });
+        setArtifactOpen(true);
+      }
+    }, 1500);
   };
+
+  // Keyboard shortcut listener for Cmd+K (Spotlight) and Cmd+Shift+Space (Voice Assistant)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSpotlightOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const latestAssistantMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0]?.content || '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', background: 'var(--bg-main)', overflow: 'hidden' }}>
@@ -62,6 +100,8 @@ export const App: React.FC = () => {
         onOpenConfig={() => setSettingsOpen(true)}
         onOpenLibrary={() => setToolsOpen(true)}
         onToggleSearch={() => setSidebarOpen(!sidebarOpen)}
+        onOpenVoiceAssistant={() => setVoiceAssistantOpen(true)}
+        onOpenSpotlight={() => setSpotlightOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -120,7 +160,39 @@ export const App: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Claude-Style Side-By-Side Interactive Artifact Canvas */}
+        <ArtifactCanvas
+          artifact={activeArtifact}
+          isOpen={artifactOpen}
+          onClose={() => setArtifactOpen(false)}
+          onRunCode={(code, lang) => {
+            handleSendMessage(`Run this ${lang} code and show the output:\n\`\`\`${lang}\n${code}\n\`\`\``, 'text');
+          }}
+        />
       </div>
+
+      {/* Fullscreen Voice Assistant Modal (Siri / Google Assistant Mode) */}
+      <VoiceAssistantModal
+        isOpen={voiceAssistantOpen}
+        onClose={() => setVoiceAssistantOpen(false)}
+        isListening={isListening}
+        isSpeaking={isSpeaking}
+        isHandsFree={isHandsFree}
+        audioLevel={audioLevel}
+        lastUserTranscript={lastUserTranscript}
+        lastAssistantResponse={latestAssistantMessage}
+        onToggleListening={toggleListening}
+        onToggleHandsFree={toggleHandsFree}
+        onSendMessage={(text) => handleSendMessage(text, 'voice')}
+      />
+
+      {/* Raycast/Spotlight Global Command Palette Overlay */}
+      <SpotlightOverlay
+        isOpen={spotlightOpen}
+        onClose={() => setSpotlightOpen(false)}
+        onSubmit={(prompt) => handleSendMessage(prompt, 'text')}
+      />
 
       {/* Settings Dialog */}
       <SettingsDialog
@@ -143,3 +215,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+
