@@ -2,8 +2,11 @@ package com.friday.assistant.updater;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
@@ -16,7 +19,9 @@ import java.net.URL;
 
 public class AutoUpdateManager {
     private static final String TAG = "AutoUpdateManager";
+    private static final String PREFS_NAME = "FRIDAY_UPDATE_PREFS";
     private static final String GITHUB_API_URL = "https://api.github.com/repos/OK45batwal/FRIDAY/releases/latest";
+    private static final String CURRENT_VERSION = "v1.0.1";
 
     private final Activity activity;
 
@@ -24,7 +29,7 @@ public class AutoUpdateManager {
         this.activity = activity;
     }
 
-    public void checkForUpdates(final boolean showUpToDateToast) {
+    public void checkForUpdates(final boolean isManualCheck) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -44,7 +49,7 @@ public class AutoUpdateManager {
                         reader.close();
 
                         JSONObject release = new JSONObject(sb.toString());
-                        String latestTag = release.optString("tag_name", "v1.0.1");
+                        String latestTag = release.optString("tag_name", "").trim();
                         JSONArray assets = release.optJSONArray("assets");
 
                         String downloadUrl = null;
@@ -59,7 +64,16 @@ public class AutoUpdateManager {
                             }
                         }
 
-                        if (downloadUrl != null) {
+                        // Compare latestTag with current installed version
+                        if (downloadUrl != null && !latestTag.isEmpty() && isNewerVersion(latestTag, CURRENT_VERSION)) {
+                            SharedPreferences prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                            String dismissedTag = prefs.getString("dismissed_tag", "");
+
+                            // On auto-check, do NOT show if user already clicked 'Later' for this exact tag
+                            if (!isManualCheck && latestTag.equals(dismissedTag)) {
+                                return;
+                            }
+
                             final String apkUrl = downloadUrl;
                             final String tag = latestTag;
 
@@ -73,25 +87,61 @@ public class AutoUpdateManager {
                         }
                     }
 
-                    if (showUpToDateToast) {
+                    if (isManualCheck) {
                         activity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(activity, "FRIDAY is up to date!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, "FRIDAY is already on the latest version (" + CURRENT_VERSION + ")", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Update check failed: " + e.getMessage());
+                    if (isManualCheck) {
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(activity, "Could not reach update server.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
                 }
             }
         }).start();
     }
 
-    private void promptUpdateDialog(String tag, final String apkUrl) {
+    private boolean isNewerVersion(String latest, String current) {
+        String cleanLatest = latest.replaceFirst("(?i)^v", "").trim();
+        String cleanCurrent = current.replaceFirst("(?i)^v", "").trim();
+        if (cleanLatest.equals(cleanCurrent)) return false;
+
+        String[] lParts = cleanLatest.split("\\.");
+        String[] cParts = cleanCurrent.split("\\.");
+
+        int length = Math.max(lParts.length, cParts.length);
+        for (int i = 0; i < length; i++) {
+            int l = i < lParts.length ? parseVer(lParts[i]) : 0;
+            int c = i < cParts.length ? parseVer(cParts[i]) : 0;
+            if (l > c) return true;
+            if (l < c) return false;
+        }
+        return false;
+    }
+
+    private int parseVer(String s) {
+        try {
+            return Integer.parseInt(s.replaceAll("[^0-9]", ""));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private void promptUpdateDialog(final String tag, final String apkUrl) {
+        final SharedPreferences prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
         new AlertDialog.Builder(activity)
-            .setTitle("🚀 FRIDAY Update Available (" + tag + ")")
-            .setMessage("A new version of FRIDAY Assistant is available.\n\nTap 'Update' to download the latest release.")
+            .setTitle("🚀 New Update Available (" + tag + ")")
+            .setMessage("A new version of FRIDAY Assistant is available with updated features.\n\nWould you like to download now?")
             .setPositiveButton("Update", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -100,7 +150,12 @@ public class AutoUpdateManager {
                     activity.startActivity(browserIntent);
                 }
             })
-            .setNegativeButton("Later", null)
+            .setNegativeButton("Later", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    prefs.edit().putString("dismissed_tag", tag).apply();
+                }
+            })
             .show();
     }
 }
