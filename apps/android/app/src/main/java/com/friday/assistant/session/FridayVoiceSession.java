@@ -37,7 +37,8 @@ public class FridayVoiceSession extends VoiceInteractionSession {
     public void onCreate() {
         super.onCreate();
         actionManager = new DeviceActionManager(getContext());
-        aiService = new AssistantAIService(actionManager);
+        aiService = new AssistantAIService(getContext(), actionManager);
+
 
         audioEngine = new AssistantAudioEngine(
             getContext(),
