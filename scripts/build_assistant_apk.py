@@ -109,8 +109,9 @@ def build():
     subprocess.run(cmd_zipalign, env=env, check=True)
     
     # 7. Sign APK with jarsigner (v1) and apksigner (v2 + v3) for 100% Android security compliance
-    final_apk = RELEASE_DIR / "FRIDAY-Assistant-v1.0.0.apk"
+    final_apk = RELEASE_DIR / "FRIDAY-Assistant-v1.0.1.apk"
     print(f"✍️ Step 7: Cryptographically signing APK with jarsigner and apksigner -> {final_apk}...")
+
     
     # 7a. v1 signing via jarsigner
     jarsigner_bin = "/opt/homebrew/Cellar/openjdk@17/17.0.20/bin/jarsigner"

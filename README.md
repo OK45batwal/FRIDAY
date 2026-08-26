@@ -25,7 +25,8 @@ Open in Chrome / Safari / Edge $\rightarrow$ Click **"Install App"** in Navbar o
 
 ### 📱 2. Android System Assistant (Google Assistant Replacement)
 Download the native APK to replace Google Assistant on your phone with power-button / swipe trigger:
-👉 [**Download FRIDAY-Assistant-v1.0.0.apk**](https://github.com/OK45batwal/FRIDAY/releases/download/v1.0.0/FRIDAY-Assistant-v1.0.0.apk)
+👉 [**Download FRIDAY-Assistant-v1.0.1.apk**](https://github.com/OK45batwal/FRIDAY/releases/download/v1.0.1/FRIDAY-Assistant-v1.0.1.apk)
+
 
 ---
 
