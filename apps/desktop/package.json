@@ -8,15 +8,11 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
-    "build:electron": "tsc -p tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist-electron/package.json',JSON.stringify({type:'commonjs'})+'\\n')\"",
-    "start:electron": "electron .",
+    "preview": "vite preview --host",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "android:sync": "npm run build && npx cap sync android",
-    "android:open": "npx cap open android",
-    "dist:mac": "npm run build && npm run build:electron && electron-builder --mac",
-    "dist:win": "npm run build && npm run build:electron && electron-builder --win"
+    "test:watch": "vitest"
   },
+
   "build": {
     "appId": "com.friday.assistant",
     "productName": "FRIDAY",

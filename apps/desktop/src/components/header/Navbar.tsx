@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Settings, Volume2, VolumeX, Sun, Moon, Mic, MessageSquare, Box } from 'lucide-react';
-
-
+import { Plus, Search, Settings, Volume2, VolumeX, Sun, Moon, Mic, MessageSquare, Box, Download } from 'lucide-react';
 import { FridayLogo } from '../common/FridayLogo';
 
 interface NavbarProps {
@@ -26,12 +24,36 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSpotlight
 }) => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
     const saved = (localStorage.getItem('FRIDAY_THEME') as 'dark' | 'light') || 'dark';
     setTheme(saved);
     document.documentElement.setAttribute('data-theme', saved);
+
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert("To install FRIDAY on Mac/Windows: Click the Install icon (⨁) in your browser address bar.\nOn Android: Tap Menu (⋮) -> 'Add to Home screen'.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -39,6 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     localStorage.setItem('FRIDAY_THEME', nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
   };
+
 
   return (
     <header
@@ -145,6 +168,27 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Settings size={14} color="var(--text-secondary)" />
           <span>Config</span>
         </button>
+
+        {/* PWA 1-Click Install Button */}
+        <button
+          onClick={handleInstallClick}
+          className="nav-pill"
+          style={{
+            background: isInstallable 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(56, 189, 248, 0.3) 100%)' 
+              : 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
+            borderColor: isInstallable ? 'rgba(16, 185, 129, 0.7)' : 'rgba(16, 185, 129, 0.3)',
+            color: 'var(--accent-emerald)',
+            fontWeight: 700,
+            boxShadow: isInstallable ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'
+          }}
+          title="Install FRIDAY as a Native App on macOS, Windows, or Android"
+        >
+          <Download size={14} color="var(--accent-emerald)" />
+          <span>{isInstallable ? 'Install App ⚡' : 'Install App'}</span>
+        </button>
+
+
 
 
         {/* User Avatar */}

@@ -5,99 +5,74 @@
 <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/public/favicon.svg" width="108" height="108" alt="FRIDAY Arc Reactor Logo" />
 
 # FRIDAY 1.0
-### Private On-Device Neural Intelligence • Cyber Voice HUD • Multi-Platform
+### High-Performance Multi-Platform AI Assistant • Ambient Voice Cockpit • Local Ollama & Cloud LLMs
 
 [![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![Mac DMG](https://img.shields.io/badge/macOS-Direct%20DMG%20Download-000000?style=for-the-badge&logo=apple)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![Android APK](https://img.shields.io/badge/Android-Direct%20APK%20Download-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![PWA Ready](https://img.shields.io/badge/PWA-1--Click%20Install-10b981?style=for-the-badge&logo=pwa)](https://github.com/OK45batwal/FRIDAY)
+[![Ollama](https://img.shields.io/badge/Ollama-Offline%20Ready-blue?style=for-the-badge)](https://ollama.ai)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
 
-**FRIDAY** is a lightweight, low-latency AI Operating Assistant built for **macOS**, **Android**, and **Windows**. It combines an on-device fine-tuned neural model (<380MB RAM footprint) with autonomous OS agent tools and a real-time speech HUD.
+**FRIDAY** is a unified, high-performance AI Operating Assistant designed to run and install seamlessly across **macOS**, **Android**, and **Windows** with **zero installation friction**.
 
 </div>
 
 ---
 
-## 📥 Direct 1-Click Downloads
+## 🚀 1-Click Multi-Platform Installation (PWA)
 
-Clicking any button below starts the download immediately:
-
-<div align="center">
+FRIDAY is built as an installable **Progressive Web Application (PWA)**:
 
 | 🍏 macOS Desktop | 📱 Android Mobile | 🪟 Windows Desktop |
 |:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/public/favicon.svg" width="52" height="52" /><br>**macOS DMG** | <img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" width="52" height="52" /><br>**Android APK** | 🪟<br>**Windows Client** |
-| [⬇️ **Download .DMG (Mac)**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download .APK (Android)**](https://github.com/OK45batwal/FRIDAY/releases/latest) | [⬇️ **Download (Windows)**](https://github.com/OK45batwal/FRIDAY/releases/latest) |
-| *Self-Contained Installer (macOS)* | *Direct Android Package (APK)* | *Windows NSIS / Portable Package* |
-
-
-
-</div>
-
-> **💡 macOS Gatekeeper Note:** If macOS displays a verification alert upon opening, run `xattr -cr /Applications/FRIDAY.app` in your Terminal or click **"Open Anyway"** in **System Settings → Privacy & Security**.
+| Open in Chrome / Safari $\rightarrow$ Click **"Install App"** in Navbar or address bar (⨁). Runs as a native desktop window with keyboard shortcuts (`⌘K`). | Open in Chrome $\rightarrow$ Click **"Install App"** or tap **Menu (⋮) → "Add to Home screen"**. Runs full-screen with native mic audio. | Open in Chrome / Edge $\rightarrow$ Click **"Install App"** (⨁). Runs as a dedicated standalone desktop app. |
 
 ---
 
 ## 🌟 Key Capabilities
 
-* **🧠 On-Device Neural Intelligence**: Autoregressive neural model with LoRA fine-tuning running directly on Apple Silicon Metal GPU (`mps`) or CPU with sub-30ms token latency.
-* **📱 Mobile-Optimized (<380MB RAM)**: Tailored for Android smartphones with native hardware microphone voice recognition and full safe-area notch support.
-* **🎙️ Responsive Cyber Voice HUD**: Live visual audio equalizer waveforms, real-time speech transcription, and multi-tier natural speech synthesis (`Tara`, `Samantha`, `Rishi`, `Karen`).
-* **🌗 Dynamic Dark & Light Theme**: OLED obsidian cockpit for night sessions and modern frosted studio aesthetic for daytime work.
-* **⚡ Native macOS Hotkey**: Press **`Cmd + Shift + Space`** anywhere to summon the floating assistant.
-* **🛠️ Native OS Automation Tools**:
-  - Web search & browser automation (`search_web`, `open_browser_url`).
-  - macOS Reminders integration (`create_macos_reminder`, `get_upcoming_reminders`).
-  - Workspace file manager & snippet reader (`read_file_snippet`, `search_workspace_files`).
-  - Mathematical AST evaluator & multi-turn pronoun disambiguation.
+* **🎙️ Fullscreen Ambient Voice Cockpit**:
+  - Siri & Google Assistant-style full-screen HUD with 3D glowing Voice Orb.
+  - Zero-latency turn-taking Voice Activity Detection (VAD) loop.
+  - Real-time speech transcription & streaming neural speech synthesis.
+* **💻 Claude-Style Artifact Canvas**:
+  - Interactive split-pane workspace for generated code, diffs, and live syntax highlighting.
+  - 1-click clipboard copy, fullscreen expansion, and code runner.
+* **⚡ Spotlight Command Palette (`⌘K` / `Ctrl+K`)**:
+  - Floating Raycast-style command bar for instant math, system queries, and quick agent prompts.
+* **🧠 Multi-Engine Intelligence**:
+  - **Local Offline Ollama (`localhost:11434`)**: Direct integration with Llama 3, Qwen 2.5, and DeepSeek with 0 cloud dependencies.
+  - **Cloud Ultra-Fast Streaming**: Direct connector for Groq (<50ms TTFT), OpenRouter, Claude, and OpenAI.
+* **🏪 Integrated Store & Agent Hub**:
+  - 1-click install and toggle personas: **Senior Architect**, **Calculus & Physics Tutor**, **DevSecOps SRE**, **Technical Writer**.
 
 ---
 
-## 🏗️ Architecture & Monorepo Structure
+## ⚡ Quick Start
 
-```text
-FRIDAY/
-├── apps/
-│   └── desktop/                 # Electron Desktop + Capacitor Android + React TS
-│       ├── android/             # Android Studio Native Gradle Project & App Icons
-│       ├── electron/            # Native macOS Main, Preload & Menu Bar Tray
-│       └── src/                 # Cyber HUD UI Components & Voice Engine
-├── services/
-│   └── core/                    # FastAPI Backend + SQLite + Neural LLM Engine
-│       ├── core/ai/             # On-Device Neural Inference Engine & LoRA Adapters
-│       ├── core/voice/          # Multi-Tier Text-To-Speech & Voice Synthesis
-│       └── training/            # SFT & DPO Fine-Tuning Pipeline (5,000 Samples)
-├── scripts/                     # Asset generators & benchmark suites
-└── docs/                        # Architecture, API specifications & build guides
+```bash
+# 1. Clone the repository
+git clone https://github.com/OK45batwal/FRIDAY.git
+cd FRIDAY
+
+# 2. Install dependencies & launch
+npm install --prefix apps/desktop
+npm run dev
+
+# 3. Open in your browser
+# Navigate to http://localhost:5173 and click "Install App" ⚡
 ```
 
 ---
 
-## ⚡ Quick Start for Developers
+## 🥣 Soup Layer-Streaming Fine-Tuning Recipe
 
-### 1. Start the Core Python Backend
-```bash
-cd services/core
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python -m app.main
-```
-The FastAPI server will start on [http://0.0.0.0:8000](http://0.0.0.0:8000).
+FRIDAY includes **Soup (`soup.yaml`)** to fine-tune 7B/8B models on consumer laptops (<4 GB RAM):
 
-### 2. Start the Frontend Cockpit
 ```bash
-cd apps/desktop
-npm install
-npm run dev               # Web UI (http://localhost:5173)
-npm run start:electron    # Native macOS Window
+pip install "soup-cli[train]"
+npm run train:soup
 ```
 
-### 3. Build & Sync Android Project
-```bash
-cd apps/desktop
-npm run android:sync      # Sync web bundle into native Android project
-npm run android:open      # Open directly in Android Studio
-```
 
 ---
 
