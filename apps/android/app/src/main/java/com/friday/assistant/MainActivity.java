@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.friday.assistant.actions.DeviceActionManager;
 import com.friday.assistant.ai.AssistantAIService;
 import com.friday.assistant.audio.AssistantAudioEngine;
+import com.friday.assistant.updater.AutoUpdateManager;
 
 public class MainActivity extends Activity {
     private static final int PERM_REQ = 101;
@@ -29,6 +31,7 @@ public class MainActivity extends Activity {
     private DeviceActionManager actionManager;
     private AssistantAIService aiService;
     private AssistantAudioEngine audioEngine;
+    private AutoUpdateManager updateManager;
 
     private TextView tvStatus;
     private LinearLayout chatContainer;
@@ -48,6 +51,10 @@ public class MainActivity extends Activity {
 
         actionManager = new DeviceActionManager(this);
         aiService = new AssistantAIService(this, actionManager);
+        updateManager = new AutoUpdateManager(this);
+
+        // Check for updates on startup
+        updateManager.checkForUpdates(false);
 
         tvStatus = findViewById(R.id.tvStatus);
         chatContainer = findViewById(R.id.chatContainer);
@@ -61,18 +68,38 @@ public class MainActivity extends Activity {
         audioEngine = new AssistantAudioEngine(
             this,
             new AssistantAudioEngine.SpeechCallback() {
-                @Override public void onResult(String text) {
-                    processQuery(text, true);
+                @Override public void onResult(String finalTranscript) {
+                    etInput.setText("");
+                    processQuery(finalTranscript, true);
+                }
+
+                @Override public void onPartialResult(String partialTranscript) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            etInput.setText(partialTranscript);
+                        }
+                    });
                 }
             },
             new AssistantAudioEngine.StateCallback() {
                 @Override public void onState(AssistantAudioEngine.AssistantState state) {
                     updateVoiceState(state);
                 }
+
+                @Override public void onRmsAmplitude(final float rmsdB) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            if (orbGlow != null && rmsdB > 2.0f) {
+                                float scale = 1.0f + (Math.min(rmsdB, 10.0f) / 15.0f);
+                                orbGlow.setScaleX(scale);
+                                orbGlow.setScaleY(scale);
+                            }
+                        }
+                    });
+                }
             }
         );
 
-        // Voice button click
         if (btnVoice != null) {
             btnVoice.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -81,7 +108,6 @@ public class MainActivity extends Activity {
             });
         }
 
-        // Send text button click
         if (btnSend != null) {
             btnSend.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -94,7 +120,6 @@ public class MainActivity extends Activity {
             });
         }
 
-        // Settings button click
         if (btnSettings != null) {
             btnSettings.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -103,7 +128,6 @@ public class MainActivity extends Activity {
             });
         }
 
-        // Setup Quick Action Chips
         setupChip(R.id.chipSetDefault, new Runnable() {
             @Override public void run() { openAssistantSettings(); }
         });
@@ -128,7 +152,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        addAssistantMessage("Hello Sir! I am FRIDAY, your AI Operating Assistant. Tap the Voice Orb or speak a command.");
+        addAssistantMessage("Hello Sir! I am FRIDAY, your advanced AI Operating Assistant. Tap the Voice Orb or speak a command.");
     }
 
     private void setupChip(int id, final Runnable action) {
@@ -191,6 +215,10 @@ public class MainActivity extends Activity {
     private void updateVoiceState(final AssistantAudioEngine.AssistantState state) {
         runOnUiThread(new Runnable() {
             @Override public void run() {
+                if (orbGlow != null) {
+                    orbGlow.setScaleX(1.0f);
+                    orbGlow.setScaleY(1.0f);
+                }
                 switch (state) {
                     case LISTENING:
                         tvStatus.setText("🎙️ LISTENING...");
@@ -220,7 +248,7 @@ public class MainActivity extends Activity {
         layout.setPadding(50, 40, 50, 10);
 
         TextView tvKeyLabel = new TextView(this);
-        tvKeyLabel.setText("Groq or OpenRouter API Key (Free):");
+        tvKeyLabel.setText("Groq or OpenRouter API Key (Free Cloud LLM):");
         layout.addView(tvKeyLabel);
 
         final EditText etKey = new EditText(this);
@@ -229,7 +257,7 @@ public class MainActivity extends Activity {
         layout.addView(etKey);
 
         TextView tvIpLabel = new TextView(this);
-        tvIpLabel.setText("\nLocal PC / Mac IP Address (Optional):");
+        tvIpLabel.setText("\nLocal PC / Mac IP (e.g. 192.168.1.100:8000):");
         layout.addView(tvIpLabel);
 
         final EditText etIp = new EditText(this);
@@ -237,8 +265,17 @@ public class MainActivity extends Activity {
         etIp.setText(prefs.getString("host_ip", ""));
         layout.addView(etIp);
 
+        Button btnCheckUpdate = new Button(this);
+        btnCheckUpdate.setText("🔄 Check for New Updates");
+        btnCheckUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                updateManager.checkForUpdates(true);
+            }
+        });
+        layout.addView(btnCheckUpdate);
+
         new AlertDialog.Builder(this)
-            .setTitle("FRIDAY AI Engine Configuration")
+            .setTitle("FRIDAY Assistant Configuration")
             .setView(layout)
             .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface dialog, int which) {

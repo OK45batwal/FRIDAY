@@ -44,11 +44,20 @@ public class FridayVoiceSession extends VoiceInteractionSession {
             getContext(),
             new AssistantAudioEngine.SpeechCallback() {
                 @Override public void onResult(String text) { handleUserSpeech(text); }
+                @Override public void onPartialResult(final String partial) {
+                    if (tvUserTranscript != null) {
+                        tvUserTranscript.post(new Runnable() {
+                            @Override public void run() { tvUserTranscript.setText(partial); }
+                        });
+                    }
+                }
             },
             new AssistantAudioEngine.StateCallback() {
                 @Override public void onState(AssistantAudioEngine.AssistantState state) { updateUiState(state); }
+                @Override public void onRmsAmplitude(float rmsdB) {}
             }
         );
+
     }
 
     @Override
