@@ -18,15 +18,17 @@
 
 ---
 
-## 🚀 1-Click Multi-Platform Installation (PWA)
+## 🚀 1-Click Multi-Platform Access (Browser PWA & Android Assistant)
 
-FRIDAY is built as an installable **Progressive Web Application (PWA)**:
+### 🌐 1. Browser Web App (macOS, Windows, Linux)
+Open in Chrome / Safari / Edge $\rightarrow$ Click **"Install App"** in Navbar or address bar (⨁) to install as a native desktop application with 0 installation friction.
 
-| 🍏 macOS Desktop | 📱 Android Mobile | 🪟 Windows Desktop |
-|:---:|:---:|:---:|
-| Open in Chrome / Safari $\rightarrow$ Click **"Install App"** in Navbar or address bar (⨁). Runs as a native desktop window with keyboard shortcuts (`⌘K`). | Open in Chrome $\rightarrow$ Click **"Install App"** or tap **Menu (⋮) → "Add to Home screen"**. Runs full-screen with native mic audio. | Open in Chrome / Edge $\rightarrow$ Click **"Install App"** (⨁). Runs as a dedicated standalone desktop app. |
+### 📱 2. Android System Assistant (Google Assistant Replacement)
+Download the native APK to replace Google Assistant on your phone with power-button / swipe trigger:
+👉 [**Download FRIDAY-Assistant-v1.0.0.apk**](https://github.com/OK45batwal/FRIDAY/releases/download/v1.0.0/FRIDAY-Assistant-v1.0.0.apk)
 
 ---
+
 
 ## 🌟 Key Capabilities
 
