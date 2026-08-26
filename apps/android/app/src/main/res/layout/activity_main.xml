@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#060913"
+    android:background="#05070E"
     android:padding="16dp">
 
     <!-- Top App Bar & Settings Header -->
@@ -20,8 +20,8 @@
             android:layout_alignParentStart="true">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:src="@mipmap/ic_launcher"
                 android:layout_marginEnd="10dp" />
 
@@ -33,20 +33,21 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FRIDAY AI"
+                    android:text="FRIDAY 1.0"
                     android:textColor="#f8fafc"
                     android:textSize="18sp"
                     android:fontFamily="sans-serif-black"
-                    android:letterSpacing="0.05" />
+                    android:letterSpacing="0.06" />
 
                 <TextView
                     android:id="@+id/tvStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚡ FRIDAY ONLINE"
+                    android:text="⚡ SYSTEM READY • SAY 'HEY FRIDAY'"
                     android:textColor="#38bdf8"
-                    android:textSize="11.5sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:textSize="11sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.04" />
             </LinearLayout>
         </LinearLayout>
 
@@ -61,12 +62,12 @@
             android:contentDescription="Settings" />
     </RelativeLayout>
 
-    <!-- Quick Action Chips ScrollView -->
+    <!-- Quick Action Chips Horizontal ScrollView -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="10dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -74,53 +75,73 @@
             android:orientation="horizontal">
 
             <Button
+                android:id="@+id/chipWakeWordToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="🎙️ Wake Word: ON"
+                android:textColor="#10b981"
+                android:background="@drawable/bg_assistant_sheet"
+                android:textSize="11.5sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
                 android:id="@+id/chipSetDefault"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:text="⚙️ Set Default Assistant"
                 android:textColor="#ffffff"
                 android:background="@drawable/bg_assistant_sheet"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/chipTestOverlay"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:text="🧪 Test Floating HUD"
                 android:textColor="#38bdf8"
                 android:background="@drawable/bg_assistant_sheet"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/chipFlashlight"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:text="🔦 Flashlight"
                 android:textColor="#cbd5e1"
                 android:background="@drawable/bg_assistant_sheet"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/chipTimer"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:text="⏰ 10m Timer"
                 android:textColor="#cbd5e1"
                 android:background="@drawable/bg_assistant_sheet"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
-                android:id="@+id/chipAlarm"
+                android:id="@+id/chipReminders"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:text="⏰ 7 AM Alarm"
+                android:layout_height="36dp"
+                android:text="📝 My Reminders"
                 android:textColor="#cbd5e1"
                 android:background="@drawable/bg_assistant_sheet"
-                android:textSize="12sp" />
+                android:textSize="11.5sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/chipBattery"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="🔋 Battery Status"
+                android:textColor="#cbd5e1"
+                android:background="@drawable/bg_assistant_sheet"
+                android:textSize="11.5sp" />
         </LinearLayout>
     </HorizontalScrollView>
 
@@ -148,16 +169,16 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Glowing Voice Orb Button -->
+        <!-- Glowing Voice Orb Button with Multi-Ring Arc Reactor Effect -->
         <FrameLayout
-            android:layout_width="52dp"
-            android:layout_height="52dp"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
             android:layout_marginEnd="10dp">
 
             <View
                 android:id="@+id/orbGlow"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
                 android:background="@drawable/shape_glowing_dot" />
 
             <ImageButton
@@ -178,7 +199,7 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="@drawable/bg_assistant_sheet"
-            android:hint="Ask FRIDAY anything..."
+            android:hint="Ask or say 'Hey Friday'..."
             android:textColorHint="#64748b"
             android:textColor="#f8fafc"
             android:paddingStart="14dp"

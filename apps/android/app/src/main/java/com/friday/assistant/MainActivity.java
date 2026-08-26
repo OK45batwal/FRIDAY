@@ -22,6 +22,7 @@ import android.widget.Toast;
 import com.friday.assistant.actions.DeviceActionManager;
 import com.friday.assistant.ai.AssistantAIService;
 import com.friday.assistant.audio.AssistantAudioEngine;
+import com.friday.assistant.audio.WakeWordEngine;
 import com.friday.assistant.updater.AutoUpdateManager;
 
 public class MainActivity extends Activity {
@@ -31,6 +32,7 @@ public class MainActivity extends Activity {
     private DeviceActionManager actionManager;
     private AssistantAIService aiService;
     private AssistantAudioEngine audioEngine;
+    private WakeWordEngine wakeWordEngine;
     private AutoUpdateManager updateManager;
 
     private TextView tvStatus;
@@ -40,7 +42,10 @@ public class MainActivity extends Activity {
     private ImageButton btnVoice;
     private ImageButton btnSend;
     private ImageButton btnSettings;
+    private Button chipWakeWordToggle;
     private View orbGlow;
+
+    private boolean isWakeWordEnabled = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +58,6 @@ public class MainActivity extends Activity {
         aiService = new AssistantAIService(this, actionManager);
         updateManager = new AutoUpdateManager(this);
 
-        // Check for updates on startup
         updateManager.checkForUpdates(false);
 
         tvStatus = findViewById(R.id.tvStatus);
@@ -63,7 +67,20 @@ public class MainActivity extends Activity {
         btnVoice = findViewById(R.id.btnVoice);
         btnSend = findViewById(R.id.btnSend);
         btnSettings = findViewById(R.id.btnSettings);
+        chipWakeWordToggle = findViewById(R.id.chipWakeWordToggle);
         orbGlow = findViewById(R.id.orbGlow);
+
+        // Wake Word Engine for hands-free "Hey Friday"
+        wakeWordEngine = new WakeWordEngine(this, new WakeWordEngine.WakeWordCallback() {
+            @Override public void onWakeWordDetected(String detectedPhrase) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        tvStatus.setText("⚡ 'HEY FRIDAY' DETECTED!");
+                        audioEngine.startListening();
+                    }
+                });
+            }
+        });
 
         audioEngine = new AssistantAudioEngine(
             this,
@@ -73,7 +90,7 @@ public class MainActivity extends Activity {
                     processQuery(finalTranscript, true);
                 }
 
-                @Override public void onPartialResult(String partialTranscript) {
+                @Override public void onPartialResult(final String partialTranscript) {
                     runOnUiThread(new Runnable() {
                         @Override public void run() {
                             etInput.setText(partialTranscript);
@@ -90,7 +107,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override public void run() {
                             if (orbGlow != null && rmsdB > 2.0f) {
-                                float scale = 1.0f + (Math.min(rmsdB, 10.0f) / 15.0f);
+                                float scale = 1.0f + (Math.min(rmsdB, 10.0f) / 14.0f);
                                 orbGlow.setScaleX(scale);
                                 orbGlow.setScaleY(scale);
                             }
@@ -103,6 +120,7 @@ public class MainActivity extends Activity {
         if (btnVoice != null) {
             btnVoice.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
+                    wakeWordEngine.pause();
                     audioEngine.startListening();
                 }
             });
@@ -128,6 +146,24 @@ public class MainActivity extends Activity {
             });
         }
 
+        if (chipWakeWordToggle != null) {
+            chipWakeWordToggle.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    isWakeWordEnabled = !isWakeWordEnabled;
+                    if (isWakeWordEnabled) {
+                        chipWakeWordToggle.setText("🎙️ Wake Word: ON");
+                        chipWakeWordToggle.setTextColor(0xFF10B981);
+                        wakeWordEngine.startListening();
+                        Toast.makeText(MainActivity.this, "Say 'Hey Friday' to trigger hands-free!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        chipWakeWordToggle.setText("🎙️ Wake Word: OFF");
+                        chipWakeWordToggle.setTextColor(0xFF94A3B8);
+                        wakeWordEngine.stopListening();
+                    }
+                }
+            });
+        }
+
         setupChip(R.id.chipSetDefault, new Runnable() {
             @Override public void run() { openAssistantSettings(); }
         });
@@ -137,8 +173,11 @@ public class MainActivity extends Activity {
         setupChip(R.id.chipTimer, new Runnable() {
             @Override public void run() { processQuery("Set timer for 10 minutes", false); }
         });
-        setupChip(R.id.chipAlarm, new Runnable() {
-            @Override public void run() { processQuery("Set alarm for 7:00 AM", false); }
+        setupChip(R.id.chipReminders, new Runnable() {
+            @Override public void run() { processQuery("What are my reminders?", false); }
+        });
+        setupChip(R.id.chipBattery, new Runnable() {
+            @Override public void run() { processQuery("How is my battery?", false); }
         });
         setupChip(R.id.chipTestOverlay, new Runnable() {
             @Override public void run() {
@@ -152,7 +191,11 @@ public class MainActivity extends Activity {
             }
         });
 
-        addAssistantMessage("Hello Sir! I am FRIDAY, your advanced AI Operating Assistant. Tap the Voice Orb or speak a command.");
+        addAssistantMessage("⚡ FRIDAY 1.0 Online. Say 'Hey Friday' or tap the Voice Orb to command.");
+
+        if (isWakeWordEnabled) {
+            wakeWordEngine.startListening();
+        }
     }
 
     private void setupChip(int id, final Runnable action) {
@@ -167,6 +210,7 @@ public class MainActivity extends Activity {
     private void processQuery(final String query, final boolean speakBack) {
         addUserMessage(query);
         tvStatus.setText("⚡ COMPUTING...");
+        wakeWordEngine.pause();
 
         new Thread(new Runnable() {
             @Override public void run() {
@@ -174,9 +218,11 @@ public class MainActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         addAssistantMessage(response);
-                        tvStatus.setText("⚡ FRIDAY ONLINE");
+                        tvStatus.setText("⚡ FRIDAY ONLINE • SAY 'HEY FRIDAY'");
                         if (speakBack) {
                             audioEngine.speak(response);
+                        } else if (isWakeWordEnabled) {
+                            wakeWordEngine.resume();
                         }
                     }
                 });
@@ -186,20 +232,20 @@ public class MainActivity extends Activity {
 
     private void addUserMessage(String message) {
         TextView tv = new TextView(this);
-        tv.setText("🗣️ " + message);
+        tv.setText("👤  " + message);
         tv.setTextColor(0xFF38BDF8);
         tv.setTextSize(15);
-        tv.setPadding(0, 10, 0, 10);
+        tv.setPadding(0, 12, 0, 12);
         chatContainer.addView(tv);
         scrollToBottom();
     }
 
     private void addAssistantMessage(String message) {
         TextView tv = new TextView(this);
-        tv.setText("🤖 " + message);
+        tv.setText("🤖  " + message);
         tv.setTextColor(0xFFF1F5F9);
         tv.setTextSize(15);
-        tv.setPadding(0, 10, 0, 10);
+        tv.setPadding(0, 12, 0, 12);
         chatContainer.addView(tv);
         scrollToBottom();
     }
@@ -229,12 +275,15 @@ public class MainActivity extends Activity {
                         if (orbGlow != null) orbGlow.setBackgroundColor(0x8038BDF8);
                         break;
                     case SPEAKING:
-                        tvStatus.setText("🔊 SPEAKING...");
+                        tvStatus.setText("🔊 FRIDAY SPEAKING...");
                         if (orbGlow != null) orbGlow.setBackgroundColor(0x8010B981);
                         break;
                     case IDLE:
-                        tvStatus.setText("⚡ FRIDAY ONLINE");
-                        if (orbGlow != null) orbGlow.setBackgroundColor(0x2038BDF8);
+                        tvStatus.setText("⚡ SYSTEM READY • SAY 'HEY FRIDAY'");
+                        if (orbGlow != null) orbGlow.setBackgroundColor(0x2538BDF8);
+                        if (isWakeWordEnabled) {
+                            wakeWordEngine.resume();
+                        }
                         break;
                 }
             }
@@ -312,8 +361,21 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (wakeWordEngine != null) wakeWordEngine.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (wakeWordEngine != null && isWakeWordEnabled) wakeWordEngine.resume();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (audioEngine != null) audioEngine.destroy();
+        if (wakeWordEngine != null) wakeWordEngine.destroy();
     }
 }

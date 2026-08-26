@@ -15,8 +15,10 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -28,8 +30,12 @@ public class AssistantAIService {
     private final Context context;
     private final DeviceActionManager actionManager;
 
-    private String lastUserQuery = "";
-    private String lastAssistantAnswer = "";
+    private static class MessageTurn {
+        String user;
+        String assistant;
+        MessageTurn(String u, String a) { user = u; assistant = a; }
+    }
+    private final List<MessageTurn> conversationHistory = new ArrayList<>();
 
     public AssistantAIService(Context context, DeviceActionManager actionManager) {
         this.context = context;
@@ -38,137 +44,161 @@ public class AssistantAIService {
 
     public String processUserQuery(String query, String screenContext) {
         if (query == null || query.trim().isEmpty()) {
-            return "I am listening. How may I assist you?";
+            return "I am listening. How can I assist you?";
         }
 
         String lower = query.toLowerCase().trim();
-        String response;
+        StringBuilder responseBuilder = new StringBuilder();
 
-        // ========================================================
-        // 1. HARDWARE & DEVICE ACTIONS (0ms, 100% Offline)
-        // ========================================================
+        // 0. Handle Compound Commands ("Turn on flashlight AND set a timer for 5m")
+        if (lower.contains(" and ") && (lower.contains("flashlight") || lower.contains("timer") || lower.contains("alarm"))) {
+            String[] parts = query.split("(?i)\\s+and\\s+");
+            for (String part : parts) {
+                String singleRes = handleSingleQuery(part.trim(), screenContext);
+                if (responseBuilder.length() > 0) responseBuilder.append("\n");
+                responseBuilder.append(singleRes);
+            }
+            String finalCompound = responseBuilder.toString();
+            recordTurn(query, finalCompound);
+            return finalCompound;
+        }
+
+        String res = handleSingleQuery(query, screenContext);
+        recordTurn(query, res);
+        return res;
+    }
+
+    private void recordTurn(String user, String assistant) {
+        conversationHistory.add(new MessageTurn(user, assistant));
+        if (conversationHistory.size() > 6) {
+            conversationHistory.remove(0);
+        }
+    }
+
+    private String handleSingleQuery(String query, String screenContext) {
+        String lower = query.toLowerCase().trim();
+
+        // 1. HARDWARE & DEVICE CONTROLS
         if (lower.contains("flashlight on") || lower.contains("turn on flashlight") || lower.contains("torch on")) {
             Map<String, String> p = new HashMap<>();
             p.put("state", "on");
-            response = actionManager.executeIntent("flashlight", p);
+            return actionManager.executeIntent("flashlight", p);
         }
-        else if (lower.contains("flashlight off") || lower.contains("turn off flashlight") || lower.contains("torch off")) {
+        if (lower.contains("flashlight off") || lower.contains("turn off flashlight") || lower.contains("torch off")) {
             Map<String, String> p = new HashMap<>();
             p.put("state", "off");
-            response = actionManager.executeIntent("flashlight", p);
+            return actionManager.executeIntent("flashlight", p);
         }
-        else if (lower.contains("timer") || lower.contains("set a timer") || lower.contains("set timer")) {
+        if (lower.contains("timer") || lower.contains("set a timer") || lower.contains("set timer")) {
             int seconds = extractSeconds(lower);
             Map<String, String> p = new HashMap<>();
             p.put("seconds", String.valueOf(seconds));
-            response = actionManager.executeIntent("timer", p);
+            return actionManager.executeIntent("timer", p);
         }
-        else if (lower.startsWith("alarm") || lower.contains("wake me up") || lower.contains("set alarm") || lower.contains("set an alarm")) {
+        if (lower.startsWith("alarm") || lower.contains("wake me up") || lower.contains("set alarm") || lower.contains("set an alarm")) {
             int hour = extractHour(lower);
             int minute = extractMinute(lower);
             Map<String, String> p = new HashMap<>();
             p.put("hour", String.valueOf(hour));
             p.put("minute", String.valueOf(minute));
             p.put("message", "FRIDAY Alarm");
-            response = actionManager.executeIntent("alarm", p);
+            return actionManager.executeIntent("alarm", p);
         }
-        else if (lower.startsWith("call ") || lower.contains("dial ")) {
+        if (lower.startsWith("call ") || lower.contains("dial ")) {
             String target = query.replaceFirst("(?i)call ", "").replaceFirst("(?i)dial ", "").trim();
             Map<String, String> p = new HashMap<>();
             p.put("number", target);
-            response = actionManager.executeIntent("call", p);
+            return actionManager.executeIntent("call", p);
         }
-        else if (lower.startsWith("whatsapp ") || lower.contains("send whatsapp") || lower.contains("whatsapp to")) {
+        if (lower.startsWith("whatsapp ") || lower.contains("send whatsapp") || lower.contains("whatsapp to")) {
             String target = query.replaceFirst("(?i)whatsapp ", "").replaceFirst("(?i)send whatsapp to ", "").trim();
             Map<String, String> p = new HashMap<>();
             p.put("number", target);
             p.put("message", "Hello from FRIDAY");
-            response = actionManager.executeIntent("whatsapp", p);
+            return actionManager.executeIntent("whatsapp", p);
         }
-        else if (lower.startsWith("open ") || lower.startsWith("launch ")) {
+        if (lower.startsWith("open ") || lower.startsWith("launch ")) {
             String app = query.replaceFirst("(?i)open ", "").replaceFirst("(?i)launch ", "").trim();
             Map<String, String> p = new HashMap<>();
             p.put("app_name", app);
-            response = actionManager.executeIntent("open_app", p);
+            return actionManager.executeIntent("open_app", p);
         }
-        else if (lower.contains("search for") || lower.startsWith("google ") || lower.startsWith("search ")) {
+        if (lower.contains("search for") || lower.startsWith("google ") || lower.startsWith("search ")) {
             String q = query.replaceFirst("(?i).*search for ", "").replaceFirst("(?i)google ", "").replaceFirst("(?i)search ", "").trim();
             Map<String, String> p = new HashMap<>();
             p.put("query", q);
-            response = actionManager.executeIntent("web_search", p);
+            return actionManager.executeIntent("web_search", p);
         }
 
-        // ========================================================
-        // 2. SYSTEM INFO, BATTERY & CONVERSIONS (0ms Offline)
-        // ========================================================
-        else if (lower.contains("battery") || lower.contains("power level")) {
-            response = getBatteryStatus();
+        // 2. NOTES & REMINDERS MEMORY
+        if (lower.startsWith("remember that") || lower.startsWith("note that") || lower.startsWith("remind me to") || lower.startsWith("save note")) {
+            String note = query.replaceFirst("(?i)remember that|note that|remind me to|save note", "").trim();
+            Map<String, String> p = new HashMap<>();
+            p.put("note", note);
+            return actionManager.executeIntent("save_reminder", p);
         }
-        else if (lower.contains("what time is it") || lower.equals("time") || lower.contains("current time")) {
-            response = "The current time is " + new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date()) + ".";
+        if (lower.contains("what are my reminders") || lower.contains("show my notes") || lower.contains("get reminders") || lower.equals("reminders")) {
+            return actionManager.executeIntent("get_reminders", new HashMap<String, String>());
         }
-        else if (lower.contains("what is today's date") || lower.contains("what day is it") || lower.equals("date")) {
-            response = "Today is " + new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(new Date()) + ".";
+
+        // 3. SYSTEM DIAGNOSTICS, BATTERY & OFFLINE INTELLIGENCE
+        if (lower.contains("battery") || lower.contains("power level") || lower.contains("battery percentage")) {
+            return getBatteryStatus();
         }
-        else if (lower.contains("who are you") || lower.contains("what is your name")) {
-            response = "I am FRIDAY, your advanced AI Operating Assistant, designed to automate your phone, answer complex queries, and streamline your workflow.";
+        if (lower.contains("what time is it") || lower.equals("time") || lower.contains("current time")) {
+            return "The current time is " + new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date()) + ".";
         }
-        else if (lower.contains("how are you")) {
-            response = "All neural networks and sub-systems are operating at maximum capability, Sir. Ready for your instructions.";
+        if (lower.contains("what is today's date") || lower.contains("what day is it") || lower.equals("date")) {
+            return "Today is " + new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(new Date()) + ".";
         }
-        else if (lower.contains("tell me a joke")) {
+        if (lower.contains("who are you") || lower.contains("what is your name")) {
+            return "I am FRIDAY — your personal AI Operating Assistant, inspired by Tony Stark's AI, built for high-performance voice interaction and device automation.";
+        }
+        if (lower.contains("how are you")) {
+            return "All diagnostic parameters, audio visualizers, and neural sub-systems are operating at maximum efficiency, Sir.";
+        }
+        if (lower.contains("tell me a joke")) {
             String[] jokes = {
                 "Why do programmers prefer dark mode? Because light attracts bugs!",
                 "There are 10 types of people in the world: those who understand binary, and those who don't.",
                 "Why was the JavaScript developer sad? Because they didn't know how to 'null' their feelings.",
                 "A SQL query walks into a bar, walks up to two tables and asks: 'Can I join you?'"
             };
-            response = jokes[(int) (Math.random() * jokes.length)];
-        }
-        else if (tryEvaluateMath(query) != null) {
-            response = tryEvaluateMath(query);
-        }
-        else if (tryUnitConversion(lower) != null) {
-            response = tryUnitConversion(lower);
+            return jokes[(int) (Math.random() * jokes.length)];
         }
 
-        // ========================================================
-        // 3. SCREEN CONTEXT REASONING
-        // ========================================================
-        else if (screenContext != null && !screenContext.trim().isEmpty() && (lower.contains("summarize") || lower.contains("what's on my screen") || lower.contains("read this"))) {
-            response = "On-Screen Context:\n" + (screenContext.length() > 250 ? screenContext.substring(0, 250) + "..." : screenContext);
+        // Fast Math & Unit Conversions (0ms)
+        String mathRes = tryEvaluateMath(query);
+        if (mathRes != null) return mathRes;
+
+        String unitRes = tryUnitConversion(lower);
+        if (unitRes != null) return unitRes;
+
+        // 4. SCREEN CONTEXT REASONING
+        if (screenContext != null && !screenContext.trim().isEmpty() && (lower.contains("summarize") || lower.contains("what's on my screen") || lower.contains("read this"))) {
+            return "Summary of active screen:\n" + (screenContext.length() > 250 ? screenContext.substring(0, 250) + "..." : screenContext);
         }
 
-        // ========================================================
-        // 4. CLOUD & LOCAL HIGH-INTELLIGENCE LLM (Groq / OpenRouter / Host IP)
-        // ========================================================
-        else {
-            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            String apiKey = prefs.getString("api_key", "").trim();
-            String hostIp = prefs.getString("host_ip", "").trim();
+        // 5. CLOUD & LOCAL HIGH-INTELLIGENCE LLM (Groq / OpenRouter / Ollama)
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String apiKey = prefs.getString("api_key", "").trim();
+        String hostIp = prefs.getString("host_ip", "").trim();
 
-            if (!apiKey.isEmpty()) {
-                try {
-                    response = queryCloudLLM(query, apiKey, screenContext);
-                } catch (Exception e) {
-                    Log.e(TAG, "Cloud query failed: " + e.getMessage());
-                    response = "I encountered a connection note. " + generateIntelligentFallback(query);
-                }
-            } else if (!hostIp.isEmpty()) {
-                try {
-                    response = queryLocalHostLLM(query, hostIp, screenContext);
-                } catch (Exception e) {
-                    Log.e(TAG, "Host query failed: " + e.getMessage());
-                    response = generateIntelligentFallback(query);
-                }
-            } else {
-                response = generateIntelligentFallback(query);
+        if (!apiKey.isEmpty()) {
+            try {
+                return queryCloudLLM(query, apiKey, screenContext);
+            } catch (Exception e) {
+                Log.e(TAG, "Cloud LLM query failed: " + e.getMessage());
+            }
+        } else if (!hostIp.isEmpty()) {
+            try {
+                return queryLocalHostLLM(query, hostIp, screenContext);
+            } catch (Exception e) {
+                Log.e(TAG, "Host query failed: " + e.getMessage());
             }
         }
 
-        lastUserQuery = query;
-        lastAssistantAnswer = response;
-        return response;
+        return "I processed your request: \"" + query + "\". Configure a free Groq API key in Settings (⚙️) for deep conversational reasoning, or try commands like 'Turn on flashlight', 'Set timer', or 'Remember that my flight is at 6 PM'.";
     }
 
     private String getBatteryStatus() {
@@ -186,28 +216,24 @@ public class AssistantAIService {
     }
 
     private String tryUnitConversion(String text) {
-        // Temperature: C to F
         Matcher m1 = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(?:celsius|c)\\s*(?:to|in)\\s*(?:fahrenheit|f)").matcher(text);
         if (m1.find()) {
             double c = Double.parseDouble(m1.group(1));
             double f = (c * 9/5) + 32;
             return String.format(Locale.US, "%.1f°C is equal to %.1f°F.", c, f);
         }
-        // Temperature: F to C
         Matcher m2 = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(?:fahrenheit|f)\\s*(?:to|in)\\s*(?:celsius|c)").matcher(text);
         if (m2.find()) {
             double f = Double.parseDouble(m2.group(1));
             double c = (f - 32) * 5/9;
             return String.format(Locale.US, "%.1f°F is equal to %.1f°C.", f, c);
         }
-        // Distance: km to miles
         Matcher m3 = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(?:km|kilometers?)\\s*(?:to|in)\\s*(?:miles?)").matcher(text);
         if (m3.find()) {
             double km = Double.parseDouble(m3.group(1));
             double mi = km * 0.621371;
             return String.format(Locale.US, "%.2f km is approximately %.2f miles.", km, mi);
         }
-        // Distance: miles to km
         Matcher m4 = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(?:miles?)\\s*(?:to|in)\\s*(?:km|kilometers?)").matcher(text);
         if (m4.find()) {
             double mi = Double.parseDouble(m4.group(1));
@@ -215,10 +241,6 @@ public class AssistantAIService {
             return String.format(Locale.US, "%.2f miles is approximately %.2f km.", mi, km);
         }
         return null;
-    }
-
-    private String generateIntelligentFallback(String query) {
-        return "I processed: \"" + query + "\". Tip: You can configure a free Groq or OpenRouter API key in Settings (⚙️) for instant cloud intelligence, or use native commands like 'Turn on flashlight', 'Set timer', or 'Open Spotify'.";
     }
 
     private String queryCloudLLM(String query, String apiKey, String screenContext) throws Exception {
@@ -237,21 +259,21 @@ public class AssistantAIService {
         conn.setReadTimeout(8000);
         conn.setDoOutput(true);
 
-        String systemPrompt = "You are FRIDAY, an elite, highly intelligent AI assistant inspired by Tony Stark's FRIDAY. Be concise, direct, polite, and spoken-friendly (1-3 sentences max).";
+        String systemPrompt = "You are FRIDAY — an ultra-intelligent, precise, and articulate AI Operating Assistant. Think step-by-step. Deliver sharp, conversational answers tailored for speech (1-3 clear sentences).";
         if (screenContext != null && !screenContext.isEmpty()) {
-            systemPrompt += " Context visible on user screen: " + screenContext;
+            systemPrompt += " Current on-screen context: " + screenContext;
         }
 
         JSONObject payload = new JSONObject();
         payload.put("model", model);
-        payload.put("max_tokens", 150);
-        payload.put("temperature", 0.7);
+        payload.put("max_tokens", 180);
+        payload.put("temperature", 0.6);
 
         JSONArray messages = new JSONArray();
         messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
-        if (!lastUserQuery.isEmpty() && !lastAssistantAnswer.isEmpty()) {
-            messages.put(new JSONObject().put("role", "user").put("content", lastUserQuery));
-            messages.put(new JSONObject().put("role", "assistant").put("content", lastAssistantAnswer));
+        for (MessageTurn turn : conversationHistory) {
+            messages.put(new JSONObject().put("role", "user").put("content", turn.user));
+            messages.put(new JSONObject().put("role", "assistant").put("content", turn.assistant));
         }
         messages.put(new JSONObject().put("role", "user").put("content", query));
         payload.put("messages", messages);
