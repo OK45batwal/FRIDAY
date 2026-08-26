@@ -3,10 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#05070E"
+    android:background="#060913"
     android:padding="16dp">
 
-    <!-- Top App Bar & Settings Header -->
+    <!-- 1. Ambient "My Day" Personalized Glance Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,46 +15,56 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:layout_alignParentStart="true">
 
-            <ImageView
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:src="@mipmap/ic_launcher"
-                android:layout_marginEnd="10dp" />
+            <TextView
+                android:id="@+id/tvPersonalizedGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Good evening, Sir"
+                android:textColor="#f8fafc"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.02" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/tvGlanceDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wednesday, Aug 26"
+                    android:textColor="#94a3b8"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FRIDAY 1.0"
-                    android:textColor="#f8fafc"
-                    android:textSize="18sp"
-                    android:fontFamily="sans-serif-black"
-                    android:letterSpacing="0.06" />
+                    android:text=" • "
+                    android:textColor="#64748b"
+                    android:textSize="12sp" />
 
                 <TextView
-                    android:id="@+id/tvStatus"
+                    android:id="@+id/tvGlanceBattery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚡ SYSTEM READY • SAY 'HEY FRIDAY'"
+                    android:text="🔋 100%"
                     android:textColor="#38bdf8"
-                    android:textSize="11sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.04" />
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium" />
             </LinearLayout>
         </LinearLayout>
 
         <ImageButton
             android:id="@+id/btnSettings"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_preferences"
             android:tint="#38bdf8"
@@ -62,12 +72,12 @@
             android:contentDescription="Settings" />
     </RelativeLayout>
 
-    <!-- Quick Action Chips Horizontal ScrollView -->
+    <!-- 2. Google-Style Suggestion Chips Horizontal Carousel -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="12dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -77,83 +87,82 @@
             <Button
                 android:id="@+id/chipWakeWordToggle"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="34dp"
                 android:text="🎙️ Wake Word: ON"
                 android:textColor="#10b981"
-                android:background="@drawable/bg_assistant_sheet"
+                android:background="@drawable/bg_chip_pill"
                 android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
-                android:id="@+id/chipSetDefault"
+                android:id="@+id/chipGoodMorning"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="⚙️ Set Default Assistant"
-                android:textColor="#ffffff"
-                android:background="@drawable/bg_assistant_sheet"
-                android:textSize="11.5sp"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/chipTestOverlay"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="🧪 Test Floating HUD"
-                android:textColor="#38bdf8"
-                android:background="@drawable/bg_assistant_sheet"
-                android:textSize="11.5sp"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/chipFlashlight"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="🔦 Flashlight"
-                android:textColor="#cbd5e1"
-                android:background="@drawable/bg_assistant_sheet"
+                android:layout_height="34dp"
+                android:text="🌅 Good Morning"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
                 android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/chipTimer"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="⏰ 10m Timer"
-                android:textColor="#cbd5e1"
-                android:background="@drawable/bg_assistant_sheet"
+                android:layout_height="34dp"
+                android:text="⏰ 5m Timer"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
+                android:textSize="11.5sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/chipYouTube"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="▶️ Open YouTube"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
+                android:textSize="11.5sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/chipFlashlight"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🔦 Flashlight"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
+                android:textSize="11.5sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/chipFlipCoin"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🪙 Flip a Coin"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
                 android:textSize="11.5sp"
                 android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/chipReminders"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="34dp"
                 android:text="📝 My Reminders"
-                android:textColor="#cbd5e1"
-                android:background="@drawable/bg_assistant_sheet"
-                android:textSize="11.5sp"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/chipBattery"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="🔋 Battery Status"
-                android:textColor="#cbd5e1"
-                android:background="@drawable/bg_assistant_sheet"
+                android:textColor="#f8fafc"
+                android:background="@drawable/bg_chip_pill"
                 android:textSize="11.5sp" />
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- Scrollable Chat History Screen -->
+    <!-- 3. Scrollable Conversation View & Rich Interactive Cards -->
     <ScrollView
         android:id="@+id/chatScrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="@drawable/bg_assistant_sheet"
-        android:padding="14dp"
-        android:layout_marginBottom="12dp">
+        android:scrollbars="none"
+        android:layout_marginBottom="10dp">
 
         <LinearLayout
             android:id="@+id/chatContainer"
@@ -162,14 +171,42 @@
             android:orientation="vertical" />
     </ScrollView>
 
-    <!-- Voice Visualizer Orb & Bottom Input Bar -->
+    <!-- 4. Central Voice Stage & Speech Subtitle Indicator -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ READY • SAY 'HEY FRIDAY'"
+            android:textColor="#38bdf8"
+            android:textSize="11.5sp"
+            android:fontFamily="sans-serif-bold"
+            android:letterSpacing="0.06"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Google Assistant Signature 4-Color Glowing Light Bar -->
+        <View
+            android:id="@+id/lightBar"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@drawable/bg_gradient_lightbar"
+            android:alpha="0.7" />
+    </LinearLayout>
+
+    <!-- 5. Floating Bottom Dock Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Glowing Voice Orb Button with Multi-Ring Arc Reactor Effect -->
+        <!-- Glowing Voice Orb Button -->
         <FrameLayout
             android:layout_width="54dp"
             android:layout_height="54dp"
@@ -192,22 +229,22 @@
                 android:contentDescription="Voice" />
         </FrameLayout>
 
-        <!-- Text Input Field -->
+        <!-- Search / Speech Input Bar -->
         <EditText
             android:id="@+id/etInput"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_assistant_sheet"
-            android:hint="Ask or say 'Hey Friday'..."
+            android:background="@drawable/bg_ambient_card"
+            android:hint="Ask anything or 'Hey Friday'..."
             android:textColorHint="#64748b"
             android:textColor="#f8fafc"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:textSize="14sp"
             android:singleLine="true" />
 
-        <!-- Send Button -->
+        <!-- Send Action Button -->
         <ImageButton
             android:id="@+id/btnSend"
             android:layout_width="48dp"

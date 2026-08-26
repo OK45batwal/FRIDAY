@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_ambient_card"
+    android:padding="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⏰ Active Countdown Timer"
+            android:textColor="#38bdf8"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tvTimerLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FRIDAY Timer"
+            android:textColor="#94a3b8"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Large Live Countdown Time Display -->
+    <TextView
+        android:id="@+id/tvTimerCountdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="05:00"
+        android:textColor="#f8fafc"
+        android:textSize="38sp"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="12dp"
+        android:letterSpacing="0.05" />
+
+    <!-- Action Buttons (Pause / Resume / Cancel) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnTimerPause"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="⏸️ Pause"
+            android:textColor="#ffffff"
+            android:background="@drawable/bg_chip_pill"
+            android:textSize="12sp"
+            android:layout_marginEnd="12dp" />
+
+        <Button
+            android:id="@+id/btnTimerCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="✕ Stop"
+            android:textColor="#f43f5e"
+            android:background="@drawable/bg_chip_pill"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</LinearLayout>

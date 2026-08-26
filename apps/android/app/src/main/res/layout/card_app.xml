@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_ambient_card"
+    android:padding="14dp"
+    android:gravity="center_vertical"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvAppEmoji"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:text="🚀"
+        android:textSize="24sp"
+        android:gravity="center"
+        android:background="@drawable/bg_chip_pill"
+        android:layout_marginEnd="12dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Application"
+            android:textColor="#f8fafc"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-bold" />
+
+        <TextView
+            android:id="@+id/tvAppDesc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ready to launch"
+            android:textColor="#94a3b8"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnLaunchApp"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:text="Open App"
+        android:textColor="#ffffff"
+        android:background="@drawable/bg_chip_pill"
+        android:textSize="12sp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp" />
+
+</LinearLayout>
