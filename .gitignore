@@ -19,6 +19,7 @@ backend/friday.db
 
 
 # Node / Frontend
+build_temp/
 node_modules/
 */node_modules/
 dist/
