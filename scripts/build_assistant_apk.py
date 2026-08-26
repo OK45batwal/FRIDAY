@@ -10,7 +10,6 @@ BUILD_DIR = ROOT / "apps" / "android" / "build_temp"
 RELEASE_DIR = ROOT / "release"
 KEYSTORE = ROOT / "release" / "friday_release.keystore"
 
-
 SDK_BUILD_TOOLS = Path("/Users/omkar/Library/Android/sdk/build-tools/34.0.0")
 ANDROID_JAR = Path("/Users/omkar/Library/Android/sdk/platforms/android-34/android.jar")
 
@@ -21,7 +20,7 @@ APKSIGNER = SDK_BUILD_TOOLS / "apksigner"
 
 def build():
     print("=" * 60)
-    print("🤖 COMPILING FRIDAY NATIVE ANDROID ASSISTANT APK")
+    print("🤖 COMPILING FRIDAY NATIVE ANDROID ASSISTANT APK (v1.0.1)")
     print("=" * 60)
     
     if BUILD_DIR.exists():
@@ -67,7 +66,6 @@ def build():
     env = os.environ.copy()
     env["JAVA_HOME"] = "/opt/homebrew/Cellar/openjdk@17/17.0.20/libexec/openjdk.jdk/Contents/Home"
     env["PATH"] = f"/opt/homebrew/Cellar/openjdk@17/17.0.20/bin:{env.get('PATH', '')}"
-
     
     cmd_javac = [
         javac_bin,
@@ -77,7 +75,6 @@ def build():
         "-d", str(classes_dir)
     ] + [str(f) for f in java_files]
     subprocess.run(cmd_javac, env=env, check=True)
-
     
     # 4. Dex classes with D8
     print("⚡ Step 4: Converting bytecode to DEX with D8...")
@@ -98,42 +95,26 @@ def build():
     with zipfile.ZipFile(unaligned_apk, "a", compression=zipfile.ZIP_DEFLATED) as z:
         z.write(dex_file, "classes.dex")
         
-    # 6. Zipalign APK
+    # 6. Zipalign APK (Strict 4-byte and 4KB page alignment)
     aligned_apk = BUILD_DIR / "aligned.apk"
-    print("📐 Step 6: Aligning APK with zipalign...")
+    print("📐 Step 6: Aligning APK with zipalign (-p 4)...")
     cmd_zipalign = [
-        str(ZIPALIGN), "-f", "4",
+        str(ZIPALIGN), "-f", "-p", "4",
         str(unaligned_apk),
         str(aligned_apk)
     ]
     subprocess.run(cmd_zipalign, env=env, check=True)
     
-    # 7. Sign APK with jarsigner (v1) and apksigner (v2 + v3) for 100% Android security compliance
+    # 7. Sign APK with apksigner (v1 + v2 + v3 on the ALIGNED APK)
     final_apk = RELEASE_DIR / "FRIDAY-Assistant-v1.0.1.apk"
-    print(f"✍️ Step 7: Cryptographically signing APK with jarsigner and apksigner -> {final_apk}...")
-
-    
-    # 7a. v1 signing via jarsigner
-    jarsigner_bin = "/opt/homebrew/Cellar/openjdk@17/17.0.20/bin/jarsigner"
-    cmd_jarsigner = [
-        jarsigner_bin,
-        "-keystore", str(KEYSTORE),
-        "-storepass", "friday_release_secure_key",
-        "-keypass", "friday_release_secure_key",
-        "-sigalg", "SHA256withRSA",
-        "-digestalg", "SHA-256",
-        str(aligned_apk),
-        "friday_release"
-    ]
-    subprocess.run(cmd_jarsigner, env=env, check=True)
-
-    # 7b. v2 + v3 signing via apksigner
+    print(f"✍️ Step 7: Cryptographically signing aligned APK with apksigner -> {final_apk}...")
     cmd_sign = [
         str(APKSIGNER), "sign",
         "--ks", str(KEYSTORE),
         "--ks-pass", "pass:friday_release_secure_key",
         "--ks-key-alias", "friday_release",
         "--key-pass", "pass:friday_release_secure_key",
+        "--min-sdk-version", "24",
         "--v1-signing-enabled", "true",
         "--v2-signing-enabled", "true",
         "--v3-signing-enabled", "true",
@@ -141,16 +122,19 @@ def build():
         str(aligned_apk)
     ]
     subprocess.run(cmd_sign, env=env, check=True)
-
-
     
-    # Verify signature
-    cmd_verify = [str(APKSIGNER), "verify", str(final_apk)]
-    subprocess.run(cmd_verify, env=env, check=True)
+    # 8. Verify strict alignment
+    print("🔍 Step 8: Verifying zipalign alignment...")
+    cmd_verify_align = [str(ZIPALIGN), "-c", "-v", "4", str(final_apk)]
+    subprocess.run(cmd_verify_align, env=env, check=True)
 
+    # 9. Verify signature
+    print("🔍 Step 9: Verifying apksigner signature...")
+    cmd_verify_sig = [str(APKSIGNER), "verify", "--verbose", str(final_apk)]
+    subprocess.run(cmd_verify_sig, env=env, check=True)
     
     print("=" * 60)
-    print(f"🎉 SUCCESS! Clean Signed Android Assistant APK Created:")
+    print(f"🎉 SUCCESS! Clean 100% Verified Android Assistant APK Created:")
     print(f"   Path: {final_apk}")
     print(f"   Size: {os.path.getsize(final_apk)} bytes")
     print("=" * 60)
