@@ -15,10 +15,9 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     private static final int PERM_REQ = 101;
     private final String[] permissions = new String[]{
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.CAMERA,
-        Manifest.permission.CALL_PHONE
+        Manifest.permission.RECORD_AUDIO
     };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

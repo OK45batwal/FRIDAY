@@ -8,7 +8,8 @@ ROOT = Path("/Users/omkar/FRIDAY")
 ANDROID_DIR = ROOT / "apps" / "android" / "app" / "src" / "main"
 BUILD_DIR = ROOT / "apps" / "android" / "build_temp"
 RELEASE_DIR = ROOT / "release"
-KEYSTORE = ROOT / "release" / "debug.keystore"
+KEYSTORE = ROOT / "release" / "friday_release.keystore"
+
 
 SDK_BUILD_TOOLS = Path("/Users/omkar/Library/Android/sdk/build-tools/34.0.0")
 ANDROID_JAR = Path("/Users/omkar/Library/Android/sdk/platforms/android-34/android.jar")
@@ -107,19 +108,40 @@ def build():
     ]
     subprocess.run(cmd_zipalign, env=env, check=True)
     
-    # 7. Sign APK with apksigner
+    # 7. Sign APK with jarsigner (v1) and apksigner (v2 + v3) for 100% Android security compliance
     final_apk = RELEASE_DIR / "FRIDAY-Assistant-v1.0.0.apk"
-    print(f"✍️ Step 7: Cryptographically signing APK with apksigner -> {final_apk}...")
+    print(f"✍️ Step 7: Cryptographically signing APK with jarsigner and apksigner -> {final_apk}...")
+    
+    # 7a. v1 signing via jarsigner
+    jarsigner_bin = "/opt/homebrew/Cellar/openjdk@17/17.0.20/bin/jarsigner"
+    cmd_jarsigner = [
+        jarsigner_bin,
+        "-keystore", str(KEYSTORE),
+        "-storepass", "friday_release_secure_key",
+        "-keypass", "friday_release_secure_key",
+        "-sigalg", "SHA256withRSA",
+        "-digestalg", "SHA-256",
+        str(aligned_apk),
+        "friday_release"
+    ]
+    subprocess.run(cmd_jarsigner, env=env, check=True)
+
+    # 7b. v2 + v3 signing via apksigner
     cmd_sign = [
         str(APKSIGNER), "sign",
         "--ks", str(KEYSTORE),
-        "--ks-pass", "pass:android",
-        "--ks-key-alias", "androiddebugkey",
-        "--key-pass", "pass:android",
+        "--ks-pass", "pass:friday_release_secure_key",
+        "--ks-key-alias", "friday_release",
+        "--key-pass", "pass:friday_release_secure_key",
+        "--v1-signing-enabled", "true",
+        "--v2-signing-enabled", "true",
+        "--v3-signing-enabled", "true",
         "--out", str(final_apk),
         str(aligned_apk)
     ]
     subprocess.run(cmd_sign, env=env, check=True)
+
+
     
     # Verify signature
     cmd_verify = [str(APKSIGNER), "verify", str(final_apk)]
