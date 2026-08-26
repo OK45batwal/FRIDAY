@@ -3,5 +3,5 @@
     android:sessionService="com.friday.assistant.service.FridayVoiceSessionService"
     android:recognitionService="com.friday.assistant.service.FridayRecognitionService"
     android:supportsAssist="true"
-    android:supportsLaunchFromKeyguard="true"
     android:supportsLocalInteraction="true" />
+
