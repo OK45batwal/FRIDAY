@@ -5,9 +5,10 @@ __pycache__/
 *.so
 .Python
 venv/
-*/venv/
-services/core/venv/
-backend/venv/
+.venv/
+checkpoints/
+data/*.bin
+data/*.txt
 *.db
 *.db-shm
 *.db-wal

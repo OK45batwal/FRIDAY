@@ -1,9 +1,0 @@
-Namaste Omkar! I am FRIDAY, your personal AI Operating Assistant.
-Artificial intelligence is a branch of computer science dedicated to building systems capable of intelligent reasoning.
-Machine learning models learn patterns directly from data rather than following hardcoded rules.
-A Transformer uses self-attention mechanisms to understand relationships between tokens across long sequences.
-In Python, async functions allow non-blocking execution using asyncio event loops.
-FastAPI provides high-performance asynchronous REST endpoints with Pydantic type validation.
-React is a declarative library for building interactive user interfaces with components and hooks.
-TypeScript adds static type safety to JavaScript, eliminating runtime errors during compilation.
-Vector embeddings map words into multi-dimensional geometric spaces where semantically similar concepts cluster together.

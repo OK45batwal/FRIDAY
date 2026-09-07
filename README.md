@@ -1,83 +1,101 @@
-# 🤖 FRIDAY — AI Operating Assistant
+# Custom LLM — Transformer Language Model from Scratch
 
-<div align="center">
-
-<img src="https://raw.githubusercontent.com/OK45batwal/FRIDAY/main/apps/desktop/public/favicon.svg" width="108" height="108" alt="FRIDAY Arc Reactor Logo" />
-
-# FRIDAY 1.0
-### High-Performance Multi-Platform AI Assistant • Ambient Voice Cockpit • Local Ollama & Cloud LLMs
-
-[![Release](https://img.shields.io/github/v/release/OK45batwal/FRIDAY?style=for-the-badge&color=rose)](https://github.com/OK45batwal/FRIDAY/releases/latest)
-[![PWA Ready](https://img.shields.io/badge/PWA-1--Click%20Install-10b981?style=for-the-badge&logo=pwa)](https://github.com/OK45batwal/FRIDAY)
-[![Ollama](https://img.shields.io/badge/Ollama-Offline%20Ready-blue?style=for-the-badge)](https://ollama.ai)
-[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
-
-**FRIDAY** is a unified, high-performance AI Operating Assistant designed to run and install seamlessly across **macOS**, **Android**, and **Windows** with **zero installation friction**.
-
-</div>
+A modern, high-performance **Decoder-Only Transformer Language Model** built completely from scratch in PyTorch. Designed for training and inference across Apple Silicon (`MPS`), NVIDIA (`CUDA`), and CPU.
 
 ---
 
-## 🚀 1-Click Multi-Platform Access (Browser PWA & Android Assistant)
+## Architecture Highlights
 
-### 🌐 1. Browser Web App (macOS, Windows, Linux)
-Open in Chrome / Safari / Edge $\rightarrow$ Click **"Install App"** in Navbar or address bar (⨁) to install as a native desktop application with 0 installation friction.
-
-### 📱 2. Android System Assistant (Google Assistant Replacement)
-Download the native APK to replace Google Assistant on your phone with power-button / swipe trigger:
-👉 [**Download FRIDAY-Assistant-v1.0.1.apk**](https://github.com/OK45batwal/FRIDAY/releases/download/v1.0.1/FRIDAY-Assistant-v1.0.1.apk)
-
-
----
-
-
-## 🌟 Key Capabilities
-
-* **🎙️ Fullscreen Ambient Voice Cockpit**:
-  - Siri & Google Assistant-style full-screen HUD with 3D glowing Voice Orb.
-  - Zero-latency turn-taking Voice Activity Detection (VAD) loop.
-  - Real-time speech transcription & streaming neural speech synthesis.
-* **💻 Claude-Style Artifact Canvas**:
-  - Interactive split-pane workspace for generated code, diffs, and live syntax highlighting.
-  - 1-click clipboard copy, fullscreen expansion, and code runner.
-* **⚡ Spotlight Command Palette (`⌘K` / `Ctrl+K`)**:
-  - Floating Raycast-style command bar for instant math, system queries, and quick agent prompts.
-* **🧠 Multi-Engine Intelligence**:
-  - **Local Offline Ollama (`localhost:11434`)**: Direct integration with Llama 3, Qwen 2.5, and DeepSeek with 0 cloud dependencies.
-  - **Cloud Ultra-Fast Streaming**: Direct connector for Groq (<50ms TTFT), OpenRouter, Claude, and OpenAI.
-* **🏪 Integrated Store & Agent Hub**:
-  - 1-click install and toggle personas: **Senior Architect**, **Calculus & Physics Tutor**, **DevSecOps SRE**, **Technical Writer**.
+- **Pre-Normalization**: Root Mean Square Layer Normalization (**RMSNorm**) for stable gradient flow.
+- **Positional Encoding**: Rotary Position Embeddings (**RoPE**) applied to query and key heads, enabling relative distance understanding and length extrapolation.
+- **Activation Function**: **SwiGLU** Feed-Forward Network ($W_2(\text{SiLU}(W_1 x) \odot W_3 x)$) matching modern architectures like LLaMA and Mistral.
+- **Attention**: Grouped-Query Attention (**GQA**) with Scaled Dot-Product Attention (`F.scaled_dot_product_attention`) leveraging hardware acceleration.
+- **Inference Optimization**: State-of-the-art **KV Caching** for $O(1)$ memory retrieval during autoregressive token generation.
+- **Data Pipeline**: Zero-copy memory-mapped binary shards (`uint16` / `uint32`) for zero-RAM overhead training on massive text corpuses.
 
 ---
 
-## ⚡ Quick Start
+## Directory Layout
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/OK45batwal/FRIDAY.git
-cd FRIDAY
-
-# 2. Install dependencies & launch
-npm install --prefix apps/desktop
-npm run dev
-
-# 3. Open in your browser
-# Navigate to http://localhost:5173 and click "Install App" ⚡
+```text
+.
+├── model/
+│   ├── config.py           # ModelConfig dataclass & model scale presets (tiny, small, base)
+│   ├── rope.py             # Rotary Position Embeddings precompute & rotation logic
+│   ├── transformer.py      # RMSNorm, SwiGLU, GQA Attention, TransformerBlock, CustomLLM
+│   └── generate.py         # KV-cached generation with top-p, top-k, and streaming
+├── tokenizer/
+│   ├── tokenizer.py        # Tokenizer wrapper around byte-level BPE with special tokens
+│   └── train_tokenizer.py  # Standalone Byte-Pair Encoding trainer from raw text
+├── data/
+│   ├── prepare_data.py     # Download, tokenize, and shard raw text into train.bin / val.bin
+│   └── dataloader.py       # Zero-copy memory-mapped dataloader
+├── train/
+│   ├── train.py            # Pretraining loop with AdamW, Cosine LR, warmup, and live sample generation
+│   ├── evaluate.py         # Validation loss and perplexity evaluation
+│   └── checkpoint.py       # Checkpoint saving & resuming
+├── infer/
+│   └── chat.py             # Interactive CLI generator with real-time token streaming
+├── tests/
+│   ├── test_model.py       # RMSNorm, RoPE, forward pass, and KV-cache parity tests
+│   ├── test_tokenizer.py   # Tokenizer roundtrip and tensor conversion tests
+│   └── test_training_step.py # Optimizer step & gradient backpropagation tests
+├── requirements.txt
+└── pyproject.toml
 ```
 
 ---
 
-## 🥣 Soup Layer-Streaming Fine-Tuning Recipe
+## Quickstart
 
-FRIDAY includes **Soup (`soup.yaml`)** to fine-tune 7B/8B models on consumer laptops (<4 GB RAM):
-
+### 1. Setup Environment
 ```bash
-pip install "soup-cli[train]"
-npm run train:soup
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
+### 2. Run Test Suite
+```bash
+pytest tests/ -v
+```
+
+### 3. Prepare Dataset
+Tokenize raw text into memory-mapped binary shards:
+```bash
+# Prepare sample benchmark dataset:
+python data/prepare_data.py
+
+# Or prepare custom raw text file:
+python data/prepare_data.py --input_file /path/to/my_corpus.txt --output_dir data
+```
+
+### 4. Train the Model
+Train on Apple Silicon GPU (`mps`), CUDA, or CPU:
+```bash
+# Rapid local test run (~17M parameters):
+python train/train.py --scale tiny --batch_size 16 --seq_len 256 --max_steps 1000
+
+# Capable model (~65M parameters):
+python train/train.py --scale small --batch_size 32 --seq_len 512 --max_steps 5000
+```
+
+### 5. Interactive Inference
+Generate text interactively or one-shot with real-time streaming:
+```bash
+# Interactive chat loop:
+python infer/chat.py --checkpoint checkpoints/best_model.pt
+
+# One-shot prompt:
+python infer/chat.py --checkpoint checkpoints/best_model.pt --prompt "To be or not to be" --temperature 0.8
+```
 
 ---
 
-## 📄 License
-MIT © 2026 Omkar. All rights reserved.
+## Model Scale Presets
+
+| Preset | Parameters | Layers | Hidden Dim | Heads | KV Heads | Max Seq Len |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `tiny` | ~17M | 6 | 256 | 8 | 4 | 512 |
+| `small`| ~65M | 8 | 512 | 8 | 4 | 1024 |
+| `base` | ~150M | 12 | 768 | 12 | 4 | 2048 |
