@@ -1,0 +1,2 @@
+RELEVANT LONG-TERM MEMORIES (Saved user facts & preferences):
+{memories_list}

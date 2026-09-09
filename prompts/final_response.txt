@@ -1,0 +1,5 @@
+TOOL OBSERVATION ({tool_name}):
+{tool_result}
+
+INSTRUCTION FOR FINAL ANSWER:
+Using the real observation above, provide a clear, helpful, and natural response to the user's initial question. Do NOT output any more tool calls. Answer directly using markdown formatting.

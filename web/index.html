@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FRIDAY — Futuristic Autonomous Local AI Assistant & Project Presentation System.">
+  <title>FRIDAY — Personal Local AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="dark">
+  <!-- Neo-Brutalist Subtle Dot Grid -->
+  <div class="background-grid"></div>
+
+  <div class="app-layout">
+    <!-- Collapsible Main Sidebar -->
+    <aside class="main-sidebar glass-panel">
+      <div class="sidebar-header">
+        <div class="brand-badge">
+          <div class="neural-spark" title="FRIDAY">
+            <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+              <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
+              <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <span class="brand-title">FRIDAY</span>
+            <span class="brand-tag">LOCAL AI</span>
+          </div>
+        </div>
+        <div class="header-controls">
+          <button id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Light / Dark Mode">
+            <span class="theme-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+            <span class="theme-label">DARK</span>
+          </button>
+          <div id="status-pill" class="status-indicator online">
+            <span class="status-dot"></span>
+            <span id="status-label">ONLINE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action: New Conversation -->
+      <button id="btn-new-chat" class="btn-new-chat" title="New Conversation (⌘K)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New Chat</span>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <!-- Navigation Tabs with Clean SVGs & Shortcuts -->
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="chat" title="Assistant Chat (⌘1)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span class="nav-label">Assistant Chat</span>
+          <kbd class="nav-kbd">⌘1</kbd>
+        </button>
+        <button class="nav-item" data-view="voice" title="Voice Mode (⌘2)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
+          <span class="nav-label">Voice Mode</span>
+          <kbd class="nav-kbd">⌘2</kbd>
+        </button>
+        <button class="nav-item" data-view="dashboard" title="System Dashboard (⌘3)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+          <kbd class="nav-kbd">⌘3</kbd>
+        </button>
+        <button class="nav-item" data-view="expo" title="Expo Presentation Flow (⌘4)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          </span>
+          <span class="nav-label">Expo Demo Flow</span>
+          <kbd class="nav-kbd">⌘4</kbd>
+        </button>
+        <button class="nav-item" data-view="settings" title="System Settings (⌘5)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="nav-label">Settings</span>
+          <kbd class="nav-kbd">⌘5</kbd>
+        </button>
+        <button class="nav-item" data-view="about" title="About Architecture">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </span>
+          <span class="nav-label">About</span>
+        </button>
+      </nav>
+
+      <!-- Saved Conversations List -->
+      <div class="sidebar-conversations-section">
+        <div class="section-title-row">
+          <span>Recent Conversations</span>
+          <span id="conv-count-badge" class="badge-count">0</span>
+        </div>
+        <div id="conversations-list" class="conversations-scroll">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Hardware Mini-Gauge Footer -->
+      <div class="sidebar-footer">
+        <div class="hw-mini-bar">
+          <span class="hw-label">BATT <strong id="mini-batt">100%</strong></span>
+          <span class="hw-sep">|</span>
+          <span class="hw-label">RAM <strong id="mini-ram">16G</strong></span>
+          <span class="hw-sep">|</span>
+          <span class="hw-label">DISK <strong id="mini-disk">655G</strong></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content Canvas -->
+    <main class="main-canvas">
+
+      <!-- ===================================================================
+           VIEW 1: ASSISTANT CHAT VIEW (DEFAULT)
+           =================================================================== -->
+      <div id="view-chat" class="view-panel active">
+        <!-- Top Chat Header Bar -->
+        <div class="chat-top-bar glass-panel">
+          <div class="top-title-group">
+            <h2 id="active-chat-title">New Conversation</h2>
+            <span class="model-badge" id="active-model-badge">Gemma 2 (2.6B)</span>
+          </div>
+          <div class="top-actions">
+            <button id="btn-theme-toggle-top" class="btn-theme-toggle-top" title="Toggle Theme (Light / Dark)">
+              <span class="theme-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+              <span class="theme-label">DARK</span>
+            </button>
+            <button id="btn-rename-chat" class="btn-icon" title="Rename Session">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+            <button id="btn-delete-chat" class="btn-icon danger" title="Delete Session">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chat-stream-area" class="chat-stream-scroll">
+          <!-- First-run heroic intro card -->
+          <div id="chat-welcome-card" class="welcome-hero-card glass-panel">
+            <div class="hero-orb-symbol" title="FRIDAY">
+              <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
+                <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <h2>FRIDAY System Online</h2>
+            <p class="hero-description">Autonomous on-device AI agent powered by local models. Equipped with live web search, safe calculator, system telemetry, file indexing, and persistent long-term memory.</p>
+            
+            <div class="first-run-checklist">
+              <div class="chk-item"><span class="chk-icon">✓</span> FastAPI Backend</div>
+              <div class="chk-item"><span class="chk-icon">✓</span> SQLite Database</div>
+              <div class="chk-item"><span class="chk-icon">✓</span> Local Ollama Engine</div>
+              <div class="chk-item"><span class="chk-icon">✓</span> Active Tool Plugins</div>
+            </div>
+
+            <div class="hero-quick-prompts">
+              <span class="quick-title">Sample prompts to try:</span>
+              <div class="quick-chips-grid">
+                <button class="quick-chip" data-text="Calculate 125 * 48">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+                  <span>Calculate 125 * 48</span>
+                </button>
+                <button class="quick-chip" data-text="What is my laptop battery status and RAM?">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></svg>
+                  <span>Mac Battery & RAM Status</span>
+                </button>
+                <button class="quick-chip" data-text="Remember that my project is called FRIDAY and I am presenting it at the expo.">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+                  <span>Remember project details</span>
+                </button>
+                <button class="quick-chip" data-text="Search the web for what is Google Gemma 2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>Search web for Gemma 2</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Tool Activity Pill -->
+        <div id="chat-tool-activity" class="tool-activity-strip hidden">
+          <div class="tool-spinner-ring"></div>
+          <span id="chat-tool-activity-label">Executing tool...</span>
+        </div>
+
+        <!-- Bottom Chat Input Dock -->
+        <div class="chat-dock-container">
+          <div class="chat-dock glass-panel">
+            <button id="btn-voice-input" class="btn-dock-mic" title="Voice Input (or hold Space)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <textarea id="chat-input" placeholder="Ask FRIDAY anything... (Press ⌘+Enter to send)" rows="1"></textarea>
+            <button id="btn-send-message" class="btn-dock-send" title="Send Message">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 2: DEDICATED VOICE MODE VIEW
+           =================================================================== -->
+      <div id="view-voice" class="view-panel">
+        <div class="voice-mode-container glass-panel">
+          <div class="voice-top-row">
+            <div class="voice-top-left">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <span class="voice-title">VOCAL INTERFACE</span>
+            </div>
+            <button id="btn-exit-voice" class="btn-ghost-sm" data-to="chat">Return (Esc)</button>
+          </div>
+
+          <!-- Central Reactive Visualizer Orb -->
+          <div class="voice-orb-stage">
+            <div id="central-voice-orb" class="central-voice-orb online">
+              <div class="orb-ring ring-1"></div>
+              <div class="orb-ring ring-2"></div>
+              <div class="orb-core">
+                <span id="voice-orb-icon">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </span>
+              </div>
+            </div>
+            <div id="voice-state-banner" class="voice-state-text">STANDBY — READY</div>
+            <p class="voice-hint">Click the orb or hold <kbd>Space</kbd> to speak.</p>
+          </div>
+
+          <!-- Voice Transcript Feed -->
+          <div class="voice-transcript-feed glass-panel">
+            <div class="transcript-header">Live Voice Transcript</div>
+            <div id="voice-transcript-content" class="transcript-content">
+              <p class="placeholder-msg">Say something like: <em>"FRIDAY, what is the weather in Tokyo?"</em> or <em>"Calculate 450 divided by 15"</em>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 3: SYSTEM DASHBOARD VIEW
+           =================================================================== -->
+      <div id="view-dashboard" class="view-panel">
+        <div class="dashboard-scroll glass-panel">
+          <div class="dash-header">
+            <div class="header-nav-left">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <h2>System Telemetry & Health</h2>
+            </div>
+            <button id="btn-refresh-dash" class="btn-ghost-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              <span>Refresh Metrics</span>
+            </button>
+          </div>
+
+          <!-- Status Grid -->
+          <div class="dash-grid">
+            <div class="dash-card">
+              <span class="dash-card-lbl">Local LLM Engine</span>
+              <div class="dash-card-val"><span class="status-dot green"></span> <span id="dash-llm-status">Connected</span></div>
+              <span class="dash-card-sub" id="dash-llm-model">Model: Gemma 2 (2.6B)</span>
+            </div>
+
+            <div class="dash-card">
+              <span class="dash-card-lbl">SQLite Database</span>
+              <div class="dash-card-val"><span class="status-dot green"></span> Connected</div>
+              <span class="dash-card-sub">WAL Mode Enabled (friday.db)</span>
+            </div>
+
+            <div class="dash-card">
+              <span class="dash-card-lbl">Dual-Tier Memory</span>
+              <div class="dash-card-val"><span class="status-dot green"></span> Active</div>
+              <span class="dash-card-sub" id="dash-mem-count">0 Persistent Memories</span>
+            </div>
+
+            <div class="dash-card">
+              <span class="dash-card-lbl">Tool Registry</span>
+              <div class="dash-card-val"><span class="status-dot green"></span> 6 Tools Active</div>
+              <span class="dash-card-sub">Search, Math, Time, Weather, Sys, File</span>
+            </div>
+          </div>
+
+          <!-- Activity Summary Counters -->
+          <div class="dash-section-title">Lifetime Session Activity</div>
+          <div class="dash-grid-stats">
+            <div class="stat-box">
+              <span class="stat-num" id="dash-stat-messages">0</span>
+              <span class="stat-name">Messages Exchanged</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-num" id="dash-stat-tools">0</span>
+              <span class="stat-name">Tool Invocations</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-num" id="dash-stat-memories">0</span>
+              <span class="stat-name">Memories Stored</span>
+            </div>
+          </div>
+
+          <!-- Hardware Telemetry Gauge Cards -->
+          <div class="dash-section-title">Laptop Hardware Telemetry</div>
+          <div class="hw-gauges-grid">
+            <div class="hw-gauge-card">
+              <div class="hw-gauge-title">Battery Level</div>
+              <div class="hw-gauge-big" id="dash-hw-batt">100%</div>
+              <span class="hw-gauge-sub" id="dash-hw-batt-status">AC Power Attached</span>
+            </div>
+            <div class="hw-gauge-card">
+              <div class="hw-gauge-title">Total RAM</div>
+              <div class="hw-gauge-big" id="dash-hw-ram">16.0 GB</div>
+              <span class="hw-gauge-sub" id="dash-hw-arch">Apple ARM64 Metal</span>
+            </div>
+            <div class="hw-gauge-card">
+              <div class="hw-gauge-title">Storage Free</div>
+              <div class="hw-gauge-big" id="dash-hw-disk">655 GB</div>
+              <span class="hw-gauge-sub">Root Volume</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 4: EXPO DEMO MODE VIEW
+           =================================================================== -->
+      <div id="view-expo" class="view-panel">
+        <div class="expo-container glass-panel">
+          <div class="expo-header">
+            <div class="header-nav-left">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <div>
+                <h2>College Project Expo — Live Demonstration Flow</h2>
+                <p class="expo-subtitle">Interactive showcase for presentation judges demonstrating local AI agent autonomy, reasoning, tools, and memory.</p>
+              </div>
+            </div>
+            <button id="btn-autoplay-expo" class="hud-btn glow-cyan" style="gap: 8px; padding: 8px 16px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Auto-Run Full Demo (1 &rarr; 4)</span>
+            </button>
+          </div>
+
+          <!-- 5 Demo Interactive Buttons -->
+          <div class="demo-scenarios-grid">
+            <button class="demo-card" data-demo="1">
+              <div class="demo-card-num">Demo 1</div>
+              <div class="demo-card-title">Normal Conversation</div>
+              <p class="demo-card-desc">Tests friendly greetings, conversational coherence, and sub-second token streaming.</p>
+              <span class="btn-trigger-demo">Run Demo 1 &rarr;</span>
+            </button>
+
+            <button class="demo-card" data-demo="2">
+              <div class="demo-card-num">Demo 2</div>
+              <div class="demo-card-title">Deep Reasoning</div>
+              <p class="demo-card-desc">Asks for a multi-step explanation of neural networks with clean markdown synthesis.</p>
+              <span class="btn-trigger-demo">Run Demo 2 &rarr;</span>
+            </button>
+
+            <button class="demo-card" data-demo="3">
+              <div class="demo-card-num">Demo 3</div>
+              <div class="demo-card-title">Live Tool Execution</div>
+              <p class="demo-card-desc">Calculates 125 &times; 48 using the deterministic safe math AST tool.</p>
+              <span class="btn-trigger-demo">Run Demo 3 &rarr;</span>
+            </button>
+
+            <button class="demo-card" data-demo="4">
+              <div class="demo-card-num">Demo 4</div>
+              <div class="demo-card-title">Memory Save & Recall</div>
+              <p class="demo-card-desc">Stores: "My project is called FRIDAY" -> recalls it across conversation boundaries.</p>
+              <span class="btn-trigger-demo">Run Demo 4 &rarr;</span>
+            </button>
+
+            <button class="demo-card" data-demo="5">
+              <div class="demo-card-num">Demo 5</div>
+              <div class="demo-card-title">Vocal Interaction</div>
+              <p class="demo-card-desc">Transitions directly to the reactive Voice HUD for hands-free speech queries.</p>
+              <span class="btn-trigger-demo">Run Demo 5 &rarr;</span>
+            </button>
+          </div>
+
+          <!-- Live Internal Pipeline Inspector -->
+          <div class="expo-inspector glass-panel">
+            <div class="inspector-title-row">
+              <span>Agent Internal Pipeline Inspector</span>
+              <span class="inspector-live-tag">LIVE TELEMETRY</span>
+            </div>
+            <div class="inspector-grid">
+              <div class="ins-box">
+                <span class="ins-lbl">DETECTED INTENT</span>
+                <span id="ins-intent" class="ins-val">READY</span>
+              </div>
+              <div class="ins-box">
+                <span class="ins-lbl">ACTIVE TOOL</span>
+                <span id="ins-tool" class="ins-val">NONE</span>
+              </div>
+              <div class="ins-box">
+                <span class="ins-lbl">TOOL ARGUMENTS</span>
+                <span id="ins-args" class="ins-val">{}</span>
+              </div>
+              <div class="ins-box">
+                <span class="ins-lbl">PROCESSING DURATION</span>
+                <span id="ins-time" class="ins-val">0.00s</span>
+              </div>
+            </div>
+            <div class="inspector-output-box">
+              <div class="ins-out-header">Observation / Tool Output:</div>
+              <pre id="ins-raw-output">Ready for demo execution...</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 5: SETTINGS VIEW
+           =================================================================== -->
+      <div id="view-settings" class="view-panel">
+        <div class="settings-container glass-panel">
+          <div class="settings-header">
+            <div class="header-nav-left">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <div>
+                <h2>System & Model Configuration</h2>
+                <p class="settings-desc">Runtime parameters are stored locally and take effect immediately.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="settings-form" class="settings-form">
+            <div class="form-group">
+              <label for="set-model">Local LLM Model</label>
+              <select id="set-model" class="custom-select">
+                <option value="gemma2:2b">Google Gemma 2 (2B) — Fast & Reliable</option>
+              </select>
+              <span class="field-hint">Ollama runtime model tag</span>
+            </div>
+
+            <div class="form-group">
+              <label for="set-temp">Temperature: <span id="set-temp-val">0.30</span></label>
+              <input type="range" id="set-temp" min="0.1" max="1.0" step="0.05" value="0.30" class="custom-range">
+              <span class="field-hint">Controls randomness. Lower values provide deterministic, accurate tool calls.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="set-max-tokens">Max Output Tokens: <span id="set-tokens-val">512</span></label>
+              <input type="range" id="set-max-tokens" min="128" max="2048" step="64" value="512" class="custom-range">
+              <span class="field-hint">Maximum token count for assistant responses</span>
+            </div>
+
+            <div class="form-checkbox-group">
+              <label class="switch">
+                <input type="checkbox" id="set-memory" checked>
+                <span class="slider round"></span>
+              </label>
+              <div class="switch-info">
+                <span class="switch-title">Enable Long-Term Memory</span>
+                <span class="switch-desc">Persist user facts, preferences, and project context across sessions</span>
+              </div>
+            </div>
+
+            <div class="form-checkbox-group">
+              <label class="switch">
+                <input type="checkbox" id="set-voice" checked>
+                <span class="slider round"></span>
+              </label>
+              <div class="switch-info">
+                <span class="switch-title">Enable Vocal Response (TTS)</span>
+                <span class="switch-desc">Allow FRIDAY to speak responses aloud with free high-fidelity Neural TTS</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="group-voice-select">
+              <label for="set-voice-persona">Neural Voice Persona</label>
+              <select id="set-voice-persona" class="custom-select">
+                <option value="aria" selected>FRIDAY Standard (Aria — Futuristic AI)</option>
+                <option value="sonia">JARVIS Style (Sonia — British Accent)</option>
+                <option value="jenny">Friendly Assistant (Jenny — Natural US)</option>
+                <option value="guy">Technical Male (Guy — Deep Tech)</option>
+                <option value="neerja">Indian English (Neerja)</option>
+              </select>
+              <span class="field-hint">Studio-grade free Neural TTS with automatic offline browser fallback</span>
+              <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                <button type="button" id="btn-test-voice" class="hud-btn glow-cyan" style="padding: 6px 14px; font-size: 0.75rem; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                  <span>Test Selected Voice</span>
+                </button>
+                <span id="voice-test-feedback" style="font-size: 0.75rem; color: var(--accent-cyan);"></span>
+              </div>
+            </div>
+
+            <div class="settings-actions">
+              <button type="button" id="btn-save-settings" class="btn-primary-glow">Save Settings</button>
+              <span id="settings-saved-feedback" class="feedback-saved hidden">✓ Settings saved successfully</span>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 6: ABOUT VIEW
+           =================================================================== -->
+      <div id="view-about" class="view-panel">
+        <div class="about-container glass-panel">
+          <div class="about-hero">
+            <div class="about-hero-left">
+              <div class="about-logo" title="FRIDAY">
+                <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+                  <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
+                  <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <h2>FRIDAY</h2>
+                <p class="about-tagline">Personal Local AI Assistant</p>
+              </div>
+            </div>
+            <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>Back to Chat</span>
+            </button>
+          </div>
+
+          <div class="about-body">
+            <p>FRIDAY is an autonomous personal AI assistant built from the ground up for on-device local execution. Inspired by futuristic AI systems, it couples local open-weight language models with a deterministic backend orchestrator, pluggable tool suite, dual-tier memory, and responsive vocal interaction.</p>
+
+            <h3>Core Architectural Principles</h3>
+            <ul class="about-principles">
+              <li><strong>LLM = Intelligence</strong>: The language model reasons and decides intent.</li>
+              <li><strong>Backend = Control</strong>: Deterministic FastAPI modules control all system permissions.</li>
+              <li><strong>Tools = Actions</strong>: Pluggable tools perform verified actions (search, math, telemetry).</li>
+              <li><strong>Memory = Context</strong>: SQLite persistence retains facts across conversation boundaries.</li>
+              <li><strong>Frontend = Experience</strong>: Futuristic minimalist HUD engineered for presentation impact.</li>
+            </ul>
+
+            <h3>Technology Stack</h3>
+            <div class="tech-tags-grid">
+              <span class="tech-tag">FastAPI</span>
+              <span class="tech-tag">Python 3.14</span>
+              <span class="tech-tag">WebSockets</span>
+              <span class="tech-tag">SQLite (WAL)</span>
+              <span class="tech-tag">Ollama</span>
+              <span class="tech-tag">Google Gemma 2</span>
+              <span class="tech-tag">Web Speech API</span>
+              <span class="tech-tag">Apple Silicon MPS</span>
+            </div>
+
+            <div class="about-footer">
+              <span>Created for College Project Expo &bull; Version 2.0.0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
