@@ -242,33 +242,158 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================================
   // 4. Conversation History Management
   // ==========================================================================
+  let cachedConversations = [];
+  const convSearchInput = document.getElementById("conv-search-input");
+  const btnQuickNewConv = document.getElementById("btn-quick-new-conv");
+
+  if (btnQuickNewConv) {
+    btnQuickNewConv.addEventListener("click", createNewConversation);
+  }
+
+  if (convSearchInput) {
+    convSearchInput.addEventListener("input", (e) => {
+      renderConversationsList(e.target.value.trim().toLowerCase());
+    });
+  }
+
+  function formatRelativeTime(dateStr) {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "";
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHr = Math.floor(diffMin / 60);
+      const diffDays = Math.floor(diffHr / 24);
+
+      if (diffMin < 1) return "Just now";
+      if (diffMin < 60) return `${diffMin}m ago`;
+      if (diffHr < 24) return `${diffHr}h ago`;
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    } catch {
+      return "";
+    }
+  }
+
   async function loadConversations() {
     try {
       const res = await fetch("/api/conversations");
       if (res.ok) {
-        const conversations = await res.json();
-        convList.innerHTML = "";
-        convCountBadge.textContent = conversations.length;
-
-        if (conversations.length === 0) {
-          convList.innerHTML = `<span style="font-size:0.75rem; color:var(--text-dim); padding:8px;">No past sessions</span>`;
-          return;
-        }
-
-        conversations.forEach((conv) => {
-          const item = document.createElement("div");
-          item.className = `conv-item ${conv.id === currentConversationId ? 'active' : ''}`;
-          item.setAttribute("data-id", conv.id);
-          item.innerHTML = `
-            <span class="conv-title-text">${escapeHtml(conv.title)}</span>
-          `;
-          item.addEventListener("click", () => selectConversation(conv.id, conv.title));
-          convList.appendChild(item);
-        });
+        cachedConversations = await res.json();
+        convCountBadge.textContent = cachedConversations.length;
+        const query = convSearchInput ? convSearchInput.value.trim().toLowerCase() : "";
+        renderConversationsList(query);
       }
     } catch (e) {
       console.warn("Failed to load conversations:", e);
     }
+  }
+
+  function renderConversationsList(filterQuery = "") {
+    convList.innerHTML = "";
+
+    const filtered = filterQuery
+      ? cachedConversations.filter((c) => (c.title || "").toLowerCase().includes(filterQuery))
+      : cachedConversations;
+
+    if (cachedConversations.length === 0) {
+      convList.innerHTML = `
+        <div class="conv-empty-state">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>No saved sessions</span>
+          <button class="btn-start-chat-hint" type="button">Start a chat <kbd>⌘K</kbd></button>
+        </div>
+      `;
+      const hintBtn = convList.querySelector(".btn-start-chat-hint");
+      if (hintBtn) hintBtn.addEventListener("click", createNewConversation);
+      return;
+    }
+
+    if (filtered.length === 0) {
+      convList.innerHTML = `
+        <div class="conv-empty-state">
+          <span style="font-size:0.75rem;">No chats matching "${escapeHtml(filterQuery)}"</span>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach((conv) => {
+      const item = document.createElement("div");
+      const isActive = conv.id === currentConversationId;
+      item.className = `conv-item ${isActive ? "active" : ""}`;
+      item.setAttribute("data-id", conv.id);
+
+      const timeText = formatRelativeTime(conv.updated_at || conv.created_at);
+
+      item.innerHTML = `
+        <div class="conv-item-main">
+          <span class="conv-item-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <div class="conv-item-meta">
+            <span class="conv-title-text" title="${escapeHtml(conv.title)}">${escapeHtml(conv.title)}</span>
+            ${timeText ? `<span class="conv-time-text">${timeText}</span>` : ""}
+          </div>
+        </div>
+        <div class="conv-item-actions">
+          <button class="btn-conv-action btn-conv-rename" title="Rename conversation" type="button">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </button>
+          <button class="btn-conv-action btn-conv-delete" title="Delete conversation" type="button">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      `;
+
+      item.querySelector(".conv-item-main").addEventListener("click", () => {
+        selectConversation(conv.id, conv.title);
+      });
+
+      const renameBtn = item.querySelector(".btn-conv-rename");
+      renameBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const newTitle = prompt("Enter new title for this chat:", conv.title);
+        if (newTitle && newTitle.trim()) {
+          try {
+            await fetch(`/api/conversations/${conv.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: newTitle.trim() }),
+            });
+            if (conv.id === currentConversationId) {
+              activeChatTitle.textContent = newTitle.trim();
+            }
+            await loadConversations();
+          } catch (err) {
+            console.error("Rename failed:", err);
+          }
+        }
+      });
+
+      const deleteBtn = item.querySelector(".btn-conv-delete");
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete "${conv.title}"?`)) {
+          try {
+            await fetch(`/api/conversations/${conv.id}`, { method: "DELETE" });
+            if (conv.id === currentConversationId) {
+              currentConversationId = null;
+              activeChatTitle.textContent = "New Conversation";
+              chatStreamArea.innerHTML = "";
+            }
+            await loadConversations();
+          } catch (err) {
+            console.error("Delete failed:", err);
+          }
+        }
+      });
+
+      convList.appendChild(item);
+    });
   }
 
   async function selectConversation(convId, title) {
@@ -279,6 +404,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".conv-item").forEach((el) => {
       el.classList.toggle("active", el.getAttribute("data-id") === convId);
     });
+
+    // Switch view to chat if we're on another tab
+    switchView("chat");
 
     // Fetch messages
     try {
@@ -326,6 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentConversationId = conv.id;
         activeChatTitle.textContent = conv.title;
         chatStreamArea.innerHTML = "";
+        switchView("chat");
         await loadConversations();
         chatInput.focus();
       }

@@ -100,8 +100,17 @@
       <!-- Saved Conversations List -->
       <div class="sidebar-conversations-section">
         <div class="section-title-row">
-          <span>Recent Conversations</span>
-          <span id="conv-count-badge" class="badge-count">0</span>
+          <div class="section-title-left">
+            <span>Recent Chats</span>
+            <span id="conv-count-badge" class="badge-count">0</span>
+          </div>
+          <button id="btn-quick-new-conv" class="btn-icon-xs" title="New Chat (⌘K)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div class="conv-search-box">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="conv-search-input" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false">
         </div>
         <div id="conversations-list" class="conversations-scroll">
           <!-- Populated dynamically -->
