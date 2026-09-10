@@ -223,6 +223,10 @@ document.addEventListener("DOMContentLoaded", () => {
       chatHeaderActions.style.display = viewName === "chat" ? "flex" : "none";
     }
 
+    document.querySelectorAll(".chat-only-crumb").forEach((el) => {
+      el.style.display = viewName === "chat" ? "inline" : "none";
+    });
+
     if (appLayout && window.innerWidth <= 840) {
       appLayout.classList.remove("sidebar-open");
     }
@@ -855,7 +859,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>Tool Execution: <strong>${escapeHtml(toolName.toUpperCase())}</strong></span>
           <span class="thought-badge">${escapeHtml(JSON.stringify(args || {}).slice(0, 32))}</span>
         </summary>
-        <div class="thought-body">Executing tool observation...</div>
+        <div class="thought-body tool-accordion-body">Executing tool observation...</div>
       </details>
     `;
 
@@ -938,8 +942,10 @@ document.addEventListener("DOMContentLoaded", () => {
               } else if (ev.type === "tool_completed") {
                 toolActivityStrip.classList.add("hidden");
                 if (activeAccordion) {
-                  const body = activeAccordion.querySelector(".tool-accordion-body");
-                  body.textContent = ev.result || "Complete.";
+                  const body = activeAccordion.querySelector(".tool-accordion-body, .thought-body");
+                  if (body) {
+                    body.textContent = ev.result || "Complete.";
+                  }
                 }
                 if (insRawOutput) insRawOutput.textContent = ev.result || "Complete.";
 
@@ -953,7 +959,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setAssistantState("ONLINE");
 
                 // Speak aloud if voice enabled
-                if (setVoice.checked && accumulatedText) {
+                if (setVoice?.checked && accumulatedText) {
                   speakText(accumulatedText);
                 }
 
@@ -1186,6 +1192,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (activeModelBadge) {
           activeModelBadge.textContent = s.llm_model === "go1.0" ? "GO 1.0 (goo1)" : (s.llm_model || "GO 1.0 (goo1)");
         }
+        const activeModelName = document.getElementById("active-model-name");
+        if (activeModelName && s.llm_model) {
+          activeModelName.textContent = s.llm_model === "go1.0" ? "GO 1.0" : (s.llm_model === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
+        }
         setTemp.value = s.temperature;
         setTempVal.textContent = parseFloat(s.temperature).toFixed(2);
         setMaxTokens.value = s.max_tokens;
@@ -1248,6 +1258,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (activeModelBadge) {
         activeModelBadge.textContent = modelVal === "go1.0" ? "GO 1.0 (goo1)" : modelVal;
+      }
+      const activeModelName = document.getElementById("active-model-name");
+      if (activeModelName) {
+        activeModelName.textContent = modelVal === "go1.0" ? "GO 1.0" : (modelVal === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
       }
       settingsSavedFeedback.classList.remove("hidden");
       setTimeout(() => settingsSavedFeedback.classList.add("hidden"), 2500);

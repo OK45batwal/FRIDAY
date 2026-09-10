@@ -1041,6 +1041,17 @@ body[data-theme="dark"] .brand-tag {
   letter-spacing: 0.5px;
 }
 
+.active-chat-title {
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .canvas-nav-pills {
   display: flex;
   align-items: center;
