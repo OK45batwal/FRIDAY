@@ -35,8 +35,39 @@ class ToolRegistry:
         self._tools[tool.name] = tool
         logger.debug(f"Registered tool: {tool.name}")
 
+    ALIASES: Dict[str, str] = {
+        "time": "time",
+        "datetime": "time",
+        "date": "time",
+        "current_time": "time",
+        "calc": "calculator",
+        "calculate": "calculator",
+        "math": "calculator",
+        "system_status": "system_info",
+        "system": "system_info",
+        "sys_info": "system_info",
+        "hardware": "system_info",
+        "web_search": "search",
+        "google_search": "search",
+        "search_web": "search",
+        "get_weather": "weather",
+        "file": "file_manager",
+        "files": "file_manager",
+        "file_search": "file_manager",
+    }
+
     def get(self, name: str) -> Optional[BaseTool]:
-        """Get tool by name."""
+        """Get tool by name with normalization and alias fallback."""
+        if not name:
+            return None
+        clean = name.strip().lower()
+        if clean.endswith("()"):
+            clean = clean[:-2].strip()
+        if clean in self._tools:
+            return self._tools[clean]
+        mapped = self.ALIASES.get(clean)
+        if mapped and mapped in self._tools:
+            return self._tools[mapped]
         return self._tools.get(name)
 
     def list_tools(self) -> List[Dict[str, Any]]:

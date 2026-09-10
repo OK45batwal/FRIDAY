@@ -766,10 +766,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chatInput.addEventListener("keydown", (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const text = chatInput.value.trim();
-      if (text) sendMessage(text);
+      if (text && !isGenerating) sendMessage(text);
     }
   });
 

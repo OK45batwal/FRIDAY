@@ -122,9 +122,10 @@ class FridayOrchestrator:
             # Step 5: First pass to detect tool requests
             initial_response = await self.client.chat(llm_messages)
             tool_call = self.parser.parse_tool_call(initial_response)
+            tool_instance = self.tools.get(tool_call["tool"]) if tool_call else None
 
-            if tool_call and self.tools.get(tool_call["tool"]):
-                tool_name = tool_call["tool"]
+            if tool_instance:
+                tool_name = tool_instance.name
                 tool_args = tool_call.get("arguments", {})
 
                 # Notify tool started
@@ -149,13 +150,24 @@ class FridayOrchestrator:
 
             else:
                 # Direct conversational response
-                yield {"type": "assistant_state", "state": "SPEAKING"}
-                # If we got the initial_response, stream it smoothly
-                for i in range(0, len(initial_response), 3):
-                    chunk = initial_response[i:i+3]
-                    final_response_text += chunk
-                    yield {"type": "assistant_token", "content": chunk}
-                    await asyncio.sleep(0.01)
+                clean_initial = self.parser.clean_tool_syntax(initial_response)
+                if not clean_initial:
+                    # Model produced tool block that could not be mapped; ask it to respond conversationally
+                    retry_messages = list(llm_messages) + [
+                        {"role": "assistant", "content": initial_response},
+                        {"role": "user", "content": "Please answer the user's message directly and conversationally without calling any tools."},
+                    ]
+                    yield {"type": "assistant_state", "state": "SPEAKING"}
+                    async for token in self.client.chat_stream(retry_messages):
+                        final_response_text += token
+                        yield {"type": "assistant_token", "content": token}
+                else:
+                    yield {"type": "assistant_state", "state": "SPEAKING"}
+                    for i in range(0, len(clean_initial), 3):
+                        chunk = clean_initial[i:i+3]
+                        final_response_text += chunk
+                        yield {"type": "assistant_token", "content": chunk}
+                        await asyncio.sleep(0.01)
 
             # Clean any leftover markup
             final_clean = self.parser.clean_tool_syntax(final_response_text)
