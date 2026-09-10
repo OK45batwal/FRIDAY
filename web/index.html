@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.2">
+  <link rel="stylesheet" href="style.css?v=2.3">
 </head>
 <body data-theme="dark">
   <!-- Neo-Brutalist Subtle Dot Grid -->
@@ -248,18 +248,18 @@
                 <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
               </svg>
             </div>
-            <h2>FRIDAY System Online</h2>
-            <p class="hero-description">Autonomous on-device AI agent powered by local models. Equipped with live web search, safe calculator, system telemetry, file indexing, and persistent long-term memory.</p>
+            <h2>What can I help you with today?</h2>
+            <p class="hero-description">Your personal AI assistant running locally on Apple Silicon. Powered by Google Gemma 2 & GO 1.0 with live tools, memory, and fast private inference.</p>
             
             <div class="first-run-checklist">
-              <div class="chk-item"><span class="chk-icon">✓</span> FastAPI Backend</div>
-              <div class="chk-item"><span class="chk-icon">✓</span> SQLite Database</div>
               <div class="chk-item"><span class="chk-icon">✓</span> Local Ollama Engine</div>
+              <div class="chk-item"><span class="chk-icon">✓</span> Long-Term Memory (SQLite)</div>
               <div class="chk-item"><span class="chk-icon">✓</span> Active Tool Plugins</div>
+              <div class="chk-item"><span class="chk-icon">✓</span> 100% On-Device Privacy</div>
             </div>
 
             <div class="hero-quick-prompts">
-              <span class="quick-title">Sample prompts to try:</span>
+              <span class="quick-title">Suggested Prompts</span>
               <div class="quick-chips-grid">
                 <button class="quick-chip" data-text="Calculate 125 * 48">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
@@ -318,13 +318,12 @@
             </button>
           </div>
           <div class="chat-dock glass-panel">
-            <button id="btn-voice-input" class="btn-dock-mic" title="Voice Input (or hold Space)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            <button id="btn-voice-input" class="btn-dock-mic" title="Voice Input">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
             </button>
-            <textarea id="chat-input" placeholder="Ask FRIDAY anything... (Press ⌘+Enter to send)" rows="1"></textarea>
-            <button id="btn-send-message" class="btn-dock-send" title="Send Message">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              <span>Send</span>
+            <textarea id="chat-input" placeholder="Message FRIDAY... (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
+            <button id="btn-send-message" class="btn-dock-send" title="Send Message (Enter)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
             </button>
           </div>
         </div>
@@ -1024,6 +1023,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=2.2"></script>
+  <script src="app.js?v=2.3"></script>
 </body>
 </html>
