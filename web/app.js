@@ -3,6 +3,21 @@
 // ==========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  // App Shell & Layout Elements
+  const appLayout = document.getElementById("app-layout");
+  const btnSidebarCollapse = document.getElementById("btn-sidebar-collapse");
+  const btnSidebarToggleCanvas = document.getElementById("btn-sidebar-toggle-canvas");
+  const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+  const btnMobDrawerToggle = document.getElementById("btn-mob-drawer-toggle");
+  const canvasBreadcrumbView = document.getElementById("canvas-breadcrumb-view");
+  const canvasPills = document.querySelectorAll(".canvas-pill");
+  const mobNavBtns = document.querySelectorAll(".mob-nav-btn");
+  const chatHeaderActions = document.getElementById("chat-header-actions");
+  const chipTranslateDraft = document.getElementById("chip-translate-draft");
+  const btnTransSendChat = document.getElementById("btn-trans-send-chat");
+  const statusPillTop = document.getElementById("status-pill-top");
+  const statusLabelTop = document.getElementById("status-label-top");
+
   // DOM Navigation & Views
   const navItems = document.querySelectorAll(".nav-item");
   const viewPanels = document.querySelectorAll(".view-panel");
@@ -145,21 +160,93 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnThemeToggleTop) btnThemeToggleTop.addEventListener("click", toggleTheme);
 
   // ==========================================================================
-  // 1. Navigation & View Switching
+  // 1. Navigation & View Switching & Layout Control
   // ==========================================================================
+  const VIEW_TITLES = {
+    chat: "Assistant Chat",
+    voice: "Voice Mode",
+    translate: "Live Translator",
+    tasks: "Email & Tasks",
+    dashboard: "System Dashboard",
+    settings: "System Settings",
+    about: "About Architecture",
+  };
+
+  function toggleSidebar(force) {
+    if (!appLayout) return;
+    const isMobile = window.innerWidth <= 840;
+    if (isMobile) {
+      const willOpen = typeof force === "boolean" ? force : !appLayout.classList.contains("sidebar-open");
+      appLayout.classList.toggle("sidebar-open", willOpen);
+    } else {
+      const willCollapse = typeof force === "boolean" ? force : !appLayout.classList.contains("sidebar-collapsed");
+      appLayout.classList.toggle("sidebar-collapsed", willCollapse);
+      try {
+        localStorage.setItem("friday_sidebar_collapsed", willCollapse ? "true" : "false");
+      } catch (e) {}
+    }
+  }
+
+  // Restore saved desktop collapse state
+  if (appLayout && window.innerWidth > 840) {
+    try {
+      if (localStorage.getItem("friday_sidebar_collapsed") === "true") {
+        appLayout.classList.add("sidebar-collapsed");
+      }
+    } catch (e) {}
+  }
+
+  if (btnSidebarCollapse) btnSidebarCollapse.addEventListener("click", () => toggleSidebar());
+  if (btnSidebarToggleCanvas) btnSidebarToggleCanvas.addEventListener("click", () => toggleSidebar());
+  if (btnMobDrawerToggle) btnMobDrawerToggle.addEventListener("click", () => toggleSidebar(true));
+  if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", () => toggleSidebar(false));
+
   function switchView(viewName) {
     navItems.forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
+    });
+    canvasPills.forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
+    });
+    mobNavBtns.forEach((btn) => {
       btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
     });
     viewPanels.forEach((panel) => {
       panel.classList.toggle("active", panel.id === `view-${viewName}`);
     });
 
+    if (canvasBreadcrumbView) {
+      canvasBreadcrumbView.textContent = VIEW_TITLES[viewName] || viewName.toUpperCase();
+    }
+
+    if (chatHeaderActions) {
+      chatHeaderActions.style.display = viewName === "chat" ? "flex" : "none";
+    }
+
+    if (appLayout && window.innerWidth <= 840) {
+      appLayout.classList.remove("sidebar-open");
+    }
+
     if (viewName === "dashboard") loadDashboardData();
     if (viewName === "settings") loadSettings();
   }
 
   navItems.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.getAttribute("data-view");
+      if (view) switchView(view);
+    });
+  });
+
+  canvasPills.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.getAttribute("data-view");
+      if (view) switchView(view);
+    });
+  });
+
+  mobNavBtns.forEach((btn) => {
+    if (btn.id === "btn-mob-drawer-toggle") return;
     btn.addEventListener("click", () => {
       const view = btn.getAttribute("data-view");
       if (view) switchView(view);
@@ -176,14 +263,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnExitVoice.addEventListener("click", () => switchView("chat"));
 
-  // Universal Keyboard Shortcuts (⌘1..5, ⌘K, Escape)
+  // Universal Keyboard Shortcuts (⌘1..6, ⌘B, ⌘K, Escape)
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (appLayout && appLayout.classList.contains("sidebar-open")) {
+        appLayout.classList.remove("sidebar-open");
+        return;
+      }
       switchView("chat");
       chatInput.focus();
     }
     if (e.metaKey || e.ctrlKey) {
-      if (e.key === "1") { e.preventDefault(); switchView("chat"); }
+      if (e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+      else if (e.key === "1") { e.preventDefault(); switchView("chat"); }
       else if (e.key === "2") { e.preventDefault(); switchView("voice"); }
       else if (e.key === "3") { e.preventDefault(); switchView("translate"); }
       else if (e.key === "4") { e.preventDefault(); switchView("tasks"); }
@@ -204,8 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function setAssistantState(state) {
     // states: ONLINE, LISTENING, THINKING, USING_TOOL, SPEAKING, ERROR
     const normalized = state.toUpperCase().replace(" ", "_");
-    statusPill.className = `status-indicator ${normalized.toLowerCase()}`;
-    statusLabel.textContent = normalized.replace("_", " ");
+    if (statusPill) statusPill.className = `status-indicator ${normalized.toLowerCase()}`;
+    if (statusLabel) statusLabel.textContent = normalized.replace("_", " ");
+    if (statusPillTop) statusPillTop.className = `status-indicator ${normalized.toLowerCase()}`;
+    if (statusLabelTop) statusLabelTop.textContent = normalized.replace("_", " ");
 
     if (centralVoiceOrb) {
       centralVoiceOrb.className = `central-voice-orb ${normalized.toLowerCase()}`;
@@ -553,6 +650,17 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="live-tokens"></span>
           <span class="cursor-blink"></span>
         </div>
+        <div class="msg-translation-card hidden">
+          <div class="msg-trans-header">
+            <span class="msg-trans-lang-tag">SPANISH</span>
+            <div class="msg-trans-actions">
+              <button class="btn-msg-trans-speak" title="Listen pronunciation">🔊 Speak</button>
+              <button class="btn-msg-trans-copy" title="Copy translation">📋 Copy</button>
+              <button class="btn-msg-trans-close" title="Close translation">✕</button>
+            </div>
+          </div>
+          <div class="msg-trans-body"></div>
+        </div>
         <div class="msg-meta-row">
           <span class="assistant-tag">${escapeHtml(currentModelName)} • Edge</span>
           <div class="message-actions-bar">
@@ -560,6 +668,26 @@ document.addEventListener("DOMContentLoaded", () => {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
               <span>Copy</span>
             </button>
+            <div class="msg-translate-wrap">
+              <button class="msg-action-btn btn-msg-translate" title="Live Translate Response">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Translate</span>
+              </button>
+              <div class="msg-translate-dropdown hidden">
+                <button data-lang="Spanish">Spanish (Español)</button>
+                <button data-lang="French">French (Français)</button>
+                <button data-lang="German">German (Deutsch)</button>
+                <button data-lang="Hindi">Hindi (हिंदी)</button>
+                <button data-lang="Japanese">Japanese (日本語)</button>
+                <button data-lang="Chinese">Chinese (Mandarin)</button>
+                <button data-lang="Italian">Italian (Italiano)</button>
+                <button data-lang="Portuguese">Portuguese (Português)</button>
+                <button data-lang="Russian">Russian (Русский)</button>
+                <button data-lang="Arabic">Arabic (العربية)</button>
+                <button data-lang="Korean">Korean (한국어)</button>
+                <button data-lang="English">English</button>
+              </div>
+            </div>
             <button class="msg-action-btn btn-msg-speak" title="Read Aloud">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
               <span>Speak</span>
@@ -583,6 +711,102 @@ document.addEventListener("DOMContentLoaded", () => {
         copyBtn.classList.add("active");
         setTimeout(() => copyBtn.classList.remove("active"), 2000);
       } catch (e) {}
+    });
+
+    // In-Chat Translation
+    const transWrap = msgDiv.querySelector(".msg-translate-wrap");
+    const transBtn = msgDiv.querySelector(".btn-msg-translate");
+    const transMenu = msgDiv.querySelector(".msg-translate-dropdown");
+    const transCard = msgDiv.querySelector(".msg-translation-card");
+    const transLangTag = msgDiv.querySelector(".msg-trans-lang-tag");
+    const transBody = msgDiv.querySelector(".msg-trans-body");
+    const transSpeakBtn = msgDiv.querySelector(".btn-msg-trans-speak");
+    const transCopyBtn = msgDiv.querySelector(".btn-msg-trans-copy");
+    const transCloseBtn = msgDiv.querySelector(".btn-msg-trans-close");
+
+    transBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      transMenu.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!transWrap.contains(e.target)) {
+        transMenu.classList.add("hidden");
+      }
+    });
+
+    transMenu.querySelectorAll("button").forEach((langBtn) => {
+      langBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const targetLang = langBtn.getAttribute("data-lang");
+        transMenu.classList.add("hidden");
+
+        const text = msgDiv.querySelector(".msg-body").innerText.trim();
+        if (!text) return;
+
+        transBtn.classList.add("active");
+        transBtn.querySelector("span").textContent = "Translating...";
+
+        try {
+          const res = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              source_lang: "Auto-Detect",
+              target_lang: targetLang,
+              style: "Natural / Conversational",
+            }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const translated = data.translated_text || "";
+
+          transLangTag.textContent = `${data.target_lang || targetLang}`;
+          transBody.textContent = translated;
+          transCard.classList.remove("hidden");
+          chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
+        } catch (err) {
+          showToast(`Translation error: ${err.message}`);
+        } finally {
+          transBtn.classList.remove("active");
+          transBtn.querySelector("span").textContent = "Translate";
+        }
+      });
+    });
+
+    transSpeakBtn.addEventListener("click", () => {
+      const text = transBody.textContent;
+      if (text && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const langStr = (transLangTag.textContent || "").toLowerCase();
+        if (langStr.includes("span")) utterance.lang = "es-ES";
+        else if (langStr.includes("fren")) utterance.lang = "fr-FR";
+        else if (langStr.includes("germ")) utterance.lang = "de-DE";
+        else if (langStr.includes("hin")) utterance.lang = "hi-IN";
+        else if (langStr.includes("jap")) utterance.lang = "ja-JP";
+        else if (langStr.includes("chin") || langStr.includes("mand")) utterance.lang = "zh-CN";
+        else if (langStr.includes("ita")) utterance.lang = "it-IT";
+        else if (langStr.includes("port")) utterance.lang = "pt-PT";
+        else if (langStr.includes("russ")) utterance.lang = "ru-RU";
+        else if (langStr.includes("arab")) utterance.lang = "ar-SA";
+        else if (langStr.includes("kore")) utterance.lang = "ko-KR";
+        else utterance.lang = "en-US";
+        window.speechSynthesis.speak(utterance);
+      }
+    });
+
+    transCopyBtn.addEventListener("click", async () => {
+      const text = transBody.textContent;
+      if (text) {
+        await navigator.clipboard.writeText(text);
+        showToast("Translation copied!");
+      }
+    });
+
+    transCloseBtn.addEventListener("click", () => {
+      transCard.classList.add("hidden");
     });
 
     const speakBtn = msgDiv.querySelector(".btn-msg-speak");
@@ -1341,6 +1565,22 @@ document.addEventListener("DOMContentLoaded", () => {
         btnMic.style.display = "none";
       }
     }
+
+    const btnSendChat = document.getElementById("btn-trans-send-chat");
+    if (btnSendChat) {
+      btnSendChat.addEventListener("click", () => {
+        const text = targetOutput.textContent.trim();
+        if (text && !targetOutput.querySelector(".trans-placeholder")) {
+          chatInput.value = text;
+          adjustTextareaHeight(chatInput);
+          switchView("chat");
+          chatInput.focus();
+          showToast("Translation inserted into chat!");
+        } else {
+          showToast("Translate some text first!");
+        }
+      });
+    }
   }
 
   // ==========================================================================
@@ -1598,6 +1838,50 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+
+    if (chipTranslateDraft) {
+      chipTranslateDraft.addEventListener("click", async () => {
+        const text = chatInput.value.trim();
+        if (!text) {
+          showToast("Type something in the box first to translate!");
+          chatInput.focus();
+          return;
+        }
+        chipTranslateDraft.style.opacity = "0.6";
+        const origLabel = chipTranslateDraft.querySelector("span") ? chipTranslateDraft.querySelector("span").textContent : "";
+        if (chipTranslateDraft.querySelector("span")) {
+          chipTranslateDraft.querySelector("span").textContent = "Translating...";
+        }
+
+        try {
+          const res = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              source_lang: "Auto-Detect",
+              target_lang: "Spanish",
+              style: "Natural / Conversational",
+            }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.translated_text) {
+            chatInput.value = data.translated_text;
+            adjustTextareaHeight(chatInput);
+            showToast(`Translated to ${data.target_lang || "Spanish"}!`);
+          }
+        } catch (err) {
+          showToast(`Translate error: ${err.message}`);
+        } finally {
+          chipTranslateDraft.style.opacity = "1";
+          if (chipTranslateDraft.querySelector("span")) {
+            chipTranslateDraft.querySelector("span").textContent = origLabel;
+          }
+          chatInput.focus();
+        }
+      });
+    }
   }
 
   // ==========================================================================
