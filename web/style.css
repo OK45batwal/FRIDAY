@@ -3416,6 +3416,8 @@ body[data-theme="dark"] .form-section-title {
   color: #000000;
   transform: translate(-1px, -1px);
   box-shadow: 2px 2px 0px #000000;
+}
+
 .email-preview-paper {
   flex: 1;
   background: var(--bg-card);
