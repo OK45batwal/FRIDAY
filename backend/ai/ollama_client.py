@@ -13,10 +13,14 @@ class OllamaClient:
     def __init__(
         self,
         base_url: str = settings.OLLAMA_BASE_URL,
-        model: str = settings.LLM_MODEL,
+        model: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
-        self.model = model
+        self._model = model
+
+    @property
+    def model(self) -> str:
+        return self._model or settings.LLM_MODEL
 
     async def check_health(self) -> bool:
         """Verify Ollama server connection and model availability."""
@@ -34,9 +38,10 @@ class OllamaClient:
         temperature: float = settings.LLM_TEMPERATURE,
         top_p: float = settings.LLM_TOP_P,
     ) -> str:
-        """Send complete non-streamed chat request."""
+        """Send complete non-streamed chat request with fallback."""
+        active_model = self.model
         payload = {
-            "model": self.model,
+            "model": active_model,
             "messages": messages,
             "stream": False,
             "options": {
@@ -45,13 +50,27 @@ class OllamaClient:
             },
         }
         async with httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/chat",
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("message", {}).get("content", "").strip()
+            try:
+                resp = await client.post(
+                    f"{self.base_url}/api/chat",
+                    json=payload,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return data.get("message", {}).get("content", "").strip()
+            except httpx.HTTPStatusError as e:
+                # If custom model not yet compiled in Ollama, fallback to gemma2:2b
+                if e.response.status_code == 404 and active_model != "gemma2:2b":
+                    logger.warning(f"Model '{active_model}' not found in Ollama, falling back to 'gemma2:2b'")
+                    payload["model"] = "gemma2:2b"
+                    fallback_resp = await client.post(
+                        f"{self.base_url}/api/chat",
+                        json=payload,
+                    )
+                    fallback_resp.raise_for_status()
+                    data = fallback_resp.json()
+                    return data.get("message", {}).get("content", "").strip()
+                raise e
 
     async def chat_stream(
         self,
@@ -60,8 +79,9 @@ class OllamaClient:
         top_p: float = settings.LLM_TOP_P,
     ) -> AsyncGenerator[str, None]:
         """Stream chat tokens asynchronously."""
+        active_model = self.model
         payload = {
-            "model": self.model,
+            "model": active_model,
             "messages": messages,
             "stream": True,
             "options": {
@@ -70,22 +90,45 @@ class OllamaClient:
             },
         }
         async with httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
-            async with client.stream(
-                "POST",
-                f"{self.base_url}/api/chat",
-                json=payload,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line:
-                        continue
-                    try:
-                        chunk = json.loads(line)
-                        content = chunk.get("message", {}).get("content", "")
-                        if content:
-                            yield content
-                    except Exception:
-                        continue
+            try:
+                async with client.stream(
+                    "POST",
+                    f"{self.base_url}/api/chat",
+                    json=payload,
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        try:
+                            chunk = json.loads(line)
+                            content = chunk.get("message", {}).get("content", "")
+                            if content:
+                                yield content
+                        except Exception:
+                            continue
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404 and active_model != "gemma2:2b":
+                    logger.warning(f"Model '{active_model}' not found in Ollama streaming, falling back to 'gemma2:2b'")
+                    payload["model"] = "gemma2:2b"
+                    async with client.stream(
+                        "POST",
+                        f"{self.base_url}/api/chat",
+                        json=payload,
+                    ) as response:
+                        response.raise_for_status()
+                        async for line in response.aiter_lines():
+                            if not line:
+                                continue
+                            try:
+                                chunk = json.loads(line)
+                                content = chunk.get("message", {}).get("content", "")
+                                if content:
+                                    yield content
+                            except Exception:
+                                continue
+                else:
+                    raise e
 
 
 # Global OllamaClient singleton

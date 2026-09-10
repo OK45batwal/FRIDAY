@@ -50,12 +50,20 @@ else
     echo -e "${RED}[!] Warning: Could not connect to Ollama. FRIDAY will start, but AI inference may fail.${NC}"
 fi
 
-# 3. Check model presence (gemma2:2b)
-MODEL_CHECK=$(curl -s http://127.0.0.1:11434/api/tags 2>/dev/null | grep "gemma2:2b" || true)
-if [ -z "$MODEL_CHECK" ]; then
-    echo -e "${YELLOW}[!] Recommended model 'gemma2:2b' not found in Ollama.${NC}"
+# 3. Check model presence (gemma2:2b and go1.0)
+MODEL_CHECK=$(curl -s http://127.0.0.1:11434/api/tags 2>/dev/null || true)
+if ! echo "$MODEL_CHECK" | grep -q "gemma2:2b"; then
+    echo -e "${YELLOW}[!] Foundation model 'gemma2:2b' not found in Ollama.${NC}"
     echo -e "${YELLOW}[*] Pulling gemma2:2b (this may take a few minutes)...${NC}"
     ollama pull gemma2:2b || echo -e "${YELLOW}[!] Failed to pull gemma2:2b. Ensure you have an active internet connection.${NC}"
+fi
+
+if ! echo "$MODEL_CHECK" | grep -q "go1.0"; then
+    if [ -f "model/go1/Modelfile" ]; then
+        echo -e "${CYAN}[*] Compiling GO 1.0 (go1.0 / goo1) from model/go1/Modelfile...${NC}"
+        ollama create go1.0 -f model/go1/Modelfile || echo -e "${YELLOW}[!] Note: Could not auto-create go1.0. Run ./scripts/build_go1.sh manually.${NC}"
+        ollama cp go1.0 goo1 2>/dev/null || true
+    fi
 fi
 
 # 4. Start FRIDAY Web Server

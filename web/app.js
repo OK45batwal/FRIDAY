@@ -78,10 +78,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // State
   let currentConversationId = null;
+  let lastUserPrompt = "";
   let isGenerating = false;
   let isListening = false;
   let speechRecognition = null;
   let ws = null;
+
+  // Toast notification helper
+  function showToast(text, duration = 2400) {
+    const existing = document.querySelectorAll(".friday-toast");
+    existing.forEach((t) => t.remove());
+
+    const toast = document.createElement("div");
+    toast.className = "friday-toast";
+    toast.innerHTML = `<span>✦</span><span>${escapeHtml(text)}</span>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(8px)";
+      setTimeout(() => toast.remove(), 250);
+    }, duration);
+  }
 
   // ==========================================================================
   // 0. Neo-Brutalist Theme Controller (Dark & Light)
@@ -170,6 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (e.key === "3") { e.preventDefault(); switchView("dashboard"); }
       else if (e.key === "4") { e.preventDefault(); switchView("expo"); }
       else if (e.key === "5") { e.preventDefault(); switchView("settings"); }
+      else if (e.key.toLowerCase() === "t") { e.preventDefault(); switchView("translate"); }
+      else if (e.key.toLowerCase() === "e") { e.preventDefault(); switchView("tasks"); }
       else if (e.key.toLowerCase() === "k") {
         e.preventDefault();
         btnNewChat.click();
@@ -521,6 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function createAssistantMessage() {
     const msgDiv = document.createElement("div");
     msgDiv.className = "chat-msg assistant";
+    const currentModelName = document.getElementById("active-model-name")?.textContent || "GO 1.0";
     msgDiv.innerHTML = `
       <div class="msg-avatar" title="FRIDAY">
         <svg width="16" height="16" viewBox="0 0 48 48" fill="none"><path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/><circle cx="34" cy="35" r="3.5" fill="currentColor"/></svg>
@@ -532,8 +553,21 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="cursor-blink"></span>
         </div>
         <div class="msg-meta-row">
-          <span class="assistant-tag">FRIDAY • Gemma 2B</span>
-          <button class="btn-msg-copy" title="Copy response">Copy</button>
+          <span class="assistant-tag">${escapeHtml(currentModelName)} • Edge</span>
+          <div class="message-actions-bar">
+            <button class="msg-action-btn btn-msg-copy" title="Copy response">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copy</span>
+            </button>
+            <button class="msg-action-btn btn-msg-speak" title="Read Aloud">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              <span>Speak</span>
+            </button>
+            <button class="msg-action-btn btn-msg-retry" title="Regenerate">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+              <span>Retry</span>
+            </button>
+          </div>
           <span>• ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
@@ -544,9 +578,41 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = msgDiv.querySelector(".msg-body").innerText;
       try {
         await navigator.clipboard.writeText(text);
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+        showToast("Copied to clipboard!");
+        copyBtn.classList.add("active");
+        setTimeout(() => copyBtn.classList.remove("active"), 2000);
       } catch (e) {}
+    });
+
+    const speakBtn = msgDiv.querySelector(".btn-msg-speak");
+    let isSpeaking = false;
+    speakBtn.addEventListener("click", async () => {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        speakBtn.classList.remove("active");
+        speakBtn.querySelector("span").textContent = "Speak";
+      } else {
+        const text = msgDiv.querySelector(".msg-body").innerText;
+        if (!text) return;
+        isSpeaking = true;
+        speakBtn.classList.add("active");
+        speakBtn.querySelector("span").textContent = "Stop";
+        try {
+          await speakText(text);
+        } finally {
+          isSpeaking = false;
+          speakBtn.classList.remove("active");
+          speakBtn.querySelector("span").textContent = "Speak";
+        }
+      }
+    });
+
+    const retryBtn = msgDiv.querySelector(".btn-msg-retry");
+    retryBtn.addEventListener("click", () => {
+      if (lastUserPrompt && !isGenerating) {
+        sendMessage(lastUserPrompt);
+      }
     });
 
     chatStreamArea.appendChild(msgDiv);
@@ -556,21 +622,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createToolAccordion(slotElem, toolName, args) {
     const acc = document.createElement("div");
-    acc.className = "tool-accordion";
+    acc.className = "thought-accordion";
     acc.innerHTML = `
-      <div class="tool-accordion-header">
-        <span class="tool-badge-wrap">
-          <span class="tool-badge">${escapeHtml(toolName.toUpperCase())}</span>
-          <span class="tool-acc-param">${escapeHtml(JSON.stringify(args || {}))}</span>
-        </span>
-        <span class="tool-acc-chevron">▼</span>
-      </div>
-      <div class="tool-accordion-body">Executing tool observation...</div>
+      <details class="thought-details" open>
+        <summary class="thought-summary">
+          <span class="thought-icon">💭</span>
+          <span>Tool Execution: <strong>${escapeHtml(toolName.toUpperCase())}</strong></span>
+          <span class="thought-badge">${escapeHtml(JSON.stringify(args || {}).slice(0, 32))}</span>
+        </summary>
+        <div class="thought-body">Executing tool observation...</div>
+      </details>
     `;
-
-    acc.querySelector(".tool-accordion-header").addEventListener("click", () => {
-      acc.classList.toggle("expanded");
-    });
 
     slotElem.appendChild(acc);
     chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
@@ -580,6 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function sendMessage(promptText) {
     if (!promptText || isGenerating) return;
 
+    lastUserPrompt = promptText;
     isGenerating = true;
     btnSendMessage.disabled = true;
     appendUserMessage(promptText);
@@ -956,6 +1019,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/settings");
       if (res.ok) {
         const s = await res.json();
+        if (setModel && s.llm_model) {
+          setModel.value = s.llm_model;
+        }
+        if (activeModelBadge) {
+          activeModelBadge.textContent = s.llm_model === "go1.0" ? "GO 1.0 (goo1)" : (s.llm_model || "GO 1.0 (goo1)");
+        }
         setTemp.value = s.temperature;
         setTempVal.textContent = parseFloat(s.temperature).toFixed(2);
         setMaxTokens.value = s.max_tokens;
@@ -1004,16 +1073,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (setVoicePersona) {
         localStorage.setItem("friday_voice", setVoicePersona.value);
       }
+      const modelVal = setModel ? setModel.value : "go1.0";
       await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          llm_model: modelVal,
           temperature: parseFloat(setTemp.value),
           max_tokens: parseInt(setMaxTokens.value, 10),
           enable_memory: setMemory.checked,
           enable_voice: setVoice.checked,
         }),
       });
+      if (activeModelBadge) {
+        activeModelBadge.textContent = modelVal === "go1.0" ? "GO 1.0 (goo1)" : modelVal;
+      }
       settingsSavedFeedback.classList.remove("hidden");
       setTimeout(() => settingsSavedFeedback.classList.add("hidden"), 2500);
     } catch (e) {
@@ -1056,9 +1130,603 @@ document.addEventListener("DOMContentLoaded", () => {
     return html;
   }
 
+  // ==========================================================================
+  // 10. GO 1.0 Live Translator Controller
+  // ==========================================================================
+  function initLiveTranslator() {
+    const sourceLang = document.getElementById("trans-source-lang");
+    const targetLang = document.getElementById("trans-target-lang");
+    const styleSelect = document.getElementById("trans-style-select");
+    const autoCheck = document.getElementById("trans-auto-check");
+    const sourceInput = document.getElementById("trans-source-input");
+    const targetOutput = document.getElementById("trans-target-output");
+    const btnSwap = document.getElementById("btn-trans-swap");
+    const btnExecute = document.getElementById("btn-trans-execute");
+    const btnClear = document.getElementById("btn-trans-clear");
+    const btnMic = document.getElementById("btn-trans-mic");
+    const btnCopy = document.getElementById("btn-trans-copy");
+    const btnSpeak = document.getElementById("btn-trans-speak");
+    const detectedBadge = document.getElementById("trans-detected-badge");
+    const nuanceCard = document.getElementById("trans-nuance-card");
+    const nuanceText = document.getElementById("trans-nuance-text");
+    const copyToast = document.getElementById("trans-copy-toast");
+    const spinner = document.getElementById("trans-spinner");
+    const sourceChars = document.getElementById("trans-source-chars");
+    const sourceWords = document.getElementById("trans-source-words");
+    const targetChars = document.getElementById("trans-target-chars");
+    const targetWords = document.getElementById("trans-target-words");
+    const phraseChips = document.querySelectorAll(".phrase-chip");
+
+    if (!sourceInput || !targetOutput) return;
+
+    let autoDebounceTimer = null;
+    let isTranslating = false;
+    let lastTranslatedText = "";
+
+    function updateSourceStats() {
+      const txt = sourceInput.value;
+      const chars = txt.length;
+      const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+      if (sourceChars) sourceChars.textContent = `${chars} characters`;
+      if (sourceWords) sourceWords.textContent = `${words} words`;
+    }
+
+    function updateTargetStats(txt) {
+      const chars = txt.length;
+      const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+      if (targetChars) targetChars.textContent = `${chars} characters`;
+      if (targetWords) targetWords.textContent = `${words} words`;
+    }
+
+    async function executeTranslation() {
+      const text = sourceInput.value.trim();
+      if (!text) {
+        targetOutput.innerHTML = '<span class="trans-placeholder">Translation will appear here in real-time...</span>';
+        updateTargetStats("");
+        if (nuanceCard) nuanceCard.classList.add("hidden");
+        return;
+      }
+      if (text === lastTranslatedText) return;
+      if (isTranslating) return;
+
+      isTranslating = true;
+      if (spinner) spinner.classList.remove("hidden");
+      targetOutput.style.opacity = "0.6";
+
+      try {
+        const payload = {
+          text: text,
+          source_lang: sourceLang ? sourceLang.value : "Auto-Detect",
+          target_lang: targetLang ? targetLang.value : "Spanish",
+          style: styleSelect ? styleSelect.value : "Natural / Conversational",
+        };
+
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const translated = data.translated_text || "";
+        targetOutput.textContent = translated;
+        targetOutput.style.opacity = "1";
+        lastTranslatedText = text;
+        updateTargetStats(translated);
+
+        if (detectedBadge) {
+          if (data.detected_lang && sourceLang.value === "Auto-Detect") {
+            detectedBadge.textContent = `Detected: ${data.detected_lang}`;
+            detectedBadge.classList.remove("hidden");
+          } else {
+            detectedBadge.classList.add("hidden");
+          }
+        }
+
+        if (nuanceCard && nuanceText) {
+          if (data.nuance_notes) {
+            nuanceText.textContent = data.nuance_notes;
+            nuanceCard.classList.remove("hidden");
+          } else {
+            nuanceCard.classList.add("hidden");
+          }
+        }
+      } catch (err) {
+        console.error("Live translation error:", err);
+        targetOutput.innerHTML = `<span style="color: var(--status-error);">Translation error: ${escapeHtml(err.message)}</span>`;
+        targetOutput.style.opacity = "1";
+      } finally {
+        isTranslating = false;
+        if (spinner) spinner.classList.add("hidden");
+      }
+    }
+
+    sourceInput.addEventListener("input", () => {
+      updateSourceStats();
+      if (autoCheck && autoCheck.checked) {
+        clearTimeout(autoDebounceTimer);
+        const val = sourceInput.value.trim();
+        if (val.length >= 3) {
+          autoDebounceTimer = setTimeout(executeTranslation, 650);
+        }
+      }
+    });
+
+    sourceInput.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        executeTranslation();
+      }
+    });
+
+    if (btnExecute) btnExecute.addEventListener("click", executeTranslation);
+
+    if (btnClear) {
+      btnClear.addEventListener("click", () => {
+        sourceInput.value = "";
+        targetOutput.innerHTML = '<span class="trans-placeholder">Translation will appear here in real-time...</span>';
+        updateSourceStats();
+        updateTargetStats("");
+        lastTranslatedText = "";
+        if (detectedBadge) detectedBadge.classList.add("hidden");
+        if (nuanceCard) nuanceCard.classList.add("hidden");
+        sourceInput.focus();
+      });
+    }
+
+    if (btnSwap) {
+      btnSwap.addEventListener("click", () => {
+        if (!sourceLang || !targetLang) return;
+        const currSrc = sourceLang.value;
+        const currTgt = targetLang.value;
+
+        if (currSrc === "Auto-Detect") {
+          sourceLang.value = currTgt;
+          targetLang.value = "English";
+        } else {
+          sourceLang.value = currTgt;
+          targetLang.value = currSrc;
+        }
+
+        const outText = targetOutput.textContent;
+        if (outText && !targetOutput.querySelector(".trans-placeholder")) {
+          sourceInput.value = outText;
+          updateSourceStats();
+          executeTranslation();
+        }
+      });
+    }
+
+    if (sourceLang) sourceLang.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
+    if (targetLang) targetLang.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
+    if (styleSelect) styleSelect.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
+
+    phraseChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const phrase = chip.getAttribute("data-phrase");
+        if (phrase) {
+          sourceInput.value = phrase;
+          updateSourceStats();
+          executeTranslation();
+        }
+      });
+    });
+
+    if (btnCopy) {
+      btnCopy.addEventListener("click", () => {
+        const text = targetOutput.textContent;
+        if (text && !targetOutput.querySelector(".trans-placeholder")) {
+          navigator.clipboard.writeText(text).then(() => {
+            if (copyToast) {
+              copyToast.classList.remove("hidden");
+              setTimeout(() => copyToast.classList.add("hidden"), 2000);
+            }
+          });
+        }
+      });
+    }
+
+    if (btnSpeak) {
+      btnSpeak.addEventListener("click", () => {
+        const text = targetOutput.textContent;
+        if (text && !targetOutput.querySelector(".trans-placeholder")) {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const tgt = targetLang ? targetLang.value.toLowerCase() : "";
+            if (tgt.includes("span")) utterance.lang = "es-ES";
+            else if (tgt.includes("fren")) utterance.lang = "fr-FR";
+            else if (tgt.includes("germ")) utterance.lang = "de-DE";
+            else if (tgt.includes("hin")) utterance.lang = "hi-IN";
+            else if (tgt.includes("jap")) utterance.lang = "ja-JP";
+            else if (tgt.includes("chin") || tgt.includes("mand")) utterance.lang = "zh-CN";
+            else if (tgt.includes("ita")) utterance.lang = "it-IT";
+            else if (tgt.includes("port")) utterance.lang = "pt-PT";
+            else if (tgt.includes("russ")) utterance.lang = "ru-RU";
+            else if (tgt.includes("arab")) utterance.lang = "ar-SA";
+            else if (tgt.includes("kore")) utterance.lang = "ko-KR";
+            else utterance.lang = "en-US";
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+          }
+        }
+      });
+    }
+
+    if (btnMic) {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        let transRec = null;
+        let isTransListening = false;
+        btnMic.addEventListener("click", () => {
+          if (isTransListening && transRec) {
+            transRec.stop();
+            return;
+          }
+          transRec = new SpeechRec();
+          transRec.continuous = false;
+          transRec.interimResults = false;
+          transRec.onstart = () => {
+            isTransListening = true;
+            btnMic.style.color = "var(--status-speaking)";
+            btnMic.style.borderColor = "var(--status-speaking)";
+          };
+          transRec.onresult = (evt) => {
+            const transcript = evt.results[0][0].transcript;
+            sourceInput.value = (sourceInput.value ? sourceInput.value + " " : "") + transcript;
+            updateSourceStats();
+            executeTranslation();
+          };
+          transRec.onend = () => {
+            isTransListening = false;
+            btnMic.style.color = "";
+            btnMic.style.borderColor = "";
+          };
+          transRec.onerror = () => {
+            isTransListening = false;
+            btnMic.style.color = "";
+            btnMic.style.borderColor = "";
+          };
+          transRec.start();
+        });
+      } else {
+        btnMic.style.display = "none";
+      }
+    }
+  }
+
+  // ==========================================================================
+  // 11. GO 1.0 Task Studio Controller (Emails & Analysis)
+  // ==========================================================================
+  function initTaskStudio() {
+    // Sub-tab toggling
+    const subtabBtns = document.querySelectorAll(".tasks-subtab-bar .subtab-btn");
+    const subtabContents = document.querySelectorAll(".tasks-studio-container .subtab-content");
+
+    subtabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-subtab");
+        subtabBtns.forEach((b) => b.classList.toggle("active", b === btn));
+        subtabContents.forEach((c) => {
+          c.classList.toggle("active", c.id === `subtab-${tab}-content`);
+        });
+      });
+    });
+
+    // --- Email Drafter ---
+    const emailRecipient = document.getElementById("email-recipient");
+    const emailTone = document.getElementById("email-tone");
+    const emailPoints = document.getElementById("email-points");
+    const btnGenerateEmail = document.getElementById("btn-generate-email");
+    const emailSpinner = document.getElementById("email-spinner");
+    const previewSubject = document.getElementById("preview-email-subject");
+    const previewTo = document.getElementById("preview-email-to");
+    const previewBody = document.getElementById("preview-email-body");
+    const btnEmailCopy = document.getElementById("btn-email-copy");
+    const btnEmailToChat = document.getElementById("btn-email-to-chat");
+    const btnEmailSpeak = document.getElementById("btn-email-speak");
+    const presetChips = document.querySelectorAll(".preset-chip");
+
+    let currentEmailDraft = null;
+
+    const presetTemplates = {
+      follow_up: {
+        recipient: "Alex Chen (Engineering Lead)",
+        points: "Thank them for Tuesday's demo of the local AI assistant. Confirm that our performance testing passed with 60 tok/sec on Apple Silicon. Propose a brief 20-minute catch-up on Friday at 3 PM."
+      },
+      proposal: {
+        recipient: "Executive Leadership Team",
+        points: "Present our new on-device AI system GO 1.0. Highlight zero cloud API latency, 100% private SQLite memory, and agentic tool-calling capabilities. Request approval to pilot across engineering."
+      },
+      reschedule: {
+        recipient: "Sarah Jenkins",
+        points: "Apologize for having to reschedule our sprint retro originally planned for Thursday 2 PM. Propose Friday 10 AM or Monday 11 AM instead as alternatives."
+      },
+      extension: {
+        recipient: "Project Coordinator",
+        points: "Request a 3-day extension on milestone 2 deliverables due to unexpected edge-case validation requirements in the neural laboratory. Assure final quality will be exceptional."
+      },
+      thank_you: {
+        recipient: "Hiring Manager / Tech Lead",
+        points: "Express gratitude for the technical interview today. Highlight our discussion on local LLMs and how my background in distributed systems and PyTorch aligns with their roadmap."
+      }
+    };
+
+    presetChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        presetChips.forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        const presetKey = chip.getAttribute("data-preset");
+        if (presetTemplates[presetKey]) {
+          if (emailRecipient) emailRecipient.value = presetTemplates[presetKey].recipient;
+          if (emailPoints) emailPoints.value = presetTemplates[presetKey].points;
+        }
+      });
+    });
+
+    async function generateEmail() {
+      const recipient = emailRecipient ? emailRecipient.value.trim() : "Colleague";
+      const tone = emailTone ? emailTone.value : "Professional";
+      const points = emailPoints ? emailPoints.value.trim() : "";
+
+      if (!points) {
+        alert("Please enter key points or details for the email.");
+        return;
+      }
+
+      if (emailSpinner) emailSpinner.classList.remove("hidden");
+      if (btnGenerateEmail) btnGenerateEmail.disabled = true;
+
+      try {
+        const res = await fetch("/api/tasks/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipient,
+            tone,
+            key_points: points,
+            purpose: "custom"
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        currentEmailDraft = data;
+
+        if (previewSubject) previewSubject.textContent = data.subject || "Subject";
+        if (previewTo) previewTo.textContent = recipient;
+        if (previewBody) {
+          previewBody.innerHTML = escapeHtml(data.salutation) + "<br><br>" +
+            escapeHtml(data.body).replace(/\n/g, "<br>") + "<br><br>" +
+            escapeHtml(data.sign_off).replace(/\n/g, "<br>");
+        }
+      } catch (err) {
+        console.error("Email generation error:", err);
+        if (previewBody) previewBody.innerHTML = `<span style="color: var(--status-error);">Generation error: ${escapeHtml(err.message)}</span>`;
+      } finally {
+        if (emailSpinner) emailSpinner.classList.add("hidden");
+        if (btnGenerateEmail) btnGenerateEmail.disabled = false;
+      }
+    }
+
+    if (btnGenerateEmail) btnGenerateEmail.addEventListener("click", generateEmail);
+
+    if (btnEmailCopy) {
+      btnEmailCopy.addEventListener("click", () => {
+        if (!currentEmailDraft) return;
+        navigator.clipboard.writeText(currentEmailDraft.full_text).then(() => {
+          btnEmailCopy.textContent = "✓ Copied!";
+          setTimeout(() => { btnEmailCopy.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy Email</span>'; }, 2000);
+        });
+      });
+    }
+
+    if (btnEmailToChat) {
+      btnEmailToChat.addEventListener("click", () => {
+        if (!currentEmailDraft) return;
+        switchView("chat");
+        chatInput.value = `Here is the email drafted by GO 1.0:\n\n${currentEmailDraft.full_text}`;
+        chatInput.focus();
+      });
+    }
+
+    if (btnEmailSpeak) {
+      btnEmailSpeak.addEventListener("click", () => {
+        if (!currentEmailDraft) return;
+        speakText(currentEmailDraft.full_text);
+      });
+    }
+
+    // --- Text Analysis & Polish ---
+    const analysisChips = document.querySelectorAll(".analysis-chip");
+    const analyzeInput = document.getElementById("analyze-input");
+    const analyzeInputStats = document.getElementById("analyze-input-stats");
+    const btnRunAnalysis = document.getElementById("btn-run-analysis");
+    const analyzeSpinner = document.getElementById("analyze-spinner");
+    const analyzeResultDisplay = document.getElementById("analyze-result-display");
+    const btnAnalyzeCopy = document.getElementById("btn-analyze-copy");
+    const btnAnalyzeSpeak = document.getElementById("btn-analyze-speak");
+
+    let currentAnalysisAction = "summarize";
+    let currentAnalysisResult = "";
+
+    analysisChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        analysisChips.forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        currentAnalysisAction = chip.getAttribute("data-action");
+      });
+    });
+
+    if (analyzeInput && analyzeInputStats) {
+      analyzeInput.addEventListener("input", () => {
+        const words = analyzeInput.value.trim() ? analyzeInput.value.trim().split(/\s+/).length : 0;
+        analyzeInputStats.textContent = `${words} words`;
+      });
+    }
+
+    async function runAnalysis() {
+      const text = analyzeInput ? analyzeInput.value.trim() : "";
+      if (!text) {
+        alert("Please paste text to analyze.");
+        return;
+      }
+
+      if (analyzeSpinner) analyzeSpinner.classList.remove("hidden");
+      if (btnRunAnalysis) btnRunAnalysis.disabled = true;
+
+      try {
+        const res = await fetch("/api/tasks/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            action: currentAnalysisAction,
+            target_tone: "Executive"
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        currentAnalysisResult = data.result || "";
+
+        if (analyzeResultDisplay) {
+          analyzeResultDisplay.innerHTML = renderMarkdown(currentAnalysisResult);
+        }
+      } catch (err) {
+        console.error("Text analysis error:", err);
+        if (analyzeResultDisplay) {
+          analyzeResultDisplay.innerHTML = `<span style="color: var(--status-error);">Analysis error: ${escapeHtml(err.message)}</span>`;
+        }
+      } finally {
+        if (analyzeSpinner) analyzeSpinner.classList.add("hidden");
+        if (btnRunAnalysis) btnRunAnalysis.disabled = false;
+      }
+    }
+
+    if (btnRunAnalysis) btnRunAnalysis.addEventListener("click", runAnalysis);
+
+    if (btnAnalyzeCopy) {
+      btnAnalyzeCopy.addEventListener("click", () => {
+        if (!currentAnalysisResult) return;
+        navigator.clipboard.writeText(currentAnalysisResult).then(() => {
+          btnAnalyzeCopy.textContent = "✓ Copied!";
+          setTimeout(() => { btnAnalyzeCopy.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy Output</span>'; }, 2000);
+        });
+      });
+    }
+
+    if (btnAnalyzeSpeak) {
+      btnAnalyzeSpeak.addEventListener("click", () => {
+        if (currentAnalysisResult) speakText(currentAnalysisResult);
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 12. Chat Quick Action Chips Controller
+  // ==========================================================================
+  function initChatQuickActions() {
+    const actionChips = document.querySelectorAll("#chat-quick-actions .action-chip");
+    actionChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const task = chip.getAttribute("data-task");
+        if (task === "email") {
+          switchView("tasks");
+        } else if (task === "translate") {
+          switchView("translate");
+        } else if (task === "summarize") {
+          chatInput.value = "Summarize the following text into key bullet points:\n";
+          chatInput.focus();
+        } else if (task === "grammar") {
+          chatInput.value = "Please fix the grammar, polish the tone, and explain any corrections:\n";
+          chatInput.focus();
+        } else if (task === "system") {
+          chatInput.value = "What is my current Mac system status, battery, and RAM?";
+          btnSendMessage.click();
+        } else if (task === "calc") {
+          chatInput.value = "Calculate ";
+          chatInput.focus();
+        }
+      });
+    });
+  }
+
+  // ==========================================================================
+  // 13. Interactive Model Switcher Popover Controller (Claude / ChatGPT style)
+  // ==========================================================================
+  function initModelSelector() {
+    const btnModelSelector = document.getElementById("btn-model-selector");
+    const modelDropdownMenu = document.getElementById("model-dropdown-menu");
+    const modelSelectorWrapper = document.getElementById("model-selector-wrapper");
+    const activeModelName = document.getElementById("active-model-name");
+    const activeModelTag = document.getElementById("active-model-tag");
+
+    if (!btnModelSelector || !modelDropdownMenu) return;
+
+    btnModelSelector.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = modelDropdownMenu.classList.contains("hidden");
+      if (isHidden) {
+        modelDropdownMenu.classList.remove("hidden");
+        modelSelectorWrapper?.classList.add("open");
+      } else {
+        modelDropdownMenu.classList.add("hidden");
+        modelSelectorWrapper?.classList.remove("open");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!modelSelectorWrapper?.contains(e.target)) {
+        modelDropdownMenu.classList.add("hidden");
+        modelSelectorWrapper?.classList.remove("open");
+      }
+    });
+
+    const modelOptions = modelDropdownMenu.querySelectorAll(".model-option");
+    modelOptions.forEach((opt) => {
+      opt.addEventListener("click", async () => {
+        const modelId = opt.getAttribute("data-model");
+        const rawName = opt.querySelector(".option-name")?.textContent || modelId;
+        const optTag = opt.querySelector(".option-pill-badge")?.textContent || "Custom";
+
+        modelOptions.forEach((o) => o.classList.remove("active"));
+        opt.classList.add("active");
+
+        const displayName = modelId === "go1.0" ? "GO 1.0" : (modelId === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
+        if (activeModelName) activeModelName.textContent = displayName;
+        if (activeModelTag) activeModelTag.textContent = optTag;
+
+        modelDropdownMenu.classList.add("hidden");
+        modelSelectorWrapper?.classList.remove("open");
+
+        if (setModel) setModel.value = modelId;
+
+        try {
+          await fetch("/api/settings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ llm_model: modelId }),
+          });
+          showToast(`Active model switched to ${rawName}`);
+        } catch (e) {
+          console.error("Failed to update active model:", e);
+        }
+      });
+    });
+  }
+
   // Initial Boot
   loadConversations();
   loadDashboardData();
+  initLiveTranslator();
+  initTaskStudio();
+  initChatQuickActions();
+  initModelSelector();
   setInterval(loadDashboardData, 12000); // 12s hardware gauge refresh
   setAssistantState("ONLINE");
 });

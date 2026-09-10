@@ -68,6 +68,20 @@
           <span class="nav-label">Voice Mode</span>
           <kbd class="nav-kbd">⌘2</kbd>
         </button>
+        <button class="nav-item" data-view="translate" title="Live Translator (⌘T)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <span class="nav-label">Live Translator</span>
+          <kbd class="nav-kbd">⌘T</kbd>
+        </button>
+        <button class="nav-item" data-view="tasks" title="Email & Basic Tasks (⌘E)">
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </span>
+          <span class="nav-label">Email & Tasks</span>
+          <kbd class="nav-kbd">⌘E</kbd>
+        </button>
         <button class="nav-item" data-view="dashboard" title="System Dashboard (⌘3)">
           <span class="nav-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -140,7 +154,75 @@
         <div class="chat-top-bar glass-panel">
           <div class="top-title-group">
             <h2 id="active-chat-title">New Conversation</h2>
-            <span class="model-badge" id="active-model-badge">Gemma 2 (2.6B)</span>
+            <!-- Interactive Model Selector Popover (Claude/ChatGPT style) -->
+            <div class="model-selector-wrapper" id="model-selector-wrapper">
+              <button id="btn-model-selector" class="model-selector-btn" title="Switch AI Model">
+                <span class="model-sparkle">✦</span>
+                <span class="model-name" id="active-model-name">GO 1.0</span>
+                <span class="model-tag" id="active-model-tag">Distilled Edge</span>
+                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              
+              <!-- Dropdown Menu -->
+              <div class="model-dropdown-menu glass-card hidden" id="model-dropdown-menu">
+                <div class="dropdown-header">
+                  <span>ACTIVE LOCAL ENGINE</span>
+                  <span class="engine-indicator">Ollama Metal</span>
+                </div>
+                <div class="model-options-list">
+                  <div class="model-option active" data-model="go1.0">
+                    <div class="option-icon-box primary">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <div class="option-info">
+                      <div class="option-title-row">
+                        <span class="option-name">GO 1.0 (goo1)</span>
+                        <span class="option-pill-badge best">Distilled Edge</span>
+                      </div>
+                      <p class="option-desc">Google Gemma 2 2B student fine-tuned for emails, translation, analysis & local tools.</p>
+                      <div class="option-meta">
+                        <span>1.59 GB</span> • <span>Q4_K_M</span> • <span>2048 ctx</span> • <span class="speed-meta">~55 tok/s</span>
+                      </div>
+                    </div>
+                    <span class="option-check">✓</span>
+                  </div>
+
+                  <div class="model-option" data-model="gemma2:2b">
+                    <div class="option-icon-box accent">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                    </div>
+                    <div class="option-info">
+                      <div class="option-title-row">
+                        <span class="option-name">Gemma 2 (2B Base)</span>
+                        <span class="option-pill-badge">Base Instruct</span>
+                      </div>
+                      <p class="option-desc">Official Google DeepMind open foundation model.</p>
+                      <div class="option-meta">
+                        <span>1.6 GB</span> • <span>4-bit</span> • <span>4096 ctx</span>
+                      </div>
+                    </div>
+                    <span class="option-check">✓</span>
+                  </div>
+
+                  <div class="model-option" data-model="llama3.2:3b">
+                    <div class="option-icon-box info">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="4" rx="2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>
+                    </div>
+                    <div class="option-info">
+                      <div class="option-title-row">
+                        <span class="option-name">Llama 3.2 (3B)</span>
+                        <span class="option-pill-badge">Meta Open</span>
+                      </div>
+                      <p class="option-desc">Meta lightweight on-device general assistant model.</p>
+                      <div class="option-meta">
+                        <span>2.0 GB</span> • <span>4-bit</span> • <span>8192 ctx</span>
+                      </div>
+                    </div>
+                    <span class="option-check">✓</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="top-actions">
             <button id="btn-theme-toggle-top" class="btn-theme-toggle-top" title="Toggle Theme (Light / Dark)">
@@ -208,6 +290,33 @@
 
         <!-- Bottom Chat Input Dock -->
         <div class="chat-dock-container">
+          <!-- Quick Action Task Pills -->
+          <div class="chat-quick-actions" id="chat-quick-actions">
+            <button class="action-chip" data-task="email" title="Draft an Email">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <span>Draft Email</span>
+            </button>
+            <button class="action-chip" data-task="translate" title="Live Translation Studio">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>Live Translate</span>
+            </button>
+            <button class="action-chip" data-task="summarize" title="Summarize Text">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+              <span>Summarize</span>
+            </button>
+            <button class="action-chip" data-task="grammar" title="Polish & Fix Grammar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+              <span>Fix Grammar</span>
+            </button>
+            <button class="action-chip" data-task="system" title="Mac System Status">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></svg>
+              <span>System Status</span>
+            </button>
+            <button class="action-chip" data-task="calc" title="Calculator">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+              <span>Calculate</span>
+            </button>
+          </div>
           <div class="chat-dock glass-panel">
             <button id="btn-voice-input" class="btn-dock-mic" title="Voice Input (or hold Space)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
@@ -257,6 +366,335 @@
             <div class="transcript-header">Live Voice Transcript</div>
             <div id="voice-transcript-content" class="transcript-content">
               <p class="placeholder-msg">Say something like: <em>"FRIDAY, what is the weather in Tokyo?"</em> or <em>"Calculate 450 divided by 15"</em>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW: LIVE TRANSLATOR (GO 1.0)
+           =================================================================== -->
+      <div id="view-translate" class="view-panel">
+        <div class="translate-container glass-panel">
+          <!-- Top Bar -->
+          <div class="translate-top-bar">
+            <div class="translate-title-group">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <div>
+                <h2>GO 1.0 Live Translator</h2>
+                <p class="translate-subtitle">Real-time multilingual neural translation powered by custom Gemma 2 2B</p>
+              </div>
+            </div>
+            <div class="translate-top-controls">
+              <div class="style-select-wrap">
+                <label for="trans-style-select">Tone / Style:</label>
+                <select id="trans-style-select" class="custom-select-sm">
+                  <option value="Natural / Conversational" selected>Natural / Conversational</option>
+                  <option value="Formal / Business">Formal / Business</option>
+                  <option value="Casual / Colloquial">Casual / Colloquial</option>
+                  <option value="Technical / Precise">Technical / Precise</option>
+                </select>
+              </div>
+              <label class="auto-trans-toggle" title="Automatically translate when typing stops">
+                <input type="checkbox" id="trans-auto-check" checked>
+                <span>Live Auto-Translate</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dual-Pane Translation Grid -->
+          <div class="translate-grid">
+            <!-- Left Pane: Source Text -->
+            <div class="translate-card source-card">
+              <div class="card-header-bar">
+                <div class="lang-selector-group">
+                  <label for="trans-source-lang">Source:</label>
+                  <select id="trans-source-lang" class="custom-select-sm">
+                    <option value="Auto-Detect" selected>Auto-Detect Language</option>
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish (Español)</option>
+                    <option value="French">French (Français)</option>
+                    <option value="German">German (Deutsch)</option>
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Japanese">Japanese (日本語)</option>
+                    <option value="Chinese">Chinese (Mandarin)</option>
+                    <option value="Italian">Italian (Italiano)</option>
+                    <option value="Portuguese">Portuguese (Português)</option>
+                    <option value="Russian">Russian (Русский)</option>
+                    <option value="Arabic">Arabic (العربية)</option>
+                    <option value="Korean">Korean (한국어)</option>
+                  </select>
+                  <span id="trans-detected-badge" class="detected-badge hidden">Detected: English</span>
+                </div>
+                <div class="card-tools">
+                  <button id="btn-trans-mic" class="tool-btn" title="Dictate with Microphone">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                  </button>
+                  <button id="btn-trans-clear" class="tool-btn" title="Clear Text">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <textarea id="trans-source-input" class="translate-textarea" placeholder="Type, paste, or speak text to translate..."></textarea>
+
+              <div class="card-footer-bar">
+                <div class="char-stats">
+                  <span id="trans-source-chars">0 characters</span> &bull; <span id="trans-source-words">0 words</span>
+                </div>
+                <div class="quick-phrase-strip">
+                  <span class="phrase-lbl">Samples:</span>
+                  <button class="phrase-chip" data-phrase="Hello, thank you for reaching out. Let's schedule a meeting for Friday.">Meeting</button>
+                  <button class="phrase-chip" data-phrase="Could you please review the attached project proposal by tomorrow?">Proposal</button>
+                  <button class="phrase-chip" data-phrase="Artificial intelligence empowers developers to build incredible tools.">AI Tech</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle Action Divider -->
+            <div class="translate-middle-actions">
+              <button id="btn-trans-swap" class="btn-swap-lang" title="Swap Source & Target Languages">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m8 3 4 8 5-5M16 21l-4-8-5 5"/></svg>
+              </button>
+              <button id="btn-trans-execute" class="btn-primary-glow trans-go-btn" title="Translate Now (⌘Enter)">
+                <span class="btn-spinner hidden" id="trans-spinner"></span>
+                <span>Translate</span>
+                <kbd>↵</kbd>
+              </button>
+            </div>
+
+            <!-- Right Pane: Target Output -->
+            <div class="translate-card target-card">
+              <div class="card-header-bar">
+                <div class="lang-selector-group">
+                  <label for="trans-target-lang">Target:</label>
+                  <select id="trans-target-lang" class="custom-select-sm">
+                    <option value="Spanish" selected>Spanish (Español)</option>
+                    <option value="French">French (Français)</option>
+                    <option value="German">German (Deutsch)</option>
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Japanese">Japanese (日本語)</option>
+                    <option value="Chinese">Chinese (Mandarin)</option>
+                    <option value="Italian">Italian (Italiano)</option>
+                    <option value="Portuguese">Portuguese (Português)</option>
+                    <option value="Russian">Russian (Русский)</option>
+                    <option value="Arabic">Arabic (العربية)</option>
+                    <option value="Korean">Korean (한국어)</option>
+                    <option value="English">English</option>
+                  </select>
+                </div>
+                <div class="card-tools">
+                  <button id="btn-trans-speak" class="tool-btn" title="Listen Aloud (Speech Synthesis)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                  </button>
+                  <button id="btn-trans-copy" class="tool-btn" title="Copy Translation">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  </button>
+                  <span id="trans-copy-toast" class="copy-toast hidden">Copied!</span>
+                </div>
+              </div>
+
+              <div id="trans-target-output" class="translate-output-display" tabindex="0">
+                <span class="trans-placeholder">Translation will appear here in real-time...</span>
+              </div>
+
+              <div class="card-footer-bar">
+                <div class="char-stats">
+                  <span id="trans-target-chars">0 characters</span> &bull; <span id="trans-target-words">0 words</span>
+                </div>
+                <div id="trans-status-tag" class="model-tag">GO 1.0 Neural Engine</div>
+              </div>
+
+              <!-- Contextual Nuance Notes -->
+              <div id="trans-nuance-card" class="nuance-notes-card hidden">
+                <div class="nuance-header">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span>Linguistic Nuance & Notes</span>
+                </div>
+                <p id="trans-nuance-text" class="nuance-body"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           VIEW: EMAIL & BASIC TASKS STUDIO (GO 1.0)
+           =================================================================== -->
+      <div id="view-tasks" class="view-panel">
+        <div class="tasks-studio-container glass-panel">
+          <!-- Top Bar -->
+          <div class="tasks-top-bar">
+            <div class="tasks-title-group">
+              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Chat</span>
+              </button>
+              <div>
+                <h2>GO 1.0 Task Studio</h2>
+                <p class="tasks-subtitle">Automate everyday LLM workflows: structured emails, executive summaries & text polish</p>
+              </div>
+            </div>
+            <!-- Sub-tab Switcher -->
+            <div class="tasks-subtab-bar">
+              <button class="subtab-btn active" data-subtab="email">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <span>Email Drafter</span>
+              </button>
+              <button class="subtab-btn" data-subtab="analyze">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+                <span>Text Analysis & Polish</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub-View 1: Email Drafter -->
+          <div id="subtab-email-content" class="subtab-content active">
+            <div class="email-drafter-grid">
+              <!-- Left Form -->
+              <div class="task-form-card">
+                <div class="form-section-title">Email Configuration</div>
+
+                <!-- Template Presets -->
+                <div class="preset-chips-wrap">
+                  <span class="preset-label">Templates:</span>
+                  <button class="preset-chip active" data-preset="follow_up">Business Follow-up</button>
+                  <button class="preset-chip" data-preset="proposal">Project Proposal</button>
+                  <button class="preset-chip" data-preset="reschedule">Reschedule Call</button>
+                  <button class="preset-chip" data-preset="extension">Deadline Extension</button>
+                  <button class="preset-chip" data-preset="thank_you">Interview Thank-You</button>
+                </div>
+
+                <div class="task-form-fields">
+                  <div class="input-row">
+                    <div class="form-group-sm">
+                      <label for="email-recipient">Recipient Name / Title:</label>
+                      <input type="text" id="email-recipient" class="custom-input-sm" value="Alex Chen (Engineering Lead)" placeholder="e.g. Hiring Manager, Client, Dr. Smith">
+                    </div>
+                    <div class="form-group-sm">
+                      <label for="email-tone">Tone:</label>
+                      <select id="email-tone" class="custom-select-sm">
+                        <option value="Professional" selected>Professional & Courteous</option>
+                        <option value="Executive">Executive & Direct</option>
+                        <option value="Friendly">Friendly & Collaborative</option>
+                        <option value="Persuasive">Persuasive Pitch</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group-sm">
+                    <label for="email-points">Key Points & Context:</label>
+                    <textarea id="email-points" class="custom-textarea-sm" rows="5" placeholder="List key points...">Thank them for Tuesday's demo of the local AI assistant. Confirm that our performance testing passed with 60 tok/sec on Apple Silicon. Propose a brief 20-minute catch-up on Friday at 3 PM.</textarea>
+                  </div>
+
+                  <button id="btn-generate-email" class="btn-primary-glow btn-wide">
+                    <span class="btn-spinner hidden" id="email-spinner"></span>
+                    <span>Generate Structured Email</span>
+                    <kbd>⌘↵</kbd>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right Email Preview -->
+              <div class="task-result-card">
+                <div class="result-header-bar">
+                  <span class="result-title">Email Preview</span>
+                  <div class="result-actions">
+                    <button id="btn-email-copy" class="btn-ghost-xs" title="Copy to Clipboard">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      <span>Copy Email</span>
+                    </button>
+                    <button id="btn-email-to-chat" class="btn-ghost-xs" title="Send to Chat">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                      <span>Open in Chat</span>
+                    </button>
+                    <button id="btn-email-speak" class="btn-ghost-xs" title="Read Aloud">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      <span>Listen</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="email-preview-paper">
+                  <div class="email-header-fields">
+                    <div class="email-row"><span class="email-meta-lbl">Subject:</span> <strong id="preview-email-subject" class="email-meta-val">Awaiting generation...</strong></div>
+                    <div class="email-row"><span class="email-meta-lbl">To:</span> <span id="preview-email-to" class="email-meta-val">Alex Chen (Engineering Lead)</span></div>
+                  </div>
+                  <div class="email-divider"></div>
+                  <div id="preview-email-body" class="email-body-content">
+                    Click <strong>"Generate Structured Email"</strong> to compose an executive-ready draft.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-View 2: Text Analysis & Polish -->
+          <div id="subtab-analyze-content" class="subtab-content">
+            <div class="analysis-grid">
+              <!-- Left Form -->
+              <div class="task-form-card">
+                <div class="form-section-title">Select Text Transformation</div>
+
+                <div class="analysis-action-chips">
+                  <button class="analysis-chip active" data-action="summarize">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+                    <span>Summarize (TL;DR)</span>
+                  </button>
+                  <button class="analysis-chip" data-action="extract_points">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <span>Extract Action Items</span>
+                  </button>
+                  <button class="analysis-chip" data-action="grammar_fix">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                    <span>Fix Grammar & Polish</span>
+                  </button>
+                  <button class="analysis-chip" data-action="tone_shift">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span>Executive Tone Shift</span>
+                  </button>
+                </div>
+
+                <div class="task-form-fields">
+                  <div class="form-group-sm">
+                    <label for="analyze-input">Input Document / Notes / Paragraph:</label>
+                    <textarea id="analyze-input" class="custom-textarea-sm" rows="7" placeholder="Paste notes, transcripts, or unpolished text here..."></textarea>
+                  </div>
+
+                  <div class="action-footer-row">
+                    <span id="analyze-input-stats" class="char-stats">0 words</span>
+                    <button id="btn-run-analysis" class="btn-primary-glow">
+                      <span class="btn-spinner hidden" id="analyze-spinner"></span>
+                      <span>Run Analysis</span>
+                      <kbd>⌘↵</kbd>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Result -->
+              <div class="task-result-card">
+                <div class="result-header-bar">
+                  <span class="result-title">Transformed Output</span>
+                  <div class="result-actions">
+                    <button id="btn-analyze-copy" class="btn-ghost-xs" title="Copy to Clipboard">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      <span>Copy Output</span>
+                    </button>
+                    <button id="btn-analyze-speak" class="btn-ghost-xs" title="Read Aloud">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      <span>Listen</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="analyze-result-display" class="analysis-output-display">
+                  <p class="trans-placeholder">Results will appear here with instant structural formatting...</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -461,7 +899,8 @@
             <div class="form-group">
               <label for="set-model">Local LLM Model</label>
               <select id="set-model" class="custom-select">
-                <option value="gemma2:2b">Google Gemma 2 (2B) — Fast & Reliable</option>
+                <option value="go1.0" selected>GO 1.0 (goo1) — Custom Evolved Gemma 2 (Emails, Translation, Analysis)</option>
+                <option value="gemma2:2b">Google Gemma 2 (2B) — Base Foundation Model</option>
               </select>
               <span class="field-hint">Ollama runtime model tag</span>
             </div>

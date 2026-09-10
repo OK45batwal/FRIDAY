@@ -51,6 +51,7 @@ dist-electron/
 *.safetensors
 *.bin
 *.gguf
+!model/go1/Modelfile.gguf
 *.pt
 *.pth
 services/core/training/output/

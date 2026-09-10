@@ -20,6 +20,7 @@ from backend.api.tools import router as tools_router
 from backend.api.settings import router as settings_router
 from backend.api.chat import router as chat_router
 from backend.api.voice import router as voice_router
+from backend.api.translate import router as translate_router
 from backend.utils.logger import get_logger
 
 # Import PyTorch model runner for legacy/testing tab
@@ -91,6 +92,7 @@ app.include_router(tools_router)
 app.include_router(settings_router)
 app.include_router(chat_router)
 app.include_router(voice_router)
+app.include_router(translate_router)
 
 
 # PyTorch 17.5M Model API for Neural Lab tab
