@@ -195,12 +195,14 @@ body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px 1fr;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
-  padding: 12px;
-  gap: 12px;
+  padding: 10px;
+  gap: 10px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* --------------------------------------------------------------------------
@@ -764,7 +766,10 @@ body[data-theme="light"] .brand-tag {
    5. Main Dynamic Canvas & View Panels
    -------------------------------------------------------------------------- */
 .main-canvas {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -773,19 +778,26 @@ body[data-theme="light"] .brand-tag {
   display: none;
   height: 100%;
   width: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
 .view-panel.active {
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* --------------------------------------------------------------------------
    6. VIEW 1: Chat HUD View
    -------------------------------------------------------------------------- */
 #view-chat {
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 8px;
 }
 
 .chat-top-bar {
@@ -859,100 +871,79 @@ body[data-theme="light"] .brand-tag {
 
 /* Chat Messages Scroll Container */
 .chat-stream-scroll {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
-  padding: 20px 24px;
+  overflow-x: hidden;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
 }
 
 /* Welcome Hero Card */
 .welcome-hero-card {
-  margin: 24px auto;
-  max-width: 680px;
-  padding: 36px 30px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(12px);
-}
-
-.hero-orb-symbol {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary), #818cf8);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 6px;
-  font-size: 22px;
-}
-
-.welcome-hero-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 36px 24px;
-  margin: 20px auto 28px auto;
-  max-width: 680px;
+  padding: 22px 24px 18px 24px;
+  margin: 6px auto 12px auto;
+  max-width: 620px;
   width: 100%;
-  gap: 14px;
+  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .hero-orb-symbol {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--bg-panel);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(129, 140, 248, 0.08));
   color: var(--accent-primary);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .welcome-hero-card h2 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.015em;
   color: var(--text-main);
+  margin: 0;
 }
 
 .hero-description {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-  line-height: 1.6;
-  max-width: 500px;
+  line-height: 1.45;
+  max-width: 480px;
+  margin: 0;
 }
 
 .first-run-checklist {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .chk-item {
@@ -961,20 +952,20 @@ body[data-theme="light"] .brand-tag {
   gap: 8px;
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 500;
   color: var(--text-main);
 }
 
 .chk-icon {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.14);
   color: #10b981;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -985,15 +976,15 @@ body[data-theme="light"] .brand-tag {
 /* Quick Prompt Chips */
 .hero-quick-prompts {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .quick-title {
   font-family: var(--font-sans);
-  font-size: 0.70rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1002,21 +993,21 @@ body[data-theme="light"] .brand-tag {
 
 .quick-chips-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
 }
 
 .quick-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   color: var(--text-main);
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
   font-family: var(--font-sans);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
@@ -1027,6 +1018,8 @@ body[data-theme="light"] .brand-tag {
 .quick-chip svg {
   flex-shrink: 0;
   color: var(--accent-primary);
+  width: 14px;
+  height: 14px;
 }
 
 body[data-theme="light"] .quick-chip svg {
@@ -1354,11 +1347,12 @@ body[data-theme="light"] .code-block-wrap {
 }
 
 /* Tool Execution Strip */
+.tool-activity-strip,
 .chat-tool-activity-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 6px 14px;
   background: var(--accent-primary-subtle);
   color: var(--accent-primary);
   border: 1px solid rgba(99, 102, 241, 0.3);
@@ -1368,11 +1362,24 @@ body[data-theme="light"] .code-block-wrap {
   font-weight: 600;
   box-shadow: var(--shadow-sm);
   width: fit-content;
-  margin: 4px auto;
+  margin: 2px auto;
+  flex-shrink: 0;
 }
 
-.chat-tool-activity-strip.hidden {
-  display: none;
+.tool-activity-strip.hidden,
+.chat-tool-activity-strip.hidden,
+.hidden {
+  display: none !important;
+}
+
+.tool-spinner-ring {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
 
 .tool-spin-icon {
@@ -1391,9 +1398,9 @@ body[data-theme="light"] .code-block-wrap {
 .chat-input-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
-  padding: 8px 0 16px 0;
+  padding: 4px 0 8px 0;
   max-width: 820px;
   width: 100%;
   margin: 0 auto;
@@ -1407,9 +1414,10 @@ body[data-theme="light"] .code-block-wrap {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 22px;
-  padding: 8px 12px 8px 16px;
+  padding: 6px 12px 6px 16px;
   box-shadow: var(--shadow-dock);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
 }
 
 .chat-dock:focus-within,
@@ -2352,10 +2360,11 @@ body[data-theme="light"] .about-tagline {
 .chat-quick-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding: 4px 6px 8px 6px;
-  margin-bottom: 4px;
+  padding: 2px 4px 4px 4px;
+  margin-bottom: 2px;
+  flex-shrink: 0;
   scrollbar-width: none;
 }
 .chat-quick-actions::-webkit-scrollbar {
@@ -2365,19 +2374,20 @@ body[data-theme="light"] .about-tagline {
 .action-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   background: var(--bg-card);
   color: var(--text-muted);
   border: 1px solid var(--border-color);
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 20px;
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
 }
 
 .action-chip:hover {
