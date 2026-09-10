@@ -1142,14 +1142,14 @@ body[data-theme="dark"] .brand-tag {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px 20px;
+  padding: 12px 16px 8px 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: var(--bg-panel);
-  border: var(--border-solid);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   scrollbar-width: thin;
 }
 
@@ -1682,10 +1682,10 @@ body[data-theme="light"] .code-block-wrap {
 .chat-input-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
-  padding: 4px 0 8px 0;
-  max-width: 820px;
+  padding: 4px 0 16px 0;
+  max-width: 920px;
   width: 100%;
   margin: 0 auto;
 }
@@ -2680,10 +2680,11 @@ body[data-theme="light"] .about-tagline {
   align-items: center;
   gap: 6px;
   overflow-x: auto;
-  padding: 2px 4px 4px 4px;
+  padding: 2px 4px 6px 4px;
   margin-bottom: 2px;
   flex-shrink: 0;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .chat-quick-actions::-webkit-scrollbar {
   display: none;
