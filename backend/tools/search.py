@@ -19,8 +19,20 @@ class SearchTool(BaseTool):
     }
     requires_confirmation = False
 
-    async def execute(self, arguments: Dict[str, Any]) -> str:
-        query = arguments.get("query", "").strip()
+    async def execute(self, arguments: Any) -> str:
+        if isinstance(arguments, str):
+            query = arguments.strip()
+        elif isinstance(arguments, dict):
+            query = str(
+                arguments.get("query")
+                or arguments.get("q")
+                or arguments.get("search")
+                or arguments.get("input")
+                or ""
+            ).strip()
+        else:
+            query = str(arguments).strip()
+
         if not query:
             return "Error: Search query cannot be empty."
 

@@ -185,9 +185,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.metaKey || e.ctrlKey) {
       if (e.key === "1") { e.preventDefault(); switchView("chat"); }
       else if (e.key === "2") { e.preventDefault(); switchView("voice"); }
-      else if (e.key === "3") { e.preventDefault(); switchView("dashboard"); }
-      else if (e.key === "4") { e.preventDefault(); switchView("expo"); }
-      else if (e.key === "5") { e.preventDefault(); switchView("settings"); }
+      else if (e.key === "3") { e.preventDefault(); switchView("translate"); }
+      else if (e.key === "4") { e.preventDefault(); switchView("tasks"); }
+      else if (e.key === "5") { e.preventDefault(); switchView("dashboard"); }
+      else if (e.key === "6") { e.preventDefault(); switchView("settings"); }
       else if (e.key.toLowerCase() === "t") { e.preventDefault(); switchView("translate"); }
       else if (e.key.toLowerCase() === "e") { e.preventDefault(); switchView("tasks"); }
       else if (e.key.toLowerCase() === "k") {
@@ -700,16 +701,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 setAssistantState(ev.state);
 
               } else if (ev.type === "intent_detected") {
-                insIntent.textContent = ev.intent;
+                if (insIntent) insIntent.textContent = ev.intent;
 
               } else if (ev.type === "tool_started") {
                 toolActivityLabel.textContent = `Using tool: ${ev.tool}...`;
                 toolActivityStrip.classList.remove("hidden");
                 activeAccordion = createToolAccordion(toolSlot, ev.tool, ev.arguments);
 
-                // Update Expo Inspector
-                insTool.textContent = ev.tool;
-                insArgs.textContent = JSON.stringify(ev.arguments || {});
+                if (insTool) insTool.textContent = ev.tool;
+                if (insArgs) insArgs.textContent = JSON.stringify(ev.arguments || {});
 
               } else if (ev.type === "tool_completed") {
                 toolActivityStrip.classList.add("hidden");
@@ -717,8 +717,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   const body = activeAccordion.querySelector(".tool-accordion-body");
                   body.textContent = ev.result || "Complete.";
                 }
-                // Update Expo Inspector
-                insRawOutput.textContent = ev.result || "Complete.";
+                if (insRawOutput) insRawOutput.textContent = ev.result || "Complete.";
 
               } else if (ev.type === "assistant_token") {
                 accumulatedText += ev.content;
@@ -726,7 +725,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
 
               } else if (ev.type === "assistant_finished") {
-                insTime.textContent = `${ev.duration || ((Date.now() - tStart)/1000).toFixed(2)}s`;
+                if (insTime) insTime.textContent = `${ev.duration || ((Date.now() - tStart)/1000).toFixed(2)}s`;
                 setAssistantState("ONLINE");
 
                 // Speak aloud if voice enabled
@@ -947,69 +946,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.speechSynthesis.speak(utterance);
   }
 
-  // ==========================================================================
-  // 7. Expo Demo Mode Scenarios
-  // ==========================================================================
-  document.querySelectorAll(".demo-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const demoNum = card.getAttribute("data-demo");
-      runDemoScenario(demoNum);
-    });
-  });
 
-  const btnAutoplayExpo = document.getElementById("btn-autoplay-expo");
-  if (btnAutoplayExpo) {
-    btnAutoplayExpo.addEventListener("click", async () => {
-      if (isGenerating) return;
-      btnAutoplayExpo.disabled = true;
-      btnAutoplayExpo.innerHTML = `<span>⏳ Running Expo Demo Sequence...</span>`;
-      switchView("chat");
-
-      const demoPrompts = [
-        "Hello FRIDAY. Introduce yourself and describe your system architecture.",
-        "Calculate 125 * 48 and check my system hardware status.",
-        "Remember that my project is called FRIDAY and I am presenting it at the college project expo.",
-        "What is the name of my project and where am I presenting it?"
-      ];
-
-      for (let i = 0; i < demoPrompts.length; i++) {
-        await sendMessage(demoPrompts[i]);
-        // Wait 2.5 seconds between demos for viewing results
-        await new Promise((r) => setTimeout(r, 2500));
-      }
-
-      btnAutoplayExpo.disabled = false;
-      btnAutoplayExpo.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        <span>Auto-Run Full Demo (1 &rarr; 4)</span>
-      `;
-    });
-  }
-
-  async function runDemoScenario(num) {
-    switch (num) {
-      case "1": // Normal Conversation
-        switchView("chat");
-        sendMessage("Hello FRIDAY. Introduce yourself and describe your architecture.");
-        break;
-      case "2": // Reasoning
-        switchView("chat");
-        sendMessage("Explain how modern transformers and neural networks work under the hood.");
-        break;
-      case "3": // Live Tool
-        switchView("chat");
-        sendMessage("Calculate 125 * 48 and check my current time.");
-        break;
-      case "4": // Memory
-        switchView("chat");
-        sendMessage("Remember that my project is called FRIDAY and I am presenting it at the college project expo.");
-        break;
-      case "5": // Voice
-        switchView("voice");
-        toggleVoiceInput();
-        break;
-    }
-  }
 
   // ==========================================================================
   // 8. Settings Management
@@ -1112,7 +1049,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderMarkdown(md) {
     if (!md) return "";
-    let html = escapeHtml(md);
+    // Clean raw tool call syntax if it ever leaks in stream
+    let clean = md
+      .replace(/```(?:tool|json)?\s*\{[\s\S]*?"tool"[\s\S]*?\}\s*```/g, "")
+      .replace(/\{"tool":\s*"[^"]+".*?\}/g, "")
+      .trim();
+    if (!clean) return "";
+
+    let html = escapeHtml(clean);
 
     // Code blocks ```code```
     html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');

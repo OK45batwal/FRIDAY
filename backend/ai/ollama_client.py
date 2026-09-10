@@ -2,7 +2,7 @@
 
 import json
 import httpx
-from typing import AsyncGenerator, Dict, Any, List
+from typing import AsyncGenerator, Dict, Any, List, Optional
 from backend.config.settings import settings
 from backend.utils.logger import get_logger
 

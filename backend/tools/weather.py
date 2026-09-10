@@ -17,8 +17,20 @@ class WeatherTool(BaseTool):
     }
     requires_confirmation = False
 
-    async def execute(self, arguments: Dict[str, Any]) -> str:
-        location = arguments.get("location", "").strip()
+    async def execute(self, arguments: Any) -> str:
+        if isinstance(arguments, str):
+            location = arguments.strip()
+        elif isinstance(arguments, dict):
+            location = str(
+                arguments.get("location")
+                or arguments.get("city")
+                or arguments.get("place")
+                or arguments.get("query")
+                or ""
+            ).strip()
+        else:
+            location = str(arguments).strip()
+
         if not location:
             return "Error: Location cannot be empty."
 

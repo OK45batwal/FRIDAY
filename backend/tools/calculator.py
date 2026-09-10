@@ -55,8 +55,21 @@ class CalculatorTool(BaseTool):
     }
     requires_confirmation = False
 
-    async def execute(self, arguments: Dict[str, Any]) -> str:
-        expr = arguments.get("expression", "").strip()
+    async def execute(self, arguments: Any) -> str:
+        if isinstance(arguments, str):
+            expr = arguments.strip()
+        elif isinstance(arguments, dict):
+            expr = str(
+                arguments.get("expression")
+                or arguments.get("expr")
+                or arguments.get("input")
+                or arguments.get("query")
+                or arguments.get("math")
+                or ""
+            ).strip()
+        else:
+            expr = str(arguments).strip()
+
         if not expr:
             return "Error: Empty expression provided."
 
