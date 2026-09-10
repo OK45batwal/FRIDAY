@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(nextTheme);
   }
 
-  const initialTheme = localStorage.getItem("friday_theme") || "dark";
+  const initialTheme = localStorage.getItem("friday_theme") || "light";
   applyTheme(initialTheme);
 
   if (btnThemeToggle) btnThemeToggle.addEventListener("click", toggleTheme);
