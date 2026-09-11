@@ -22,6 +22,7 @@ backend/friday.db
 # Node / Frontend
 .gradle/
 build_temp/
+android/**/build/
 node_modules/
 
 */node_modules/
@@ -67,4 +68,3 @@ services/core/learning_data/
 *.zip
 *.tar.gz
 *.tgz
-

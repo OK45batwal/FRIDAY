@@ -115,6 +115,30 @@ Start Ollama and the FRIDAY web server in a single command:
 ./run.sh
 ```
 
+## Android client (new)
+
+The existing FastAPI/web assistant is preserved. The Android-first client lives in
+[`android/`](android/) and is intentionally independent: it uses Android system tools and
+local storage directly, rather than sending microphone audio or private data to the Python
+backend. Cloud AI is not enabled by default.
+
+Open `android/` in a current Android Studio installation with Android SDK 36 and JDK 17+, then:
+
+```bash
+cd android
+./gradlew :app:assembleDebug
+```
+
+The first implementation provides a Compose control surface, a transparent microphone
+foreground-service lifecycle, manual-microphone fallback, Room database foundation,
+deterministic local request routing, model-runtime interfaces, resource policy, and an
+allowlisted tool-safety boundary. A real offline wake-word engine and a local LLM/STT runtime
+are deliberately not bundled yet: these are device/model artifacts that must be selected and
+licensed before integration. Until then, FRIDAY reports the absence of a local model rather
+than silently using cloud processing.
+
+See [`android/README.md`](android/README.md) for architecture, permissions, and limitations.
+
 Then open your browser to:
 - **FRIDAY Dashboard**: [http://127.0.0.1:8080](http://127.0.0.1:8080)
 - **Interactive Swagger Docs**: [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs)
