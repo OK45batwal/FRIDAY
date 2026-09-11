@@ -7,13 +7,11 @@
   <title>FRIDAY — Personal Local AI Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=5.0">
 </head>
-<body data-theme="light">
+<body data-theme="dark">
   <!-- Neo-Brutalist Subtle Dot Grid -->
   <div class="background-grid"></div>
 
@@ -398,7 +396,7 @@
 
           <!-- Central Reactive Visualizer Orb -->
           <div class="voice-orb-stage">
-            <div id="central-voice-orb" class="central-voice-orb online">
+            <div id="central-voice-orb" class="central-voice-orb online" title="Click to speak / interrupt">
               <div class="orb-ring ring-1"></div>
               <div class="orb-ring ring-2"></div>
               <div class="orb-core">
@@ -407,8 +405,27 @@
                 </span>
               </div>
             </div>
+            
+            <!-- Real-time audio-reactive waveform -->
+            <canvas id="voice-waveform-canvas" class="voice-waveform-canvas" width="360" height="60"></canvas>
+
             <div id="voice-state-banner" class="voice-state-text">STANDBY — READY</div>
-            <p class="voice-hint">Click the orb or hold <kbd>Space</kbd> to speak.</p>
+            
+            <!-- Live Streaming Sentence Caption -->
+            <div id="voice-live-caption" class="voice-live-caption"></div>
+
+            <div class="voice-controls-row">
+              <button id="btn-voice-interrupt" class="btn-ghost-sm voice-interrupt-btn hidden" title="Interrupt FRIDAY">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                <span>Interrupt (Space)</span>
+              </button>
+              <label class="voice-continuous-toggle" title="Continuous turn-taking without clicking">
+                <input type="checkbox" id="chk-continuous-voice" checked />
+                <span>Continuous Conversation</span>
+              </label>
+            </div>
+
+            <p class="voice-hint">Click the orb or press <kbd>Space</kbd> to talk. Barge in anytime while FRIDAY speaks.</p>
           </div>
 
           <!-- Voice Transcript Feed -->

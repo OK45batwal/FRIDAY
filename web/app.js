@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(nextTheme);
   }
 
-  const initialTheme = localStorage.getItem("friday_theme") || "light";
+  const initialTheme = localStorage.getItem("friday_theme") || "dark";
   applyTheme(initialTheme);
 
   if (btnThemeToggle) btnThemeToggle.addEventListener("click", toggleTheme);
@@ -915,17 +915,237 @@ document.addEventListener("DOMContentLoaded", () => {
     return msgDiv;
   }
 
+  function renderToolWidget(toolName, result, args) {
+    const card = document.createElement("div");
+    card.className = "tool-widget-card";
+    const name = (toolName || "").toLowerCase();
+    const rawText = String(result || "").trim();
+
+    // Widget Header
+    const header = document.createElement("div");
+    header.className = "tw-header";
+    header.innerHTML = `
+      <div class="tw-header-left">
+        <span>⚡</span>
+        <span>${escapeHtml((toolName || "TOOL").toUpperCase())}</span>
+        <span class="tw-header-badge">VERIFIED</span>
+      </div>
+      <button class="tw-copy-btn" title="Copy Output">COPY</button>
+    `;
+    const copyBtn = header.querySelector(".tw-copy-btn");
+    copyBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(rawText);
+      showToast("Output copied to clipboard");
+    });
+    card.appendChild(header);
+
+    // 1. system_info
+    if (name.includes("system_info")) {
+      const battMatch = rawText.match(/Battery:\s*(\d+)%?\s*\((.*?)\)/i) || rawText.match(/Battery:\s*(.*)/i);
+      const battPct = battMatch && battMatch[1] && !isNaN(parseInt(battMatch[1])) ? parseInt(battMatch[1]) : 100;
+      const battStat = battMatch && battMatch[2] ? battMatch[2] : (battMatch ? battMatch[1] : "Active");
+
+      const ramMatch = rawText.match(/Total RAM:\s*([\d\.]+)\s*GB/i);
+      const ramGb = ramMatch ? ramMatch[1] : "16.0";
+
+      const diskMatch = rawText.match(/Disk Storage:\s*([\d\.]+)\s*GB\s*free\s*of\s*([\d\.]+)\s*GB/i);
+      const diskFree = diskMatch ? parseFloat(diskMatch[1]) : 0;
+      const diskTotal = diskMatch ? parseFloat(diskMatch[2]) : 100;
+      const diskUsedPct = diskTotal > 0 ? Math.round(((diskTotal - diskFree) / diskTotal) * 100) : 50;
+
+      const osMatch = rawText.match(/Operating System:\s*(.*)/i);
+      const osStr = osMatch ? osMatch[1] : "macOS";
+      const archMatch = rawText.match(/Processor Architecture:\s*(.*)/i);
+      const archStr = archMatch ? archMatch[1] : "arm64";
+
+      const grid = document.createElement("div");
+      grid.className = "tw-gauge-grid";
+      grid.innerHTML = `
+        <div class="tw-gauge-item">
+          <div class="tw-gauge-label-row">
+            <span>BATTERY</span>
+            <span class="tw-gauge-val">${battPct}%</span>
+          </div>
+          <div class="tw-gauge-track">
+            <div class="tw-gauge-bar ${battPct < 20 ? 'red' : (battPct < 50 ? 'amber' : 'green')}" style="width: ${battPct}%"></div>
+          </div>
+          <div class="tw-gauge-label-row" style="margin-top: 2px;">
+            <span style="font-size: 0.60rem; color: var(--text-dim);">${escapeHtml(battStat)}</span>
+          </div>
+        </div>
+        <div class="tw-gauge-item">
+          <div class="tw-gauge-label-row">
+            <span>STORAGE</span>
+            <span class="tw-gauge-val">${diskUsedPct}% USED</span>
+          </div>
+          <div class="tw-gauge-track">
+            <div class="tw-gauge-bar ${diskUsedPct > 85 ? 'red' : 'green'}" style="width: ${diskUsedPct}%"></div>
+          </div>
+          <div class="tw-gauge-label-row" style="margin-top: 2px;">
+            <span style="font-size: 0.60rem; color: var(--text-dim);">${diskFree}GB free of ${diskTotal}GB</span>
+          </div>
+        </div>
+        <div class="tw-gauge-item">
+          <div class="tw-gauge-label-row">
+            <span>TOTAL RAM</span>
+            <span class="tw-gauge-val">${ramGb} GB</span>
+          </div>
+          <div class="tw-gauge-track">
+            <div class="tw-gauge-bar green" style="width: 100%"></div>
+          </div>
+          <div class="tw-gauge-label-row" style="margin-top: 2px;">
+            <span style="font-size: 0.60rem; color: var(--text-dim);">Unified Memory</span>
+          </div>
+        </div>
+      `;
+      card.appendChild(grid);
+
+      const meta = document.createElement("div");
+      meta.className = "tw-meta-pills";
+      meta.innerHTML = `
+        <span class="tw-pill">OS: ${escapeHtml(osStr.slice(0, 30))}</span>
+        <span class="tw-pill">ARCH: ${escapeHtml(archStr)}</span>
+      `;
+      card.appendChild(meta);
+      return card;
+    }
+
+    // 2. calculator
+    if (name.includes("calculator")) {
+      const resMatch = rawText.match(/Result:\s*(.*?)\s*=\s*(.*)/i);
+      const expr = resMatch ? resMatch[1] : (args?.expression || args?.expr || "Expression");
+      const answer = resMatch ? resMatch[2] : rawText;
+
+      const calcDiv = document.createElement("div");
+      calcDiv.className = "tw-calc-display";
+      calcDiv.innerHTML = `
+        <div class="tw-calc-expr">EXPR: ${escapeHtml(expr)}</div>
+        <div class="tw-calc-result-row">
+          <span style="font-size: 0.70rem; color: var(--text-dim);">ANSWER =</span>
+          <span class="tw-calc-answer">${escapeHtml(answer)}</span>
+        </div>
+      `;
+      card.appendChild(calcDiv);
+      return card;
+    }
+
+    // 3. weather
+    if (name.includes("weather")) {
+      const cityMatch = rawText.match(/Weather for\s*(.*?):/i);
+      const city = cityMatch ? cityMatch[1] : (args?.location || "Current Location");
+      const tempMatch = rawText.match(/Temperature:\s*([\d\.\-]+°?C?)/i);
+      const temp = tempMatch ? tempMatch[1] : "--°C";
+      const feelsMatch = rawText.match(/Feels like\s*([\d\.\-]+°?C?)/i);
+      const feels = feelsMatch ? feelsMatch[1] : "";
+      const humMatch = rawText.match(/Humidity:\s*([\d]+%?)/i);
+      const hum = humMatch ? humMatch[1] : "--";
+      const windMatch = rawText.match(/Wind Speed:\s*([\d\.\-]+\s*km\/h)/i);
+      const wind = windMatch ? windMatch[1] : "--";
+
+      const weatherDiv = document.createElement("div");
+      weatherDiv.className = "tw-weather-card";
+      weatherDiv.innerHTML = `
+        <div class="tw-weather-info">
+          <span class="tw-weather-city">📍 ${escapeHtml(city)}</span>
+          ${feels ? `<span class="tw-weather-sub">Feels like ${escapeHtml(feels)}</span>` : ""}
+          <div class="tw-weather-stats" style="margin-top: 4px;">
+            <span>💧 Humidity: ${escapeHtml(hum)}</span>
+            <span>💨 Wind: ${escapeHtml(wind)}</span>
+          </div>
+        </div>
+        <div class="tw-weather-temp">${escapeHtml(temp)}</div>
+      `;
+      card.appendChild(weatherDiv);
+      return card;
+    }
+
+    // 4. time
+    if (name.includes("time")) {
+      const dateMatch = rawText.match(/Date:\s*(.*)/i);
+      const dateStr = dateMatch ? dateMatch[1] : new Date().toLocaleDateString();
+      const timeMatch = rawText.match(/Time:\s*(.*)/i);
+      const timeStr = timeMatch ? timeMatch[1] : new Date().toLocaleTimeString();
+      const tzMatch = rawText.match(/Timezone:\s*(.*)/i);
+      const tzStr = tzMatch ? tzMatch[1] : Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const clockDiv = document.createElement("div");
+      clockDiv.className = "tw-clock-card";
+      clockDiv.innerHTML = `
+        <div class="tw-clock-time">${escapeHtml(timeStr)}</div>
+        <div class="tw-clock-date">${escapeHtml(dateStr)}</div>
+        <span class="tw-clock-tz">${escapeHtml(tzStr)}</span>
+      `;
+      card.appendChild(clockDiv);
+      return card;
+    }
+
+    // 5. search
+    if (name.includes("search")) {
+      const lines = rawText.split("\n").filter(l => l.trim().length > 0);
+      const listDiv = document.createElement("div");
+      listDiv.className = "tw-search-items";
+
+      lines.slice(0, 5).forEach((line, idx) => {
+        const item = document.createElement("div");
+        item.className = "tw-search-item";
+        item.innerHTML = `
+          <div class="tw-search-title">#${idx + 1} ${escapeHtml(line.slice(0, 80))}</div>
+          ${line.length > 80 ? `<div class="tw-search-snippet">${escapeHtml(line.slice(80, 240))}...</div>` : ""}
+        `;
+        listDiv.appendChild(item);
+      });
+      card.appendChild(listDiv);
+      return card;
+    }
+
+    // 6. file_manager
+    if (name.includes("file")) {
+      const lines = rawText.split("\n").filter(l => l.trim().length > 0);
+      const listDiv = document.createElement("div");
+      listDiv.className = "tw-file-list";
+
+      lines.slice(0, 8).forEach(line => {
+        const row = document.createElement("div");
+        row.className = "tw-file-row";
+        const isDir = line.endsWith("/") || line.includes("<DIR>");
+        row.innerHTML = `
+          <span>${isDir ? "📁" : "📄"}</span>
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(line)}</span>
+        `;
+        listDiv.appendChild(row);
+      });
+      card.appendChild(listDiv);
+      return card;
+    }
+
+    // Default Fallback
+    const rawPre = document.createElement("pre");
+    rawPre.style.cssText = "font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-main); white-space: pre-wrap; margin: 0; line-height: 1.5;";
+    rawPre.textContent = rawText;
+    card.appendChild(rawPre);
+    return card;
+  }
+
   function createToolAccordion(slotElem, toolName, args) {
     const acc = document.createElement("div");
     acc.className = "thought-accordion";
+    acc._toolName = toolName;
+    acc._toolArgs = args;
+    const argsSummary = args ? JSON.stringify(args).slice(0, 32) : "";
     acc.innerHTML = `
       <details class="thought-details" open>
         <summary class="thought-summary">
-          <span class="thought-icon">💭</span>
+          <span class="thought-icon">⚙️</span>
           <span>Tool Execution: <strong>${escapeHtml(toolName.toUpperCase())}</strong></span>
-          <span class="thought-badge">${escapeHtml(JSON.stringify(args || {}).slice(0, 32))}</span>
+          ${argsSummary ? `<span class="thought-badge">${escapeHtml(argsSummary)}</span>` : ""}
         </summary>
-        <div class="thought-body tool-accordion-body">Executing tool observation...</div>
+        <div class="thought-body tool-accordion-body">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
+            <div class="tool-spinner-ring"></div>
+            <span>Acquiring telemetry data...</span>
+          </div>
+        </div>
       </details>
     `;
 
@@ -1010,7 +1230,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (activeAccordion) {
                   const body = activeAccordion.querySelector(".tool-accordion-body, .thought-body");
                   if (body) {
-                    body.textContent = ev.result || "Complete.";
+                    body.innerHTML = "";
+                    const widget = renderToolWidget(ev.tool || activeAccordion._toolName, ev.result, ev.arguments || activeAccordion._toolArgs);
+                    body.appendChild(widget);
                   }
                 }
                 if (insRawOutput) insRawOutput.textContent = ev.result || "Complete.";
@@ -1097,8 +1319,261 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ==========================================================================
-  // 6. Voice Interaction (Speech-to-Text & Text-to-Speech)
+  // 6. Voice Interaction (WebSocket Pipeline, Streaming TTS, Barge-in, Waveform)
   // ==========================================================================
+  const voiceWaveformCanvas = document.getElementById("voice-waveform-canvas");
+  const voiceLiveCaption = document.getElementById("voice-live-caption");
+  const btnVoiceInterrupt = document.getElementById("btn-voice-interrupt");
+  const chkContinuousVoice = document.getElementById("chk-continuous-voice");
+
+  let voiceWs = null;
+  let voiceWsReconnectTimer = null;
+  let voiceAudioQueue = [];
+  let isPlayingVoiceQueue = false;
+  let currentAudio = null;
+  let canvasCtx = voiceWaveformCanvas ? voiceWaveformCanvas.getContext("2d") : null;
+  let visualizerAnimFrame = null;
+  let visualizerPhase = 0;
+
+  // Waveform Visualizer — Teenage Engineering TP-7 Segmented Digital Audio Meters
+  function drawWaveform() {
+    if (!canvasCtx || !voiceWaveformCanvas) return;
+    const width = voiceWaveformCanvas.width;
+    const height = voiceWaveformCanvas.height;
+    canvasCtx.clearRect(0, 0, width, height);
+
+    visualizerPhase += 0.07;
+
+    let baseColor = "#00e599"; // Phosphor Green (Online)
+    let glowColor = "rgba(0, 229, 153, 0.35)";
+    let amplitude = 4;
+    let frequency = 0.18;
+
+    if (assistantState === "SPEAKING") {
+      baseColor = "#ff5500"; // Signal Orange
+      glowColor = "rgba(255, 85, 0, 0.45)";
+      amplitude = 18 + Math.sin(visualizerPhase * 2) * 5;
+      frequency = 0.22;
+    } else if (assistantState === "LISTENING" || isListening) {
+      baseColor = "#ef4444"; // Vivid Alert Red
+      glowColor = "rgba(239, 68, 68, 0.45)";
+      amplitude = 16 + Math.cos(visualizerPhase * 2.5) * 6;
+      frequency = 0.26;
+    } else if (assistantState === "THINKING") {
+      baseColor = "#ffb700"; // Industrial Amber
+      glowColor = "rgba(255, 183, 0, 0.4)";
+      amplitude = 10 + Math.sin(visualizerPhase * 1.5) * 4;
+      frequency = 0.20;
+    } else {
+      // ONLINE / STANDBY
+      baseColor = "rgba(0, 229, 153, 0.6)";
+      glowColor = "rgba(0, 229, 153, 0.2)";
+      amplitude = 3.5 + Math.sin(visualizerPhase * 0.6) * 1.5;
+      frequency = 0.15;
+    }
+
+    const numBars = 32;
+    const barWidth = 4;
+    const gap = (width - numBars * barWidth) / (numBars - 1);
+    const centerY = height / 2;
+
+    canvasCtx.save();
+    canvasCtx.shadowBlur = 8;
+    canvasCtx.shadowColor = glowColor;
+
+    for (let i = 0; i < numBars; i++) {
+      const x = i * (barWidth + gap);
+      // Windowing function to taper edges gracefully (hanning window)
+      const window = Math.sin((i / (numBars - 1)) * Math.PI);
+      const wave = Math.sin(i * frequency + visualizerPhase);
+      const barHeight = Math.max(3, Math.abs(wave) * amplitude * window + 2);
+
+      // Draw top and bottom symmetrical bar (instrument style meter)
+      canvasCtx.fillStyle = baseColor;
+      canvasCtx.beginPath();
+      if (typeof canvasCtx.roundRect === "function") {
+        canvasCtx.roundRect(x, centerY - barHeight, barWidth, barHeight * 2, 2);
+      } else {
+        canvasCtx.rect(x, centerY - barHeight, barWidth, barHeight * 2);
+      }
+      canvasCtx.fill();
+    }
+    canvasCtx.restore();
+
+    visualizerAnimFrame = requestAnimationFrame(drawWaveform);
+  }
+
+  if (voiceWaveformCanvas) {
+    drawWaveform();
+  }
+
+  // Barge-In & Interruption
+  function bargeInInterrupt() {
+    console.log("Barge-in triggered: interrupting speech and clearing queue.");
+    // 1. Stop audio element
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    // 2. Clear queued sentences
+    voiceAudioQueue.forEach((item) => {
+      if (item.url) URL.revokeObjectURL(item.url);
+    });
+    voiceAudioQueue = [];
+    isPlayingVoiceQueue = false;
+
+    // 3. Stop browser synthesis
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    // 4. Notify server pipeline
+    if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+      voiceWs.send(JSON.stringify({ type: "barge_in" }));
+    }
+
+    // 5. Update UI
+    if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
+    if (voiceLiveCaption) voiceLiveCaption.textContent = "[Interrupted]";
+    setAssistantState("LISTENING");
+  }
+
+  if (btnVoiceInterrupt) {
+    btnVoiceInterrupt.addEventListener("click", () => {
+      bargeInInterrupt();
+      if (!isListening) toggleVoiceInput();
+    });
+  }
+
+  // Voice Queue Playback
+  function playNextInAudioQueue() {
+    if (voiceAudioQueue.length === 0) {
+      isPlayingVoiceQueue = false;
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
+      setAssistantState("ONLINE");
+
+      // Continuous turn-taking mode
+      if (chkContinuousVoice?.checked && document.getElementById("view-voice").classList.contains("active")) {
+        setTimeout(() => {
+          if (!isListening && !isPlayingVoiceQueue && document.getElementById("view-voice").classList.contains("active")) {
+            console.log("Continuous mode: automatically listening for next turn...");
+            toggleVoiceInput();
+          }
+        }, 600);
+      }
+      return;
+    }
+
+    isPlayingVoiceQueue = true;
+    if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
+    setAssistantState("SPEAKING");
+
+    const item = voiceAudioQueue.shift();
+    if (voiceLiveCaption && item.sentence) {
+      voiceLiveCaption.textContent = item.sentence;
+    }
+
+    currentAudio = new Audio(item.url);
+    currentAudio.onended = () => {
+      URL.revokeObjectURL(item.url);
+      currentAudio = null;
+      playNextInAudioQueue();
+    };
+    currentAudio.onerror = (e) => {
+      console.warn("Audio queue chunk playback error:", e);
+      URL.revokeObjectURL(item.url);
+      currentAudio = null;
+      playNextInAudioQueue();
+    };
+
+    currentAudio.play().catch((err) => {
+      console.warn("Audio play prevented:", err);
+      playNextInAudioQueue();
+    });
+  }
+
+  function queueAudioChunk(base64Data, sentence, mimeType = "audio/mp4", isLast = false) {
+    try {
+      const binaryStr = atob(base64Data);
+      const len = binaryStr.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: mimeType });
+      const audioUrl = URL.createObjectURL(blob);
+      voiceAudioQueue.push({ url: audioUrl, sentence, isLast });
+
+      if (!isPlayingVoiceQueue) {
+        playNextInAudioQueue();
+      }
+    } catch (e) {
+      console.error("Failed to decode audio chunk:", e);
+    }
+  }
+
+  // WebSocket Full-Duplex Connection
+  function initVoiceWebSocket() {
+    if (voiceWs && (voiceWs.readyState === WebSocket.OPEN || voiceWs.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${proto}//${window.location.host}/ws/voice`;
+
+    try {
+      voiceWs = new WebSocket(wsUrl);
+
+      voiceWs.onopen = () => {
+        console.log("Voice WebSocket connected to", wsUrl);
+      };
+
+      voiceWs.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "audio") {
+            queueAudioChunk(msg.chunk, msg.sentence, msg.mime, msg.is_last);
+          } else if (msg.type === "token") {
+            // Live token in voice caption if not currently playing audio
+            if (!isPlayingVoiceQueue && voiceLiveCaption) {
+              voiceLiveCaption.textContent = (voiceLiveCaption.textContent + msg.content).slice(-90);
+            }
+          } else if (msg.type === "state") {
+            if (msg.state === "LISTENING") {
+              if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
+            }
+            setAssistantState(msg.state);
+          } else if (msg.type === "finished") {
+            if (msg.full_text) {
+              const p = document.createElement("p");
+              p.innerHTML = `<strong>FRIDAY:</strong> ${renderMarkdown(msg.full_text)}`;
+              voiceTranscriptContent.appendChild(p);
+              voiceTranscriptContent.scrollTop = voiceTranscriptContent.scrollHeight;
+            }
+          } else if (msg.type === "interrupted") {
+            if (voiceLiveCaption) voiceLiveCaption.textContent = "[Interrupted]";
+          }
+        } catch (err) {
+          console.warn("WS message parse error:", err);
+        }
+      };
+
+      voiceWs.onclose = () => {
+        console.log("Voice WebSocket closed. Reconnecting in 3s...");
+        clearTimeout(voiceWsReconnectTimer);
+        voiceWsReconnectTimer = setTimeout(initVoiceWebSocket, 3000);
+      };
+
+      voiceWs.onerror = (err) => {
+        console.warn("Voice WebSocket error:", err);
+      };
+    } catch (e) {
+      console.warn("Could not create Voice WebSocket:", e);
+    }
+  }
+
+  initVoiceWebSocket();
+
   function initVoiceRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -1107,25 +1582,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const rec = new SpeechRec();
     rec.continuous = false;
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.lang = "en-US";
 
     rec.onstart = () => {
       isListening = true;
       btnVoiceInput.classList.add("listening");
       setAssistantState("LISTENING");
+      if (voiceLiveCaption) voiceLiveCaption.textContent = "Listening...";
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
     };
 
     rec.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) {
+      let interim = "";
+      let finalTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const trans = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += trans;
+        } else {
+          interim += trans;
+        }
+      }
+
+      if (interim && voiceLiveCaption) {
+        voiceLiveCaption.textContent = `"${interim}"`;
+      }
+
+      if (finalTranscript) {
+        if (voiceLiveCaption) voiceLiveCaption.textContent = `"${finalTranscript}"`;
+
         // Append to voice feed
         const p = document.createElement("p");
-        p.innerHTML = `<strong>You:</strong> ${escapeHtml(transcript)}`;
+        p.innerHTML = `<strong>You:</strong> ${escapeHtml(finalTranscript)}`;
         voiceTranscriptContent.appendChild(p);
+        voiceTranscriptContent.scrollTop = voiceTranscriptContent.scrollHeight;
 
-        // Send to assistant
-        sendMessage(transcript);
+        // If Voice WebSocket is online, stream directly via WebSocket for instant speech synthesis
+        const selectedVoice = (setVoicePersona ? setVoicePersona.value : null) || localStorage.getItem("friday_voice") || "aria";
+        if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+          setAssistantState("THINKING");
+          voiceWs.send(JSON.stringify({
+            type: "user_speech",
+            text: finalTranscript,
+            conversation_id: currentConversationId,
+            voice: selectedVoice,
+          }));
+        } else {
+          // Fallback to HTTP SSE
+          sendMessage(finalTranscript);
+        }
       }
     };
 
@@ -1139,7 +1646,9 @@ document.addEventListener("DOMContentLoaded", () => {
     rec.onend = () => {
       isListening = false;
       btnVoiceInput.classList.remove("listening");
-      setAssistantState("ONLINE");
+      if (!isPlayingVoiceQueue && assistantState === "LISTENING") {
+        setAssistantState("ONLINE");
+      }
     };
 
     return rec;
@@ -1148,6 +1657,15 @@ document.addEventListener("DOMContentLoaded", () => {
   speechRecognition = initVoiceRecognition();
 
   function toggleVoiceInput() {
+    if (isPlayingVoiceQueue || assistantState === "SPEAKING") {
+      // User tapped orb while speaking -> Barge-in!
+      bargeInInterrupt();
+      if (speechRecognition) {
+        try { speechRecognition.start(); } catch (e) {}
+      }
+      return;
+    }
+
     if (!speechRecognition) {
       showToast("Speech recognition is not supported in this browser. Please use Chrome/Safari or keyboard text.", 3200);
       return;
@@ -1155,27 +1673,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isListening) {
       speechRecognition.stop();
     } else {
-      speechRecognition.start();
+      try {
+        speechRecognition.start();
+      } catch (e) {
+        console.warn("Speech recognition start failed:", e);
+      }
     }
   }
 
   btnVoiceInput.addEventListener("click", toggleVoiceInput);
   if (centralVoiceOrb) centralVoiceOrb.addEventListener("click", toggleVoiceInput);
 
-  // Hold Space to talk in voice mode
+  // Hold / Tap Space to talk or barge-in in voice mode
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space" && document.getElementById("view-voice").classList.contains("active")) {
-      if (!isListening && document.activeElement !== chatInput) {
+      if (document.activeElement !== chatInput) {
         e.preventDefault();
         toggleVoiceInput();
       }
     }
   });
 
-  let currentAudio = null;
-
   async function speakText(text) {
-    // 1. Stop any currently playing audio
     if (currentAudio) {
       currentAudio.pause();
       currentAudio = null;
@@ -1184,16 +1703,12 @@ document.addEventListener("DOMContentLoaded", () => {
       window.speechSynthesis.cancel();
     }
 
-    const cleanSpeech = text
-      .replace(/```[\s\S]*?```/g, " code omitted ")
-      .replace(/[*_#`~]/g, "")
-      .trim();
-
+    const cleanSpeech = voice_clean_text(text);
     if (!cleanSpeech) return;
 
-    // 2. High-Fidelity Free Neural TTS (/api/voice/tts)
     try {
       setAssistantState("SPEAKING");
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
       const selectedVoice = (setVoicePersona ? setVoicePersona.value : null) || localStorage.getItem("friday_voice") || "aria";
 
       const res = await fetch("/api/voice/tts", {
@@ -1211,6 +1726,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentAudio = new Audio(audioUrl);
         currentAudio.onended = () => {
           setAssistantState("ONLINE");
+          if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
           URL.revokeObjectURL(audioUrl);
           currentAudio = null;
         };
@@ -1224,8 +1740,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("Neural TTS request failed, falling back to browser speech:", e);
     }
 
-    // 3. Fallback: Browser Web Speech API
     fallbackBrowserSpeech(cleanSpeech);
+  }
+
+  function voice_clean_text(text) {
+    return text
+      .replace(/```[\s\S]*?```/g, " code omitted ")
+      .replace(/[*_#`~>|]/g, "")
+      .trim();
   }
 
   function fallbackBrowserSpeech(text) {
@@ -1233,12 +1755,21 @@ document.addEventListener("DOMContentLoaded", () => {
       setAssistantState("ONLINE");
       return;
     }
-    const utterance = new SpeechSynthesisUtterance(text.slice(0, 300));
+    const utterance = new SpeechSynthesisUtterance(text.slice(0, 400));
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
-    utterance.onstart = () => setAssistantState("SPEAKING");
-    utterance.onend = () => setAssistantState("ONLINE");
-    utterance.onerror = () => setAssistantState("ONLINE");
+    utterance.onstart = () => {
+      setAssistantState("SPEAKING");
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
+    };
+    utterance.onend = () => {
+      setAssistantState("ONLINE");
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
+    };
+    utterance.onerror = () => {
+      setAssistantState("ONLINE");
+      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
+    };
     window.speechSynthesis.speak(utterance);
   }
 

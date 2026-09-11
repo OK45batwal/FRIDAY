@@ -68,14 +68,19 @@ class LongTermMemory:
         if not all_memories:
             return []
 
-        # Simple token intersection relevance scoring
+        # Hybrid semantic cosine similarity + token overlap scoring
+        from backend.memory.embeddings import embedding_engine
+
         query_tokens = set(re.findall(r"\w+", query.lower()))
         scored = []
         for m in all_memories:
             mem_tokens = set(re.findall(r"\w+", m.content.lower()))
             overlap = len(query_tokens & mem_tokens)
-            score = overlap * 2.0 + m.importance
-            scored.append((score, m.content))
+            # Semantic cosine similarity (0.0 to 1.0)
+            sem_sim = embedding_engine.similarity(query, m.content)
+
+            total_score = (overlap * 2.0) + (sem_sim * 4.0) + m.importance
+            scored.append((total_score, m.content))
 
         scored.sort(key=lambda x: x[0], reverse=True)
         # Return memories with positive score, plus top priority memories if empty
