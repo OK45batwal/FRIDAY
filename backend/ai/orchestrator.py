@@ -111,8 +111,18 @@ class FridayOrchestrator:
 
         llm_messages = [{"role": "system", "content": system_prompt}]
 
-        # Append previous turns (excluding last which is current user prompt)
-        for h in history[:-1]:
+        # Append previous turns within safe context budget (~3200 tokens / 12,000 chars)
+        max_history_chars = 12000
+        current_chars = len(system_prompt) + len(user_text)
+        truncated_history = []
+        for h in reversed(history[:-1]):
+            content_len = len(h.get("content", ""))
+            if current_chars + content_len > max_history_chars:
+                break
+            truncated_history.insert(0, h)
+            current_chars += content_len
+
+        for h in truncated_history:
             llm_messages.append(h)
         llm_messages.append({"role": "user", "content": user_text})
 

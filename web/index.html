@@ -254,6 +254,9 @@
               </div>
             </div>
 
+            <button id="btn-export-chat" class="btn-icon" title="Export Session (Markdown)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
             <button id="btn-rename-chat" class="btn-icon" title="Rename Session">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
             </button>
@@ -263,6 +266,9 @@
           </div>
 
           <!-- Global Controls -->
+          <button id="btn-open-shortcuts" class="btn-icon" title="Keyboard Shortcuts (?)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
           <button id="btn-theme-toggle-top" class="btn-theme-toggle-top" title="Toggle Theme (Light / Dark)">
             <span class="theme-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
             <span class="theme-label">DARK</span>
@@ -1005,6 +1011,84 @@
       <span>Menu</span>
     </button>
   </nav>
+
+  <!-- Keyboard Shortcuts Cheat Sheet Modal (Neo-Brutalist) -->
+  <div id="shortcuts-modal" class="friday-modal-backdrop hidden">
+    <div class="friday-modal-card" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title">
+      <div class="friday-modal-header">
+        <div class="modal-title-group">
+          <span class="modal-sparkle">✦</span>
+          <h3 id="shortcuts-modal-title">Keyboard Shortcuts</h3>
+          <span class="modal-badge">SPEED HUD</span>
+        </div>
+        <button id="btn-close-shortcuts" class="btn-icon-sm" title="Close (Esc)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="shortcuts-modal-body">
+        <div class="shortcuts-section">
+          <div class="shortcuts-group-title">VIEW NAVIGATION</div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Assistant Chat</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>1</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Voice Mode</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>2</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Live Translator</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>3</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Task & Email Studio</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>4</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">System Dashboard</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>5</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">System Settings</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>6</kbd></div>
+          </div>
+        </div>
+
+        <div class="shortcuts-section">
+          <div class="shortcuts-group-title">CORE ACTIONS</div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">New Conversation</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>K</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Toggle Sidebar</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>B</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Focus Chat Input</span>
+            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>/</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Return to Chat / Close Modal</span>
+            <div class="shortcut-keys"><kbd>Esc</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Push-to-Talk (in Voice View)</span>
+            <div class="shortcut-keys"><kbd>Space</kbd></div>
+          </div>
+          <div class="shortcuts-row">
+            <span class="shortcut-desc">Open this Shortcuts Cheat Sheet</span>
+            <div class="shortcut-keys"><kbd>?</kbd></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="friday-modal-footer">
+        <span>FRIDAY v2.0 • Press <kbd>Esc</kbd> to dismiss</span>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js?v=4.0"></script>
 </body>

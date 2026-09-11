@@ -196,9 +196,6 @@ body[data-theme="dark"] .background-grid {
 /* --------------------------------------------------------------------------
    3. Application Shell & Layout
    -------------------------------------------------------------------------- */
-/* --------------------------------------------------------------------------
-   3. Application Shell & Layout
-   -------------------------------------------------------------------------- */
 .sidebar-backdrop {
   display: none;
   position: fixed;
@@ -4171,6 +4168,168 @@ body[data-theme="dark"] .msg-trans-header {
     border-color: #000000;
     box-shadow: 1.5px 1.5px 0px #000000;
   }
+}
+
+/* --------------------------------------------------------------------------
+   14. Neo-Brutalist Modal & Shortcuts Dialog
+   -------------------------------------------------------------------------- */
+.friday-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.friday-modal-backdrop.hidden {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.friday-modal-card {
+  background: var(--bg-surface);
+  border: 3px solid #000000;
+  border-radius: var(--radius-md);
+  box-shadow: 8px 8px 0px #000000;
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.96) translateY(8px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.friday-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--accent-primary);
+  border-bottom: 2.5px solid #000000;
+}
+
+.modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-title-group h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #000000;
+}
+
+.modal-sparkle {
+  font-size: 1.1rem;
+  color: #000000;
+}
+
+.modal-badge {
+  background: #000000;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.shortcuts-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.shortcuts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcuts-group-title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1.5px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+.shortcuts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all 0.1s ease;
+}
+
+.shortcuts-row:hover {
+  background: var(--bg-card-hover);
+  border-color: #000000;
+  transform: translateX(2px);
+}
+
+.shortcut-desc {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcut-keys kbd, .friday-modal-footer kbd {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1.5px solid #000000;
+  border-radius: 4px;
+  box-shadow: 1.5px 1.5px 0px #000000;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+}
+
+.friday-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border-top: 1.5px solid var(--border-color);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 

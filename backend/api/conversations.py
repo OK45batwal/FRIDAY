@@ -41,6 +41,40 @@ async def get_conversation(conv_id: str):
     }
 
 
+@router.get("/{conv_id}/export")
+async def export_conversation(conv_id: str, format: str = "markdown"):
+    """Export conversation history as Markdown or JSON."""
+    conv = await ConversationRepository.get_by_id(conv_id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    messages = await MessageRepository.get_by_conversation(conv_id)
+
+    title = getattr(conv, "title", None) or (conv.get("title") if isinstance(conv, dict) else "Conversation")
+    updated_at = getattr(conv, "updated_at", None) or (conv.get("updated_at") if isinstance(conv, dict) else None)
+
+    if format == "json":
+        return {
+            "title": title,
+            "exported_at": str(updated_at) if updated_at else None,
+            "messages": [m.model_dump() if hasattr(m, "model_dump") else m for m in messages],
+        }
+
+    # Markdown format
+    lines = [f"# {title}", ""]
+    lines.append("> Exported from FRIDAY Local AI Assistant\n")
+    for m in messages:
+        role = getattr(m, "role", None) or (m.get("role") if isinstance(m, dict) else "")
+        content = getattr(m, "content", "") or (m.get("content", "") if isinstance(m, dict) else "")
+        sender = "👤 You" if role == "user" else "✦ FRIDAY"
+        lines.append(f"### {sender}\n\n{str(content).strip()}\n")
+    return {
+        "format": "markdown",
+        "title": title,
+        "filename": f"{title.replace(' ', '_').lower()}.md",
+        "content": "\n".join(lines),
+    }
+
+
 @router.put("/{conv_id}")
 async def update_conversation(conv_id: str, req: UpdateConversationRequest):
     """Rename a conversation."""

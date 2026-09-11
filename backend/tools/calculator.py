@@ -33,6 +33,11 @@ def safe_eval(node):
         right = safe_eval(node.right)
         if op_type in (ast.Div, ast.FloorDiv, ast.Mod) and right == 0:
             raise ZeroDivisionError("Division by zero")
+        if op_type == ast.Pow:
+            if not isinstance(right, (int, float)) or abs(right) > 1000:
+                raise ValueError("Exponent too large (maximum exponent is 1000)")
+            if isinstance(left, (int, float)) and abs(left) > 10000 and abs(right) > 10:
+                raise ValueError("Calculation too large to evaluate safely")
         return SAFE_OPERATORS[op_type](left, right)
     elif isinstance(node, ast.UnaryOp):
         op_type = type(node.op)

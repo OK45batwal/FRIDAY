@@ -55,6 +55,14 @@ def test_database_and_repositories():
         val = await SettingsRepository.get("test_key")
         assert val == "test_val"
 
+        # 6. Conversation Export
+        from backend.api.conversations import export_conversation
+        export_md = await export_conversation(conv.id, format="markdown")
+        assert "Test Session" in export_md["title"]
+        assert "Hello FRIDAY" in export_md["content"]
+        export_json = await export_conversation(conv.id, format="json")
+        assert len(export_json["messages"]) >= 1
+
     asyncio.run(_test())
 
 
@@ -65,9 +73,19 @@ def test_tools():
         res = await calc.execute({"expression": "125 * 48"})
         assert "6000" in res
 
+        # Exponentiation cap (DoS protection)
+        dos_res = await calc.execute({"expression": "10 ** 10000"})
+        assert "error" in dos_res.lower() or "too large" in dos_res.lower()
+
         # Math syntax error safety
         err_res = await calc.execute({"expression": "__import__('os').system('ls')"})
         assert "error" in err_res.lower()
+
+        # File Manager validation
+        from backend.tools.file_manager import FileManagerTool
+        fm = FileManagerTool()
+        bad_find = await fm.execute({"action": "find", "target": "test; rm -rf /"})
+        assert "error" in bad_find.lower() or "invalid" in bad_find.lower()
 
         # Time Tool
         t_tool = TimeTool()

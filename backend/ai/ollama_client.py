@@ -17,6 +17,16 @@ class OllamaClient:
     ):
         self.base_url = base_url.rstrip("/")
         self._model = model
+        self._client: Optional[httpx.AsyncClient] = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=60.0, trust_env=False)
+        return self._client
+
+    async def close(self):
+        if self._client and not self._client.is_closed:
+            await self._client.aclose()
 
     @property
     def model(self) -> str:
@@ -25,9 +35,9 @@ class OllamaClient:
     async def check_health(self) -> bool:
         """Verify Ollama server connection and model availability."""
         try:
-            async with httpx.AsyncClient(timeout=4.0, trust_env=False) as client:
-                res = await client.get(f"{self.base_url}/api/tags")
-                return res.status_code == 200
+            client = await self._get_client()
+            res = await client.get(f"{self.base_url}/api/tags", timeout=4.0)
+            return res.status_code == 200
         except Exception as e:
             logger.warning(f"Ollama health check failed: {e}")
             return False
@@ -47,30 +57,31 @@ class OllamaClient:
             "options": {
                 "temperature": temperature,
                 "top_p": top_p,
+                "num_predict": settings.LLM_MAX_TOKENS,
             },
         }
-        async with httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
-            try:
-                resp = await client.post(
+        client = await self._get_client()
+        try:
+            resp = await client.post(
+                f"{self.base_url}/api/chat",
+                json=payload,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("message", {}).get("content", "").strip()
+        except httpx.HTTPStatusError as e:
+            # If custom model not yet compiled in Ollama, fallback to gemma2:2b
+            if e.response.status_code == 404 and active_model != "gemma2:2b":
+                logger.warning(f"Model '{active_model}' not found in Ollama, falling back to 'gemma2:2b'")
+                payload["model"] = "gemma2:2b"
+                fallback_resp = await client.post(
                     f"{self.base_url}/api/chat",
                     json=payload,
                 )
-                resp.raise_for_status()
-                data = resp.json()
+                fallback_resp.raise_for_status()
+                data = fallback_resp.json()
                 return data.get("message", {}).get("content", "").strip()
-            except httpx.HTTPStatusError as e:
-                # If custom model not yet compiled in Ollama, fallback to gemma2:2b
-                if e.response.status_code == 404 and active_model != "gemma2:2b":
-                    logger.warning(f"Model '{active_model}' not found in Ollama, falling back to 'gemma2:2b'")
-                    payload["model"] = "gemma2:2b"
-                    fallback_resp = await client.post(
-                        f"{self.base_url}/api/chat",
-                        json=payload,
-                    )
-                    fallback_resp.raise_for_status()
-                    data = fallback_resp.json()
-                    return data.get("message", {}).get("content", "").strip()
-                raise e
+            raise e
 
     async def chat_stream(
         self,
@@ -87,10 +98,31 @@ class OllamaClient:
             "options": {
                 "temperature": temperature,
                 "top_p": top_p,
+                "num_predict": settings.LLM_MAX_TOKENS,
             },
         }
-        async with httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
-            try:
+        client = await self._get_client()
+        try:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/api/chat",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                        content = chunk.get("message", {}).get("content", "")
+                        if content:
+                            yield content
+                    except Exception:
+                        continue
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404 and active_model != "gemma2:2b":
+                logger.warning(f"Model '{active_model}' not found in Ollama streaming, falling back to 'gemma2:2b'")
+                payload["model"] = "gemma2:2b"
                 async with client.stream(
                     "POST",
                     f"{self.base_url}/api/chat",
@@ -107,28 +139,8 @@ class OllamaClient:
                                 yield content
                         except Exception:
                             continue
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404 and active_model != "gemma2:2b":
-                    logger.warning(f"Model '{active_model}' not found in Ollama streaming, falling back to 'gemma2:2b'")
-                    payload["model"] = "gemma2:2b"
-                    async with client.stream(
-                        "POST",
-                        f"{self.base_url}/api/chat",
-                        json=payload,
-                    ) as response:
-                        response.raise_for_status()
-                        async for line in response.aiter_lines():
-                            if not line:
-                                continue
-                            try:
-                                chunk = json.loads(line)
-                                content = chunk.get("message", {}).get("content", "")
-                                if content:
-                                    yield content
-                            except Exception:
-                                continue
-                else:
-                    raise e
+            else:
+                raise e
 
 
 # Global OllamaClient singleton

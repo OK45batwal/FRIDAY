@@ -1,6 +1,7 @@
 """Safe File Manager Tool for local search and inspection."""
 
 import os
+import re
 import subprocess
 from typing import Dict, Any
 from backend.tools.base import BaseTool
@@ -31,7 +32,9 @@ class FileManagerTool(BaseTool):
             return "Error: Target filename or path must be specified."
 
         if action == "find":
-            clean_name = target.replace("'", "").replace('"', "").replace("*", "")
+            clean_name = target.replace("'", "").replace('"', "").replace("*", "").strip()
+            if not clean_name or not re.match(r"^[\w.\-\s/]+$", clean_name):
+                return "Error: Invalid filename pattern. Allowed characters: letters, digits, dots, hyphens, underscores, slashes."
             matches = []
 
             # 1. Spotlight search

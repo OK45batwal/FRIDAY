@@ -37,8 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const convCountBadge = document.getElementById("conv-count-badge");
   const activeChatTitle = document.getElementById("active-chat-title");
   const activeModelBadge = document.getElementById("active-model-badge");
+  const activeModelName = document.getElementById("active-model-name");
+  const btnExportChat = document.getElementById("btn-export-chat");
   const btnRenameChat = document.getElementById("btn-rename-chat");
   const btnDeleteChat = document.getElementById("btn-delete-chat");
+  const btnOpenShortcuts = document.getElementById("btn-open-shortcuts");
+  const btnCloseShortcuts = document.getElementById("btn-close-shortcuts");
+  const shortcutsModal = document.getElementById("shortcuts-modal");
 
   // Chat Elements
   const chatStreamArea = document.getElementById("chat-stream-area");
@@ -267,16 +272,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnExitVoice.addEventListener("click", () => switchView("chat"));
 
-  // Universal Keyboard Shortcuts (⌘1..6, ⌘B, ⌘K, Escape)
+  // Shortcuts Modal Controllers
+  function openShortcutsModal() {
+    if (shortcutsModal) shortcutsModal.classList.remove("hidden");
+  }
+
+  function closeShortcutsModal() {
+    if (shortcutsModal) shortcutsModal.classList.add("hidden");
+  }
+
+  if (btnOpenShortcuts) btnOpenShortcuts.addEventListener("click", openShortcutsModal);
+  if (btnCloseShortcuts) btnCloseShortcuts.addEventListener("click", closeShortcutsModal);
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener("click", (e) => {
+      if (e.target === shortcutsModal) closeShortcutsModal();
+    });
+  }
+
+  // Universal Keyboard Shortcuts (⌘1..6, ⌘B, ⌘K, ?, Escape)
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (shortcutsModal && !shortcutsModal.classList.contains("hidden")) {
+        closeShortcutsModal();
+        return;
+      }
       if (appLayout && appLayout.classList.contains("sidebar-open")) {
         appLayout.classList.remove("sidebar-open");
         return;
       }
       switchView("chat");
       chatInput.focus();
+      return;
     }
+
+    // Open shortcuts cheat sheet on '?' when not inside an input/textarea
+    if (e.key === "?" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
+      e.preventDefault();
+      if (shortcutsModal && !shortcutsModal.classList.contains("hidden")) {
+        closeShortcutsModal();
+      } else {
+        openShortcutsModal();
+      }
+      return;
+    }
+
     if (e.metaKey || e.ctrlKey) {
       if (e.key.toLowerCase() === "b") {
         e.preventDefault();
@@ -619,6 +658,33 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  if (btnExportChat) {
+    btnExportChat.addEventListener("click", async () => {
+      if (!currentConversationId) {
+        showToast("No active conversation session to export.");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/conversations/${currentConversationId}/export?format=markdown`);
+        if (!res.ok) throw new Error("Export failed");
+        const data = await res.json();
+        const blob = new Blob([data.content || ""], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename || "conversation.md";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("Session exported as Markdown! 📄");
+      } catch (err) {
+        console.error("Export error:", err);
+        showToast("Failed to export conversation.");
+      }
+    });
+  }
 
   // ==========================================================================
   // 5. Chat UI Streaming & Event Handling
@@ -1083,7 +1149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function toggleVoiceInput() {
     if (!speechRecognition) {
-      alert("Speech recognition is not supported in this browser. Please use Chrome/Safari or keyboard text.");
+      showToast("Speech recognition is not supported in this browser. Please use Chrome/Safari or keyboard text.", 3200);
       return;
     }
     if (isListening) {
@@ -1672,7 +1738,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const points = emailPoints ? emailPoints.value.trim() : "";
 
       if (!points) {
-        alert("Please enter key points or details for the email.");
+        showToast("Please enter key points or details for the email.", 2500);
         return;
       }
 
@@ -1770,7 +1836,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function runAnalysis() {
       const text = analyzeInput ? analyzeInput.value.trim() : "";
       if (!text) {
-        alert("Please paste text to analyze.");
+        showToast("Please paste text to analyze.", 2500);
         return;
       }
 
@@ -1969,6 +2035,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTaskStudio();
   initChatQuickActions();
   initModelSelector();
-  setInterval(loadDashboardData, 12000); // 12s hardware gauge refresh
+  setInterval(loadDashboardData, 20000); // 20s hardware gauge refresh
   setAssistantState("ONLINE");
 });
