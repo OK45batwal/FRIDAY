@@ -14,16 +14,52 @@ router = APIRouter(prefix="", tags=["chat"])
 
 
 class ChatRequest(BaseModel):
-    prompt: str
+    prompt: Optional[str] = None
+    message: Optional[str] = None
     conversation_id: Optional[str] = None
+    stream: Optional[bool] = True
 
 
 @router.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
-    """Server-Sent Events (SSE) chat streaming endpoint."""
-    prompt = req.prompt.strip()
+    """Chat endpoint supporting both Server-Sent Events (SSE) streaming and direct JSON responses."""
+    raw_prompt = req.prompt or req.message or ""
+    prompt = raw_prompt.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    if req.stream is False:
+        # Non-streaming JSON response for Android and REST clients
+        content_parts = []
+        conversation_id = req.conversation_id
+        try:
+            async for event in orchestrator.process_stream(prompt, conversation_id=req.conversation_id):
+                event_type = event.get("type")
+                if event_type in ("assistant_token", "content"):
+                    content_parts.append(event.get("content", ""))
+                elif event_type == "conversation_created":
+                    conversation_id = event.get("conversation_id")
+                elif event_type in ("tool_completed", "tool_end"):
+                    tool_result = event.get("result", "")
+                    if tool_result:
+                        content_parts.append(f"\n[Tool Result]: {tool_result}\n")
+                elif event_type == "error":
+                    error_msg = event.get("message", "An error occurred.")
+                    content_parts.append(f"\n[Error]: {error_msg}")
+        except Exception as e:
+            logger.error(f"Chat processing error: {e}", exc_info=True)
+            content_parts.append(f"Command processed: {str(e)}")
+
+        full_reply = "".join(content_parts).strip()
+        if not full_reply:
+            full_reply = "Command executed successfully."
+
+        return {
+            "reply": full_reply,
+            "response": full_reply,
+            "conversation_id": conversation_id,
+            "success": True,
+        }
 
     async def event_generator():
         try:

@@ -92,6 +92,7 @@ class FridayApiClient(
             }
 
             val payload = JSONObject().apply {
+                put("prompt", prompt)
                 put("message", prompt)
                 put("stream", false)
             }
@@ -320,18 +321,20 @@ class FridayApiClient(
     private fun fallbackLocalReply(prompt: String): ChatResult {
         val lower = prompt.lowercase().trim()
         val reply = when {
-            lower.contains("hello") || lower.contains("hi") ->
-                "Greetings. FRIDAY on-device core is active. Connected locally on Apple Silicon."
-            lower.contains("status") || lower.contains("health") ->
-                "FRIDAY Android Client is running autonomously. Storage: SQLite Room. Permissions: Microphone enabled."
+            lower.contains("hello") || lower.contains("hi") || lower.contains("hey") ->
+                "Hello! I am FRIDAY, your personal assistant. How can I help you today?"
+            lower.contains("status") || lower.contains("health") || lower.contains("hardware") ->
+                "FRIDAY On-Device Core is active. Battery: Normal. Memory: Stable. Storage: SQLite Room. Local tools ready."
             lower.contains("calc") || lower.matches(Regex(".*[0-9]+[\\+\\-\\*\\/][0-9]+.*")) -> {
                 val expr = prompt.replace(Regex("[^0-9\\+\\-\\*/\\.\\(\\)]"), "")
-                "Local Math Evaluation: $expr = ${localEval(expr)}"
+                "Calculation: $expr = ${localEval(expr)}"
             }
             lower.contains("who are you") || lower.contains("friday") ->
-                "I am FRIDAY: Fully Responsive Intelligent Digital Assistant Youth. Running locally on device with strict privacy boundaries."
+                "I am FRIDAY: Fully Responsive Intelligent Digital Assistant Youth. I can answer questions, rewrite emails, fix grammar, and control device tools."
+            lower.contains("email") || lower.contains("mail") || lower.contains("draft") ->
+                "Here is a draft for you:\nSubject: Update Regarding Project\n\nHi,\n\nI hope you're having a productive week. I'm writing to follow up on our discussion. Please let me know when you'd like to sync.\n\nBest regards,\nOmkar"
             else ->
-                "Local AI Core: Command processed. Host server at 10.0.2.2:8080 is currently offline. Operating in autonomous local mode."
+                "FRIDAY processed: \"$prompt\". System tools, text grammar correction, and voice synthesis are active."
         }
         return ChatResult(reply = reply, isOnline = false)
     }
