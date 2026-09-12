@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.friday.assistant.service.FridayForegroundService
+import com.friday.assistant.ui.AssistantState
 import com.friday.assistant.ui.FridayScreen
 import com.friday.assistant.ui.FridayViewModel
 
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
                 add(Manifest.permission.RECORD_AUDIO)
                 if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
             }.toTypedArray()
+
             val launcher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
             ) { result ->
@@ -34,17 +36,39 @@ class MainActivity : ComponentActivity() {
                     model.setServiceEnabled(true)
                 }
             }
+
             FridayScreen(
                 state = model.state,
+                onTabSelect = model::selectTab,
+                onInputChange = model::onInputTextChange,
+                onSendMessage = model::sendMessage,
+                onRunTool = model::runTool,
+                onToggleVoice = {
+                    if (model.state.assistantState == AssistantState.LISTENING) {
+                        model.stopVoiceListening()
+                    } else {
+                        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                        if (!granted) {
+                            launcher.launch(permissions)
+                        } else {
+                            model.startVoiceListening()
+                        }
+                    }
+                },
+                onStopVoice = model::stopVoiceListening,
                 onToggleService = { enabled ->
                     val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                    if (enabled && !granted) launcher.launch(permissions)
-                    else if (enabled) startFridayService()
-                    else stopService(Intent(this, FridayForegroundService::class.java))
-                    model.setServiceEnabled(enabled && granted)
+                    if (enabled && !granted) {
+                        launcher.launch(permissions)
+                    } else if (enabled) {
+                        startFridayService()
+                        model.setServiceEnabled(true)
+                    } else {
+                        stopService(Intent(this, FridayForegroundService::class.java))
+                        model.setServiceEnabled(false)
+                    }
                 },
-                onManualListen = { model.beginManualListening() },
-                onStop = model::cancel,
+                onRefreshHealth = model::refreshHealth
             )
         }
     }

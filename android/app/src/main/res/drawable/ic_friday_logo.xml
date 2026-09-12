@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Brutalist Yellow badge border and background -->
+    <path
+        android:fillColor="#FFE600"
+        android:strokeColor="#121212"
+        android:strokeWidth="2"
+        android:pathData="M2,2 h44 v44 h-44 z" />
+    <!-- Black F glyph -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M14,12 h20 v6 h-13 v6 h11 v6 h-11 v10 h-7 z" />
+    <path
+        android:fillColor="#121212"
+        android:pathData="M29,32 h6 v6 h-6 z" />
+</vector>
