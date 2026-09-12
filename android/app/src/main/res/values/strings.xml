@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">FRIDAY</string>
+    <string name="accessibility_service_description">FRIDAY Writing Assistant: Observes text input in messaging and email apps (like WhatsApp, Gmail, and browsers) to provide instant grammar corrections, tone polishing, and floating AI actions.</string>
+    <string name="tile_label">FRIDAY Assistant</string>
+</resources>

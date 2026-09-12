@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,6 +72,11 @@ fun FridayScreen(
     onStopVoice: () -> Unit,
     onToggleService: (Boolean) -> Unit,
     onRefreshHealth: () -> Unit,
+    onSandboxInputChange: (String) -> Unit = {},
+    onSandboxGrammarFix: () -> Unit = {},
+    onSandboxToneRewrite: (String) -> Unit = {},
+    onToggleFloatingService: () -> Unit = {},
+    onOpenAccessibilitySettings: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CanvasDark,
@@ -112,6 +118,14 @@ fun FridayScreen(
                 ConsoleTab.TOOLS -> ToolsView(
                     actionLedger = state.actionLedger,
                     onRunTool = onRunTool
+                )
+                ConsoleTab.ASSIST -> AssistView(
+                    state = state,
+                    onSandboxInputChange = onSandboxInputChange,
+                    onSandboxGrammarFix = onSandboxGrammarFix,
+                    onSandboxToneRewrite = onSandboxToneRewrite,
+                    onToggleFloatingService = onToggleFloatingService,
+                    onOpenAccessibilitySettings = onOpenAccessibilitySettings
                 )
                 ConsoleTab.STATUS -> StatusView(
                     state = state,
@@ -810,3 +824,299 @@ private fun StatusView(
         }
     }
 }
+
+// -----------------------------------------------------------------------------
+// 5. ASSIST (SIRI & SYSTEM WRITING COMPANION) VIEW
+// -----------------------------------------------------------------------------
+@Composable
+private fun AssistView(
+    state: FridayUiState,
+    onSandboxInputChange: (String) -> Unit,
+    onSandboxGrammarFix: () -> Unit,
+    onSandboxToneRewrite: (String) -> Unit,
+    onToggleFloatingService: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Text(
+                text = "SIRI SYSTEM ASSISTANT & WRITING COMPANION",
+                color = AccentYellow,
+                fontWeight = FontWeight.Black,
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Real-time grammar fix & assistant overlay across WhatsApp, Gmail & Web",
+                color = TextMuted,
+                fontSize = 11.sp
+            )
+        }
+
+        // Service Control Cards
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Floating Overlay Trigger
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(SurfaceDark)
+                        .border(1.5.dp, BorderDark, RectangleShape)
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("FLOATING PILL", color = TextMuted, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                            Box(
+                                modifier = Modifier
+                                    .background(if (state.isFloatingRunning) Color(0xFF003820) else Color(0xFF24231E))
+                                    .border(1.dp, if (state.isFloatingRunning) SuccessGreen else BorderDark, RectangleShape)
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (state.isFloatingRunning) "ACTIVE" else "OFF",
+                                    color = if (state.isFloatingRunning) SuccessGreen else TextMuted,
+                                    fontSize = 8.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text("Overlay on any app", color = TextWhite, fontSize = 11.sp)
+                        Spacer(Modifier.height(10.dp))
+                        Button(
+                            onClick = onToggleFloatingService,
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.isFloatingRunning) DangerRed else AccentYellow,
+                                contentColor = Color.Black
+                            ),
+                            shape = RectangleShape
+                        ) {
+                            Text(if (state.isFloatingRunning) "STOP" else "START", fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        }
+                    }
+                }
+
+                // Accessibility Service Setup
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(SurfaceDark)
+                        .border(1.5.dp, BorderDark, RectangleShape)
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("AUTO-TYPING", color = TextMuted, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                            Box(
+                                modifier = Modifier
+                                    .background(if (state.isAccessibilityRunning) Color(0xFF003820) else Color(0xFF24231E))
+                                    .border(1.dp, if (state.isAccessibilityRunning) SuccessGreen else BorderDark, RectangleShape)
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (state.isAccessibilityRunning) "READY" else "SETUP",
+                                    color = if (state.isAccessibilityRunning) SuccessGreen else AccentYellow,
+                                    fontSize = 8.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text("In-place text fix", color = TextWhite, fontSize = 11.sp)
+                        Spacer(Modifier.height(10.dp))
+                        Button(
+                            onClick = onOpenAccessibilitySettings,
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentYellow, contentColor = Color.Black),
+                            shape = RectangleShape
+                        ) {
+                            Text("SETTINGS", fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Universal Text Selection Tip
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF24231E))
+                    .border(1.5.dp, AccentYellow, RectangleShape)
+                    .padding(12.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "⚡ NATIVE WHATSAPP & GMAIL INTEGRATION",
+                        color = AccentYellow,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Highlight text in WhatsApp, Gmail, or Chrome -> Tap 3-dot context menu -> Select 'FRIDAY: Fix Grammar'.",
+                        color = TextWhite,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp
+                    )
+                }
+            }
+        }
+
+        // Interactive Grammar Sandbox
+        item {
+            Text(
+                text = "INTERACTIVE GRAMMAR & REWRITE SANDBOX",
+                color = TextWhite,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace
+            )
+            Spacer(Modifier.height(6.dp))
+
+            OutlinedTextField(
+                value = state.sandboxInput,
+                onValueChange = onSandboxInputChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Enter message with typos or awkward phrasing...", color = TextMuted, fontSize = 12.sp) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextWhite,
+                    unfocusedTextColor = TextWhite,
+                    focusedContainerColor = SurfaceDark,
+                    unfocusedContainerColor = SurfaceDark,
+                    focusedBorderColor = AccentYellow,
+                    unfocusedBorderColor = BorderDark,
+                ),
+                shape = RectangleShape
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            // Action triggers
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Button(
+                    onClick = onSandboxGrammarFix,
+                    enabled = !state.isAnalyzing,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentYellow, contentColor = Color.Black),
+                    shape = RectangleShape,
+                    modifier = Modifier.weight(1.1f)
+                ) {
+                    Text("⚡ Grammar", fontWeight = FontWeight.Black, fontSize = 10.sp, maxLines = 1)
+                }
+
+                Button(
+                    onClick = { onSandboxToneRewrite("professional") },
+                    enabled = !state.isAnalyzing,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = TextWhite),
+                    shape = RectangleShape,
+                    modifier = Modifier.weight(0.95f).border(1.dp, BorderDark, RectangleShape)
+                ) {
+                    Text("✉ Gmail", fontWeight = FontWeight.Bold, fontSize = 10.sp, maxLines = 1)
+                }
+
+                Button(
+                    onClick = { onSandboxToneRewrite("casual") },
+                    enabled = !state.isAnalyzing,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = TextWhite),
+                    shape = RectangleShape,
+                    modifier = Modifier.weight(1.05f).border(1.dp, BorderDark, RectangleShape)
+                ) {
+                    Text("💬 WhatsApp", fontWeight = FontWeight.Bold, fontSize = 10.sp, maxLines = 1)
+                }
+            }
+        }
+
+        // Sandbox Result Card
+        item {
+            if (state.isAnalyzing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceDark)
+                        .border(1.dp, BorderDark, RectangleShape)
+                        .padding(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = AccentYellow, strokeWidth = 2.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text("Analyzing linguistic structure...", color = TextWhite, fontSize = 12.sp)
+                    }
+                }
+            } else if (state.sandboxResult != null) {
+                val res = state.sandboxResult
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceDark)
+                        .border(1.5.dp, AccentYellow, RectangleShape)
+                        .padding(14.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "CORRECTED OUTPUT",
+                                color = AccentYellow,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = if (res.isOnline) "LOCAL OLLAMA" else "OFFLINE HEURISTICS",
+                                color = if (res.isOnline) SuccessGreen else AccentYellow,
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = res.correctedText,
+                            color = TextWhite,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = res.explanation,
+                            color = TextMuted,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+

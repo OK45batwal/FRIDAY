@@ -5,24 +5,76 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:name=".FridayApplication"
         android:allowBackup="true"
-        android:label="FRIDAY"
+        android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Friday">
-        <activity android:name=".MainActivity" android:exported="true">
+
+        <!-- Main Dashboard Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- System-Wide Text Selection Assistant (WhatsApp, Gmail, Chrome, etc.) -->
+        <activity
+            android:name=".ui.ProcessTextActivity"
+            android:label="FRIDAY: Fix Grammar"
+            android:theme="@style/Theme.Friday.Dialog"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Background Mic Assistant Service -->
         <service
             android:name=".service.FridayForegroundService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- Floating Siri-Like Overlay Assistant Service -->
+        <service
+            android:name=".service.FridayFloatingService"
+            android:exported="false" />
+
+        <!-- System-Wide Accessibility Writing & Grammar Assistant -->
+        <service
+            android:name=".service.FridayAccessibilityService"
+            android:label="FRIDAY Writing Assistant"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Quick Settings Tile for 1-Tap Assistant Invocation -->
+        <service
+            android:name=".service.FridayQuickSettingsTileService"
+            android:label="@string/tile_label"
+            android:icon="@drawable/ic_friday_logo"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
     </application>
 </manifest>

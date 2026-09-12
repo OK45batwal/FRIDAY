@@ -1,8 +1,18 @@
 <resources>
     <style name="Theme.Friday" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#65D6FF</item>
-        <item name="android:navigationBarColor">#07111B</item>
+        <item name="android:colorAccent">#FFE600</item>
+        <item name="android:navigationBarColor">#0E0E0C</item>
         <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Translucent floating modal theme for system text processing dialog -->
+    <style name="Theme.Friday.Dialog" parent="android:style/Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
     </style>
 </resources>

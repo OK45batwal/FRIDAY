@@ -32,6 +32,13 @@ data class ToolResult(
     val durationMs: Long,
 )
 
+data class GrammarResult(
+    val originalText: String,
+    val correctedText: String,
+    val explanation: String,
+    val isOnline: Boolean,
+)
+
 class FridayApiClient(
     private val baseUrl: String = "http://10.0.2.2:8080"
 ) {
@@ -161,11 +168,153 @@ class FridayApiClient(
                 val json = JSONObject(readStream(conn))
                 json.optString("full_text", "Subject: $purpose\n\nTo $recipient,\n\n$keyPoints")
             } else {
-                "Subject: ${purpose.replace('_', ' ').capitalize()}\nTo: $recipient\n\nRegarding: $keyPoints\n\nBest regards,\nFRIDAY Android"
+                val formattedPurpose = purpose.replace('_', ' ').replaceFirstChar { it.uppercase() }
+                "Subject: $formattedPurpose\nTo: $recipient\n\nRegarding: $keyPoints\n\nBest regards,\nFRIDAY Android"
             }
         } catch (e: Exception) {
-            "Subject: ${purpose.replace('_', ' ').capitalize()}\nTo: $recipient\n\nRegarding: $keyPoints\n\nBest regards,\nFRIDAY Android (Offline Mode)"
+            val formattedPurpose = purpose.replace('_', ' ').replaceFirstChar { it.uppercase() }
+            "Subject: $formattedPurpose\nTo: $recipient\n\nRegarding: $keyPoints\n\nBest regards,\nFRIDAY Android (Offline Mode)"
         }
+    }
+
+    suspend fun fixGrammar(text: String): GrammarResult = withContext(Dispatchers.IO) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) {
+            return@withContext GrammarResult(text, text, "Text was empty", true)
+        }
+        try {
+            val url = URL("$baseUrl/api/tasks/analyze")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 15000
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                doOutput = true
+            }
+            val payload = JSONObject().apply {
+                put("text", trimmed)
+                put("action", "grammar_fix")
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(payload.toString()) }
+
+            if (conn.responseCode == 200) {
+                val json = JSONObject(readStream(conn))
+                val result = json.optString("result", trimmed)
+                GrammarResult(
+                    originalText = trimmed,
+                    correctedText = result,
+                    explanation = "Polished by local Ollama AI",
+                    isOnline = true
+                )
+            } else {
+                offlineGrammarHeuristics(trimmed)
+            }
+        } catch (e: Exception) {
+            offlineGrammarHeuristics(trimmed)
+        }
+    }
+
+    suspend fun rewriteTone(text: String, tone: String): GrammarResult = withContext(Dispatchers.IO) {
+        val trimmed = text.trim()
+        try {
+            val url = URL("$baseUrl/api/tasks/analyze")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 15000
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                doOutput = true
+            }
+            val payload = JSONObject().apply {
+                put("text", trimmed)
+                put("action", "tone_shift")
+                put("target_tone", tone)
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(payload.toString()) }
+
+            if (conn.responseCode == 200) {
+                val json = JSONObject(readStream(conn))
+                val result = json.optString("result", trimmed)
+                GrammarResult(
+                    originalText = trimmed,
+                    correctedText = result,
+                    explanation = "Rewritten in $tone tone",
+                    isOnline = true
+                )
+            } else {
+                offlineToneRewrite(trimmed, tone)
+            }
+        } catch (e: Exception) {
+            offlineToneRewrite(trimmed, tone)
+        }
+    }
+
+    private fun offlineGrammarHeuristics(text: String): GrammarResult {
+        var corrected = text.trim()
+
+        // 1. Capitalize first letter
+        if (corrected.isNotEmpty()) {
+            corrected = corrected.replaceFirstChar { it.uppercase() }
+        }
+
+        // 2. Common contractions & subject-verb agreements
+        val rules = listOf(
+            Regex("\\bhe dont\\b", RegexOption.IGNORE_CASE) to "he doesn't",
+            Regex("\\bshe dont\\b", RegexOption.IGNORE_CASE) to "she doesn't",
+            Regex("\\bit dont\\b", RegexOption.IGNORE_CASE) to "it doesn't",
+            Regex("\\bi has\\b", RegexOption.IGNORE_CASE) to "I have",
+            Regex("\\bi is\\b", RegexOption.IGNORE_CASE) to "I am",
+            Regex("\\bthey is\\b", RegexOption.IGNORE_CASE) to "they are",
+            Regex("\\bwe is\\b", RegexOption.IGNORE_CASE) to "we are",
+            Regex("\\byou is\\b", RegexOption.IGNORE_CASE) to "you are",
+            Regex("\\bdidnt knew\\b", RegexOption.IGNORE_CASE) to "didn't know",
+            Regex("\\bcould of\\b", RegexOption.IGNORE_CASE) to "could have",
+            Regex("\\bshould of\\b", RegexOption.IGNORE_CASE) to "should have",
+            Regex("\\bwould of\\b", RegexOption.IGNORE_CASE) to "would have",
+            Regex("\\balot\\b", RegexOption.IGNORE_CASE) to "a lot",
+            Regex("\\bteh\\b", RegexOption.IGNORE_CASE) to "the",
+            Regex("\\bi\\b") to "I",
+            Regex("\\bim\\b", RegexOption.IGNORE_CASE) to "I'm",
+            Regex("\\bcant\\b", RegexOption.IGNORE_CASE) to "can't",
+            Regex("\\bwont\\b", RegexOption.IGNORE_CASE) to "won't",
+            Regex("\\bdont\\b", RegexOption.IGNORE_CASE) to "don't",
+            Regex("\\bthats\\b", RegexOption.IGNORE_CASE) to "that's",
+            Regex("\\bwheres\\b", RegexOption.IGNORE_CASE) to "where's",
+            Regex("\\bwhats\\b", RegexOption.IGNORE_CASE) to "what's"
+        )
+
+        for ((pattern, replacement) in rules) {
+            corrected = corrected.replace(pattern, replacement)
+        }
+
+        // 3. Spacing before punctuation
+        corrected = corrected.replace(Regex("\\s+([,\\.\\?!;:])"), "$1")
+
+        // 4. Ensure trailing period if sentence-like
+        if (!corrected.endsWith(".") && !corrected.endsWith("?") && !corrected.endsWith("!")) {
+            corrected += "."
+        }
+
+        return GrammarResult(
+            originalText = text,
+            correctedText = corrected,
+            explanation = "Fixed capitalization, subject-verb agreement, and punctuation (Offline Engine)",
+            isOnline = false
+        )
+    }
+
+    private fun offlineToneRewrite(text: String, tone: String): GrammarResult {
+        val corrected = offlineGrammarHeuristics(text).correctedText
+        val rewritten = when (tone.lowercase()) {
+            "professional", "gmail" ->
+                "Hello,\n\nI wanted to follow up regarding: ${corrected.trimEnd('.')}.\n\nPlease let me know if you have any questions.\n\nBest regards,\nOmkar"
+            "casual", "whatsapp" ->
+                "Hey! Just wanted to share: ${corrected.trimEnd('.')} 👍"
+            "concise" ->
+                corrected.replace("I wanted to let you know that ", "").replace("Please be advised that ", "")
+            else -> corrected
+        }
+        return GrammarResult(text, rewritten, "Formatted for $tone tone (Local Offline)", false)
     }
 
     private fun fallbackLocalReply(prompt: String): ChatResult {

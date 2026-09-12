@@ -10,12 +10,15 @@ import com.friday.assistant.data.FridayDatabase
 import com.friday.assistant.data.MessageEntity
 import com.friday.assistant.network.BackendHealth
 import com.friday.assistant.network.FridayApiClient
+import com.friday.assistant.network.GrammarResult
 import com.friday.assistant.network.ToolResult
+import com.friday.assistant.service.FridayAccessibilityService
+import com.friday.assistant.service.FridayFloatingService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-enum class ConsoleTab { CHAT, VOICE, TOOLS, STATUS }
+enum class ConsoleTab { CHAT, VOICE, TOOLS, ASSIST, STATUS }
 enum class AssistantState { IDLE, LISTENING, THINKING, EXECUTING, SPEAKING, ERROR }
 
 data class FridayUiState(
@@ -30,6 +33,11 @@ data class FridayUiState(
     val audioLevels: List<Float> = List(16) { 0.15f },
     val actionLedger: List<ToolResult> = emptyList(),
     val latestVoiceTranscript: String = "Tap PUSH TO TALK to speak to FRIDAY",
+    val isFloatingRunning: Boolean = false,
+    val isAccessibilityRunning: Boolean = false,
+    val sandboxInput: String = "he dont know what time is the meeting and i has to tell him",
+    val sandboxResult: GrammarResult? = null,
+    val isAnalyzing: Boolean = false,
 )
 
 class FridayViewModel(application: Application) : AndroidViewModel(application) {
@@ -44,10 +52,12 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
     init {
         loadMessages()
         refreshHealth()
+        refreshServiceStates()
     }
 
     fun selectTab(tab: ConsoleTab) {
         state = state.copy(currentTab = tab)
+        refreshServiceStates()
     }
 
     fun onInputTextChange(text: String) {
@@ -62,10 +72,47 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
         state = state.copy(serviceEnabled = enabled)
     }
 
+    fun refreshServiceStates() {
+        state = state.copy(
+            isFloatingRunning = FridayFloatingService.isRunning,
+            isAccessibilityRunning = FridayAccessibilityService.isRunning
+        )
+    }
+
     fun refreshHealth() {
         viewModelScope.launch {
             val health = apiClient.checkHealth()
             state = state.copy(backendHealth = health)
+            refreshServiceStates()
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Interactive Sandbox for Grammar & Siri Assistant
+    // -------------------------------------------------------------------------
+    fun onSandboxInputChange(text: String) {
+        state = state.copy(sandboxInput = text)
+    }
+
+    fun runSandboxGrammarFix() {
+        val text = state.sandboxInput.trim()
+        if (text.isEmpty()) return
+
+        state = state.copy(isAnalyzing = true)
+        viewModelScope.launch {
+            val res = apiClient.fixGrammar(text)
+            state = state.copy(sandboxResult = res, isAnalyzing = false)
+        }
+    }
+
+    fun runSandboxToneRewrite(tone: String) {
+        val text = state.sandboxInput.trim()
+        if (text.isEmpty()) return
+
+        state = state.copy(isAnalyzing = true)
+        viewModelScope.launch {
+            val res = apiClient.rewriteTone(text, tone)
+            state = state.copy(sandboxResult = res, isAnalyzing = false)
         }
     }
 
@@ -75,7 +122,7 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
             if (history.isEmpty()) {
                 val welcome = MessageEntity(
                     role = "assistant",
-                    text = "FRIDAY Local Intelligence Core active. Ready for local inference and tool execution."
+                    text = "FRIDAY Local Intelligence Core active. System-wide Siri Assistant and WhatsApp/Gmail writing companion enabled."
                 )
                 messageDao.insert(welcome)
                 state = state.copy(messages = listOf(welcome))
@@ -96,7 +143,6 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
             messageDao.insert(userMsg)
             state = state.copy(messages = state.messages + userMsg)
 
-            // Send to backend (with local offline fallback)
             val result = apiClient.sendChat(textToSend)
 
             val replyMsg = MessageEntity(role = "assistant", text = result.reply)
@@ -147,7 +193,6 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
             latestVoiceTranscript = "Listening locally... (Speak now)"
         )
         viewModelScope.launch {
-            // Animate waveform
             for (i in 0 until 12) {
                 if (state.assistantState != AssistantState.LISTENING) break
                 val levels = List(16) { Random.nextFloat().coerceIn(0.2f, 0.95f) }
@@ -167,7 +212,6 @@ class FridayViewModel(application: Application) : AndroidViewModel(application) 
                     latestVoiceTranscript = "Voice Pipeline: Ready. Edge-TTS neural speech synthesized."
                 )
 
-                // Simulate speaking waveform
                 for (i in 0 until 8) {
                     val levels = List(16) { Random.nextFloat().coerceIn(0.15f, 0.7f) }
                     state = state.copy(audioLevels = levels)

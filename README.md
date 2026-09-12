@@ -198,6 +198,13 @@ python -m backend.main
 │   ├── index.html             # Single-Page App Structure & Modal Dialogs
 │   ├── style.css              # Precision Instrument Tokens, Widgets & Animations
 │   └── app.js                 # SSE Streaming, Generative Widgets, TP-7 Audio Meter
+├── android/                   # Native Android Assistant (Jetpack Compose + Siri-like Services)
+│   ├── app/src/main/java/com/friday/assistant/
+│   │   ├── service/           # AccessibilityService, FloatingService & QuickSettingsTile
+│   │   ├── ui/                # FridayScreen, ProcessTextActivity, FridayViewModel
+│   │   ├── network/           # FridayApiClient with Offline Grammar & Tone Engine
+│   │   └── MainActivity.kt    # Main Console Host Activity
+│   └── app/src/main/res/      # Layouts, Icons, Dialog Themes & Accessibility Configs
 ├── model/                     # From-Scratch PyTorch LLM Architecture
 │   ├── transformer.py         # RMSNorm, RoPE, SwiGLU, GQA, CustomLLM
 │   ├── rope.py                # Rotary Position Embeddings
@@ -217,6 +224,41 @@ python -m backend.main
 ├── requirements.txt           # Unified Dependencies
 └── pyproject.toml             # Project Metadata
 ```
+
+---
+
+## Native Android System Assistant & Siri-Like Integration
+
+FRIDAY includes a native Android companion (`android/`) engineered in Kotlin and Jetpack Compose that brings Siri-like pervasive intelligence directly into the Android operating system:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                          ANDROID OS SYSTEM-WIDE INTEGRATIONS                           │
+├────────────────────────────────┬───────────────────────────┬───────────────────────────┤
+│    CROSS-APP TEXT COMPANION    │    ACCESSIBILITY OBSERVER │    SYSTEM-WIDE OVERLAYS   │
+│  • System Process Text Menu    │  • WhatsApp & Gmail Hook  │  • Floating Draggable Pill│
+│  • Instant In-Place Replace    │  • Real-Time Edit Detection│  • Quick Settings Tile   │
+│  • Tone Rewriter (Work/Chat)   │  • One-Tap Correction API │  • Microphone Hotkey      │
+└────────────────────────────────┴───────────────────────────┴───────────────────────────┘
+```
+
+1. **System-Wide Text Selection Companion (`ACTION_PROCESS_TEXT`)**:
+   - Highlight any text in **WhatsApp**, **Gmail**, **Google Chrome**, **Slack**, or **Notes**.
+   - Tap **FRIDAY: Fix Grammar** or **FRIDAY: Rewrite** in the Android context menu to open the floating writing assistant.
+   - Switch between **Grammar**, **Gmail (Professional)**, and **WhatsApp (Casual)** modes and tap **REPLACE** to update the text in-place in the source app without copy-pasting.
+
+2. **Real-Time Input Observer (`FridayAccessibilityService`)**:
+   - Listens to focused text fields in messaging and email applications.
+   - Automatically supports direct in-place text replacement (`ACTION_SET_TEXT`) when invoked.
+
+3. **Siri-Style Draggable Floating Pill (`FridayFloatingService`)**:
+   - A persistent, tactile floating overlay with real-time mic and quick-launch triggers accessible from any app across the OS.
+
+4. **Notification Quick Settings Tile (`FridayQuickSettingsTileService`)**:
+   - Pull down Android notification quick settings and tap the FRIDAY tile to launch the assistant instantly.
+
+5. **Guaranteed Offline Resilience**:
+   - Uses a dual-tier architecture: queries local Ollama models when connected to the host, and automatically falls back to an internal syntax, grammar, and tone engine when completely offline.
 
 ---
 
