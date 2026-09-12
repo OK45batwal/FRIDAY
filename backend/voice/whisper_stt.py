@@ -7,6 +7,7 @@ with graceful status reporting and client-side Web Audio fallback.
 import os
 import io
 import tempfile
+import asyncio
 from typing import Optional, Dict, Any
 from backend.utils.logger import get_logger
 
@@ -75,13 +76,39 @@ class WhisperSTTEngine:
             self._model = None
             self._engine_type = None
 
+    def _run_inference(self, file_path: str, language: Optional[str]) -> Dict[str, Any]:
+        """Synchronously execute local Whisper model in background worker thread."""
+        if self._engine_type == "faster-whisper":
+            segments, info = self._model.transcribe(
+                file_path,
+                language=language,
+                beam_size=1,
+                vad_filter=True,
+            )
+            full_text = " ".join(seg.text for seg in segments).strip()
+            detected_lang = info.language if hasattr(info, "language") else "en"
+            return {
+                "text": full_text,
+                "language": detected_lang,
+                "duration": info.duration if hasattr(info, "duration") else None,
+                "confidence": 1.0,
+            }
+        elif self._engine_type == "openai-whisper":
+            result = self._model.transcribe(file_path, language=language)
+            return {
+                "text": result.get("text", "").strip(),
+                "language": result.get("language", "en"),
+                "confidence": 1.0,
+            }
+        return {"text": "", "status": "no_result"}
+
     async def transcribe(
         self,
         audio_bytes: bytes,
         language: Optional[str] = None,
         suffix: str = ".wav",
     ) -> Dict[str, Any]:
-        """Transcribe raw audio bytes into text."""
+        """Transcribe raw audio bytes into text without blocking the asyncio event loop."""
         if not audio_bytes:
             return {"text": "", "language": language or "en", "confidence": 0.0}
 
@@ -100,28 +127,8 @@ class WhisperSTTEngine:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
 
-            if self._engine_type == "faster-whisper":
-                segments, info = self._model.transcribe(
-                    tmp_path,
-                    language=language,
-                    beam_size=1,
-                    vad_filter=True,
-                )
-                full_text = " ".join(seg.text for seg in segments).strip()
-                detected_lang = info.language if hasattr(info, "language") else "en"
-                return {
-                    "text": full_text,
-                    "language": detected_lang,
-                    "duration": info.duration if hasattr(info, "duration") else None,
-                    "confidence": 1.0,
-                }
-            elif self._engine_type == "openai-whisper":
-                result = self._model.transcribe(tmp_path, language=language)
-                return {
-                    "text": result.get("text", "").strip(),
-                    "language": result.get("language", "en"),
-                    "confidence": 1.0,
-                }
+            # Offload heavy model inference to background thread pool
+            return await asyncio.to_thread(self._run_inference, tmp_path, language)
         except Exception as e:
             logger.error(f"Whisper transcription failed: {e}")
             return {"text": "", "error": str(e), "status": "error"}

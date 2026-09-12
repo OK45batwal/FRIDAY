@@ -125,6 +125,7 @@ async def get_model_info():
 
 # Mount Web UI Static Directory
 if os.path.exists(WEB_DIR):
+    app.mount("/web", StaticFiles(directory=WEB_DIR), name="web_prefix")
     app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
 
 

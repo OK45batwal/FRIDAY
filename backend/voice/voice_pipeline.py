@@ -104,7 +104,7 @@ class VoicePipelineSession:
                             clean_s = voice_service.clean_text_for_speech(sentence)
 
                             if clean_s and not self.is_interrupted:
-                                audio_bytes = await voice_service.synthesize_speech(clean_s, voice_key_or_id=voice)
+                                audio_bytes, mime_type = await voice_service.synthesize_speech_with_mime(clean_s, voice_key_or_id=voice)
                                 if audio_bytes and not self.is_interrupted:
                                     b64 = base64.b64encode(audio_bytes).decode("ascii")
                                     await self.send_json({
@@ -112,7 +112,7 @@ class VoicePipelineSession:
                                         "chunk": b64,
                                         "sentence": clean_s,
                                         "index": sentence_index,
-                                        "mime": "audio/mp4",
+                                        "mime": mime_type,
                                         "is_last": False,
                                     })
                                     sentence_index += 1
@@ -126,7 +126,7 @@ class VoicePipelineSession:
                 if remaining and not self.is_interrupted:
                     clean_rem = voice_service.clean_text_for_speech(remaining)
                     if clean_rem:
-                        audio_bytes = await voice_service.synthesize_speech(clean_rem, voice_key_or_id=voice)
+                        audio_bytes, mime_type = await voice_service.synthesize_speech_with_mime(clean_rem, voice_key_or_id=voice)
                         if audio_bytes and not self.is_interrupted:
                             b64 = base64.b64encode(audio_bytes).decode("ascii")
                             await self.send_json({
@@ -134,7 +134,7 @@ class VoicePipelineSession:
                                 "chunk": b64,
                                 "sentence": clean_rem,
                                 "index": sentence_index,
-                                "mime": "audio/mp4",
+                                "mime": mime_type,
                                 "is_last": True,
                             })
                             sentence_index += 1

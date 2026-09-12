@@ -29,7 +29,10 @@ class MainActivity : ComponentActivity() {
             ) { result ->
                 val granted = result[Manifest.permission.RECORD_AUDIO] == true
                 model.setPermissionsGranted(granted)
-                if (granted) startFridayService()
+                if (granted) {
+                    startFridayService()
+                    model.setServiceEnabled(true)
+                }
             }
             FridayScreen(
                 state = model.state,

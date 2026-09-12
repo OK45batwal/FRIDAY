@@ -15,7 +15,7 @@
 **A private, offline-first personal AI assistant and neural architecture laboratory.**  
 Powered by **Ollama (`gemma2:2b` / `go1.0`)**, an asynchronous **FastAPI** agentic backend, **SQLite WAL** long-term memory with semantic vector embeddings, and a custom **PyTorch Transformer** engineered completely from scratch.
 
-[![Tests](https://img.shields.io/badge/tests-22%20passed-00e599?style=flat-square&logo=pytest)](file:///Users/omkar/FRIDAY/tests)
+[![Tests](https://img.shields.io/badge/tests-29%20passed-00e599?style=flat-square&logo=pytest)](file:///Users/omkar/FRIDAY/tests)
 [![Python](https://img.shields.io/badge/python-3.10%2B-ff5500?style=flat-square&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-00e599?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-white?style=flat-square&logo=ollama)](https://ollama.ai)
@@ -28,13 +28,13 @@ Powered by **Ollama (`gemma2:2b` / `go1.0`)**, an asynchronous **FastAPI** agent
 
 ## Architecture Overview
 
-FRIDAY combines an asynchronous agentic orchestration backend with a modern **Precision Instrument** user interface:
+FRIDAY combines an asynchronous agentic orchestration backend with a modern **Yellow Brutalism Local Intelligence Console**:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        FRIDAY FRONTEND (PRECISION INSTRUMENT)                          │
-│   Obsidian Technical Substrate • Inter & Geist Mono Typography • Hairline 1px Grids    │
-│   Generative Tool Widgets • Glassmorphic Voice Orb • TP-7 Segmented Audio Meters       │
+│                   FRIDAY FRONTEND (LOCAL INTELLIGENCE CONSOLE)                         │
+│   Yellow Brutalism Design System • 0px Radius • 6px Offset Shadows • Dual Themes       │
+│   Hash-Routed Left Rail • Push-to-Talk Voice Meter • Action Ledger • Permission Center │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                             │ HTTP / Server-Sent Events (SSE) / WebSockets
 ┌───────────────────────────────────────────▼────────────────────────────────────────────┐
@@ -141,8 +141,21 @@ See [`android/README.md`](android/README.md) for architecture, permissions, and 
 
 Then open your browser to:
 - **FRIDAY Dashboard**: [http://127.0.0.1:8080](http://127.0.0.1:8080)
-- **Interactive Swagger Docs**: [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs)
-- **Health Check Endpoint**: [http://127.0.0.1:8080/api/health](http://127.0.0.1:8080/api/health)
+### Launching as an Application
+
+- **Native macOS Application (`FRIDAY.app`)**:
+  Build and launch the standalone macOS app bundle:
+  ```bash
+  ./scripts/build_macos_app.sh
+  open FRIDAY.app
+  ```
+- **Installable Progressive Web App (PWA)**:
+  Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in Chrome, Safari, or Edge and click **Install FRIDAY** or **Add to Dock** to run it in standalone window mode.
+- **Android Native Application**:
+  ```bash
+  cd android
+  ./gradlew :app:assembleDebug
+  ```
 
 ### Manual Setup
 

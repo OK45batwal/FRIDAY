@@ -1,1112 +1,554 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="FRIDAY — Futuristic Autonomous Local AI Assistant & Project Presentation System.">
-  <title>FRIDAY — Personal Local AI Assistant</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5.0">
+  <title>FRIDAY — Local Intelligence Console</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#FFE600">
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body data-theme="dark">
-  <!-- Neo-Brutalist Subtle Dot Grid -->
-  <div class="background-grid"></div>
+<body>
 
-  <!-- Mobile Drawer Backdrop -->
-  <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+  <div class="app-shell">
 
-  <div class="app-layout" id="app-layout">
-    <!-- Collapsible Main Sidebar -->
-    <aside class="main-sidebar glass-panel" id="main-sidebar">
-      <div class="sidebar-header">
-        <div class="brand-badge">
-          <div class="neural-spark" title="FRIDAY">
-            <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-              <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
-              <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
-            </svg>
+    <!-- PERSISTENT LEFT RAIL (DESKTOP) -->
+    <aside class="sidebar-rail" aria-label="Console Navigation">
+      <div class="rail-header">
+        <a href="#chat" class="rail-brand">
+          <div class="rail-logo-badge">FRIDAY</div>
+          <div class="rail-title-wrap">
+            <span class="rail-title">LOCAL CONSOLE</span>
+            <span class="rail-subtitle">v2.5 • ON-DEVICE</span>
           </div>
-          <div class="brand-info">
-            <span class="brand-title">FRIDAY</span>
-            <span class="brand-tag">LOCAL AI</span>
-          </div>
-        </div>
-        <div class="header-controls">
-          <button id="btn-sidebar-collapse" class="btn-sidebar-collapse" title="Collapse Sidebar (⌘B)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2"/>
-              <path d="M9 3v18"/>
-              <path d="m16 15-3-3 3-3"/>
-            </svg>
-          </button>
-          <button id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Light / Dark Mode">
-            <span class="theme-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-            <span class="theme-label">DARK</span>
-          </button>
-          <div id="status-pill" class="status-indicator online">
-            <span class="status-dot"></span>
-            <span id="status-label">ONLINE</span>
-          </div>
-        </div>
+        </a>
+        <span class="locality-pill-header" title="Running 100% locally on Apple Silicon / Device">LOCAL</span>
       </div>
 
-      <!-- Action: New Conversation -->
-      <button id="btn-new-chat" class="btn-new-chat" title="New Conversation (⌘K)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-        <span>New Chat</span>
-        <kbd>⌘K</kbd>
-      </button>
-
-      <!-- Navigation Tabs with Clean SVGs & Shortcuts -->
-      <nav class="sidebar-nav">
-        <div class="nav-section-title">WORKSPACE</div>
-        <button class="nav-item active" data-view="chat" title="Assistant Chat (⌘1)">
+      <!-- Navigation Links (Hash Routed) -->
+      <nav class="rail-nav">
+        <div class="nav-section-label">WORKSPACE</div>
+        <a href="#chat" class="rail-btn active" data-view="chat">
           <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </span>
-          <span class="nav-label">Assistant Chat</span>
+          <span>Assistant Chat</span>
           <kbd class="nav-kbd">⌘1</kbd>
-        </button>
-        <button class="nav-item" data-view="voice" title="Voice Mode (⌘2)">
-          <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-          </span>
-          <span class="nav-label">Voice Mode</span>
-          <kbd class="nav-kbd">⌘2</kbd>
-        </button>
-        <button class="nav-item" data-view="translate" title="Live Translator (⌘3 / ⌘T)">
-          <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </span>
-          <span class="nav-label">Live Translator</span>
-          <kbd class="nav-kbd">⌘3</kbd>
-        </button>
-        <button class="nav-item" data-view="tasks" title="Email & Basic Tasks (⌘4 / ⌘E)">
-          <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-          </span>
-          <span class="nav-label">Email & Tasks</span>
-          <kbd class="nav-kbd">⌘4</kbd>
-        </button>
+        </a>
 
-        <div class="nav-section-title">SYSTEM & PREFS</div>
-        <button class="nav-item" data-view="dashboard" title="System Dashboard (⌘5)">
+        <a href="#voice" class="rail-btn" data-view="voice">
           <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
           </span>
-          <span class="nav-label">Dashboard</span>
+          <span>Voice Mode</span>
+          <kbd class="nav-kbd">⌘2</kbd>
+        </a>
+
+        <a href="#translate" class="rail-btn" data-view="translate">
+          <span class="nav-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <span>Translator</span>
+          <kbd class="nav-kbd">⌘3</kbd>
+        </a>
+
+        <a href="#tasks" class="rail-btn" data-view="tasks">
+          <span class="nav-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </span>
+          <span>Email & Tasks</span>
+          <kbd class="nav-kbd">⌘4</kbd>
+        </a>
+
+        <div class="nav-section-label" style="margin-top: 8px;">CONTROL & TELEMETRY</div>
+        <a href="#dashboard" class="rail-btn" data-view="dashboard">
+          <span class="nav-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="7" height="9" x="3" y="3"/><rect width="7" height="5" x="14" y="3"/><rect width="7" height="9" x="14" y="12"/><rect width="7" height="5" x="3" y="16"/></svg>
+          </span>
+          <span>Dashboard</span>
           <kbd class="nav-kbd">⌘5</kbd>
-        </button>
-        <button class="nav-item" data-view="settings" title="System Settings (⌘6)">
+        </a>
+
+        <a href="#settings" class="rail-btn" data-view="settings">
           <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </span>
-          <span class="nav-label">Settings</span>
+          <span>Settings</span>
           <kbd class="nav-kbd">⌘6</kbd>
-        </button>
-        <button class="nav-item" data-view="about" title="About Architecture">
+        </a>
+
+        <a href="#about" class="rail-btn" data-view="about">
           <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </span>
-          <span class="nav-label">About</span>
-        </button>
+          <span>About</span>
+        </a>
       </nav>
 
-      <!-- Saved Conversations List -->
-      <div class="sidebar-conversations-section">
-        <div class="section-title-row">
-          <div class="section-title-left">
-            <span>Recent Chats</span>
-            <span id="conv-count-badge" class="badge-count">0</span>
-          </div>
-          <button id="btn-quick-new-conv" class="btn-icon-xs" title="New Chat (⌘K)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
+      <!-- Recent Conversations Scroll List -->
+      <div class="rail-conv-section">
+        <button id="btn-new-chat" class="btn-new-chat-brutal" title="Create a clean conversation (⌘K)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+          <span>NEW CHAT</span>
+        </button>
+
+        <div class="conv-header-row">
+          <span class="conv-header-title">Saved Chats</span>
+          <span id="conv-count-badge" class="brutal-badge" style="padding: 2px 6px; font-size: 10px;">0</span>
         </div>
-        <div class="conv-search-box">
-          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="conv-search-input" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false">
-        </div>
-        <div id="conversations-list" class="conversations-scroll">
-          <!-- Populated dynamically -->
+
+        <input id="conv-search-input" class="conv-search-input" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false">
+
+        <div id="conversations-list" class="conv-list-scroll">
+          <!-- Dynamically populated -->
         </div>
       </div>
 
-      <!-- Hardware Mini-Gauge Footer -->
-      <div class="sidebar-footer">
-        <div class="hw-mini-bar">
-          <span class="hw-label">BATT <strong id="mini-batt">100%</strong></span>
-          <span class="hw-sep">|</span>
-          <span class="hw-label">RAM <strong id="mini-ram">16G</strong></span>
-          <span class="hw-sep">|</span>
-          <span class="hw-label">DISK <strong id="mini-disk">655G</strong></span>
+      <!-- Footer Hardware Status -->
+      <div class="rail-footer">
+        <div class="status-indicator">
+          <span class="indicator-dot"></span>
+          <span id="rail-status-text">ONLINE</span>
         </div>
+        <div id="rail-mini-metrics">MPS ACTIVE</div>
       </div>
     </aside>
 
-    <!-- Main Dynamic Content Canvas -->
+    <!-- MAIN DYNAMIC CANVAS -->
     <main class="main-canvas">
 
-      <!-- Universal Canvas Top Navigation Header -->
-      <header id="canvas-top-bar" class="canvas-top-bar glass-panel">
-        <div class="top-bar-left">
-          <button id="btn-sidebar-toggle-canvas" class="btn-sidebar-toggle-canvas" title="Toggle Sidebar (⌘B)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2"/>
-              <path d="M9 3v18"/>
-              <path d="m14 9 3 3-3 3"/>
-            </svg>
-          </button>
-
-          <div class="canvas-breadcrumbs" id="canvas-breadcrumbs">
-            <span class="crumb-brand">FRIDAY</span>
-            <span class="crumb-sep">/</span>
-            <span id="canvas-breadcrumb-view" class="crumb-view">Assistant Chat</span>
-            <span class="crumb-sep chat-only-crumb">/</span>
-            <span id="active-chat-title" class="active-chat-title chat-only-crumb" title="Active conversation title">New Conversation</span>
+      <!-- Universal Header -->
+      <header class="canvas-header">
+        <div class="header-left">
+          <div class="header-breadcrumbs">
+            <span>FRIDAY</span>
+            <span class="sep">/</span>
+            <span id="header-view-title" class="view-name">ASSISTANT CHAT</span>
+            <span class="sep">/</span>
+            <span id="header-sub-title" style="color: var(--color-ink-muted); font-size: 12px;">Active</span>
           </div>
-
-          <!-- Quick Navigation Pills for instant 1-click view switching -->
-          <nav class="canvas-nav-pills" aria-label="Quick View Switcher">
-            <button class="canvas-pill active" data-view="chat" title="Assistant Chat (⌘1)">Chat</button>
-            <button class="canvas-pill" data-view="voice" title="Voice Mode (⌘2)">Voice</button>
-            <button class="canvas-pill" data-view="translate" title="Live Translator (⌘3)">Translate</button>
-            <button class="canvas-pill" data-view="tasks" title="Email & Tasks (⌘4)">Tasks</button>
-            <button class="canvas-pill" data-view="dashboard" title="Dashboard (⌘5)">Dashboard</button>
-          </nav>
         </div>
 
-        <div class="top-bar-right">
-          <!-- Chat-Specific Actions (visible when in Chat view) -->
-          <div id="chat-header-actions" class="chat-header-actions">
-            <!-- Interactive Model Selector Popover (Claude/ChatGPT style) -->
-            <div class="model-selector-wrapper" id="model-selector-wrapper">
-              <button id="btn-model-selector" class="model-selector-btn" title="Switch AI Model">
-                <span class="model-sparkle">✦</span>
-                <span class="model-name" id="active-model-name">GO 1.0</span>
-                <span class="model-tag" id="active-model-tag">Distilled Edge</span>
-                <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              
-              <!-- Dropdown Menu -->
-              <div class="model-dropdown-menu glass-card hidden" id="model-dropdown-menu">
-                <div class="dropdown-header">
-                  <span>ACTIVE LOCAL ENGINE</span>
-                  <span class="engine-indicator">Ollama Metal</span>
-                </div>
-                <div class="model-options-list">
-                  <div class="model-option active" data-model="go1.0">
-                    <div class="option-icon-box primary">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </div>
-                    <div class="option-info">
-                      <div class="option-title-row">
-                        <span class="option-name">GO 1.0 (goo1)</span>
-                        <span class="option-pill-badge best">Distilled Edge</span>
-                      </div>
-                      <p class="option-desc">Google Gemma 2 2B student fine-tuned for emails, translation, analysis & local tools.</p>
-                      <div class="option-meta">
-                        <span>1.59 GB</span> • <span>Q4_K_M</span> • <span>2048 ctx</span> • <span class="speed-meta">~55 tok/s</span>
-                      </div>
-                    </div>
-                    <span class="option-check">✓</span>
-                  </div>
+        <div class="header-right">
+          <span id="privacy-badge" class="brutal-badge local" title="Requests processed on local device hardware">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            LOCAL ONLY
+          </span>
 
-                  <div class="model-option" data-model="gemma2:2b">
-                    <div class="option-icon-box accent">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
-                    </div>
-                    <div class="option-info">
-                      <div class="option-title-row">
-                        <span class="option-name">Gemma 2 (2B Base)</span>
-                        <span class="option-pill-badge">Base Instruct</span>
-                      </div>
-                      <p class="option-desc">Official Google DeepMind open foundation model.</p>
-                      <div class="option-meta">
-                        <span>1.6 GB</span> • <span>4-bit</span> • <span>4096 ctx</span>
-                      </div>
-                    </div>
-                    <span class="option-check">✓</span>
-                  </div>
-
-                  <div class="model-option" data-model="llama3.2:3b">
-                    <div class="option-icon-box info">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="4" rx="2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>
-                    </div>
-                    <div class="option-info">
-                      <div class="option-title-row">
-                        <span class="option-name">Llama 3.2 (3B)</span>
-                        <span class="option-pill-badge">Meta Open</span>
-                      </div>
-                      <p class="option-desc">Meta lightweight on-device general assistant model.</p>
-                      <div class="option-meta">
-                        <span>2.0 GB</span> • <span>4-bit</span> • <span>8192 ctx</span>
-                      </div>
-                    </div>
-                    <span class="option-check">✓</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button id="btn-export-chat" class="btn-icon" title="Export Session (Markdown)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </button>
-            <button id="btn-rename-chat" class="btn-icon" title="Rename Session">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-            </button>
-            <button id="btn-delete-chat" class="btn-icon danger" title="Delete Session">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
-
-          <!-- Global Controls -->
-          <button id="btn-open-shortcuts" class="btn-icon" title="Keyboard Shortcuts (?)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <!-- Theme Switcher -->
+          <button id="btn-toggle-theme" class="theme-switch-btn" title="Toggle Theme (Dark / Light / System)">
+            <svg id="theme-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <span id="theme-mode-label">THEME</span>
           </button>
-          <button id="btn-theme-toggle-top" class="btn-theme-toggle-top" title="Toggle Theme (Light / Dark)">
-            <span class="theme-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-            <span class="theme-label">DARK</span>
-          </button>
-          <div id="status-pill-top" class="status-indicator online">
-            <span class="status-dot"></span>
-            <span id="status-label-top">ONLINE</span>
-          </div>
         </div>
       </header>
 
-      <!-- ===================================================================
-           VIEW 1: ASSISTANT CHAT VIEW (DEFAULT)
-           =================================================================== -->
-      <div id="view-chat" class="view-panel active">
+      <!-- ====================================================================
+           VIEW 1: ASSISTANT CHAT (#chat)
+           ==================================================================== -->
+      <section id="view-chat" class="view-panel active">
+        <div id="chat-messages" class="chat-messages-container" aria-live="polite">
+          <!-- Messages rendered here -->
+        </div>
 
-        <!-- Chat Messages Area -->
-        <div id="chat-stream-area" class="chat-stream-scroll">
-          <!-- First-run heroic intro card -->
-          <div id="chat-welcome-card" class="welcome-hero-card glass-panel">
-            <div class="hero-orb-symbol" title="FRIDAY">
-              <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
-                <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
-                <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
-              </svg>
-            </div>
-            <h2>What can I help you with today?</h2>
-            <p class="hero-description">Your personal AI assistant running locally on Apple Silicon. Powered by Google Gemma 2 & GO 1.0 with live tools, memory, and fast private inference.</p>
-            
-            <div class="first-run-checklist">
-              <div class="chk-item"><span class="chk-icon">✓</span> Local Ollama Engine</div>
-              <div class="chk-item"><span class="chk-icon">✓</span> Long-Term Memory (SQLite)</div>
-              <div class="chk-item"><span class="chk-icon">✓</span> Active Tool Plugins</div>
-              <div class="chk-item"><span class="chk-icon">✓</span> 100% On-Device Privacy</div>
+        <div class="chat-composer-dock">
+          <div class="composer-input-row">
+            <textarea id="chat-input" class="brutal-textarea composer-textarea" placeholder="Ask FRIDAY or command local tools (e.g. 'check battery', 'calculate 2^16', 'search files')..." rows="2"></textarea>
+            <button id="btn-send-message" class="btn-brutal btn-brutal-primary" style="height: 52px; padding: 0 22px;">
+              <span>SEND</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+          </div>
+          <div class="composer-actions">
+            <span>Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for newline</span>
+            <button id="btn-cancel-gen" class="btn-brutal btn-brutal-secondary" style="padding: 4px 8px; font-size: 11px; display: none;">CANCEL</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: VOICE MODE (#voice)
+           ==================================================================== -->
+      <section id="view-voice" class="view-panel">
+        <div class="voice-console-wrap">
+          <div class="voice-status-banner">
+            <span class="voice-state-tag" id="voice-state-label" data-state="READY">READY</span>
+            <span class="brutal-badge local">ON-DEVICE STT & NEURAL TTS</span>
+          </div>
+
+          <div class="voice-waveform-box">
+            <canvas id="voice-waveform-canvas" width="600" height="50"></canvas>
+          </div>
+
+          <!-- Massive Push-To-Talk Button -->
+          <button id="btn-push-to-talk" class="btn-push-to-talk" title="Click or hold to speak">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            <span id="ptt-label">HOLD OR CLICK TO TALK</span>
+          </button>
+
+          <div class="voice-caption-box">
+            <div style="font-size: 11px; font-weight: 800; color: var(--color-ink-muted); margin-bottom: 4px; text-transform: uppercase;">Live Captions / Transcript</div>
+            <div id="voice-live-caption">Ready for vocal prompt. Press and hold to speak.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: LIVE TRANSLATOR (#translate)
+           ==================================================================== -->
+      <section id="view-translate" class="view-panel">
+        <div class="brutal-card" style="width: 100%;">
+          <div class="brutal-card-header">
+            <span class="brutal-card-title">Live Multilingual Translation</span>
+            <span class="brutal-badge local">LOCAL INFERENCE</span>
+          </div>
+
+          <div class="translate-controls-grid">
+            <select id="trans-source-lang" class="brutal-select">
+              <option value="Auto-Detect">Auto-Detect Source</option>
+              <option value="English">English</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Hindi">Hindi</option>
+            </select>
+
+            <button id="btn-trans-swap" class="btn-brutal btn-brutal-secondary btn-swap-languages" title="Swap languages">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7 16-4-4 4-4"/><path d="M3 12h18"/><path d="m17 8 4 4-4 4"/></svg>
+            </button>
+
+            <select id="trans-target-lang" class="brutal-select">
+              <option value="Spanish">Spanish</option>
+              <option value="English">English</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Hindi">Hindi</option>
+            </select>
+          </div>
+
+          <div class="translate-boxes-grid">
+            <div class="translate-text-card">
+              <textarea id="trans-source-input" class="brutal-textarea" rows="7" placeholder="Type or paste text to translate..."></textarea>
+              <div class="char-counter"><span id="trans-char-count">0</span> characters</div>
             </div>
 
-            <div class="hero-quick-prompts">
-              <span class="quick-title">Suggested Prompts</span>
-              <div class="quick-chips-grid">
-                <button class="quick-chip" data-text="Calculate 125 * 48">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-                  <span>Calculate 125 * 48</span>
-                </button>
-                <button class="quick-chip" data-text="What is my laptop battery status and RAM?">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></svg>
-                  <span>Mac Battery & RAM Status</span>
-                </button>
-                <button class="quick-chip" data-text="Remember that my project is called FRIDAY and I am presenting it at the expo.">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-                  <span>Remember project details</span>
-                </button>
-                <button class="quick-chip" data-text="Search the web for what is Google Gemma 2">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  <span>Search web for Gemma 2</span>
-                </button>
+            <div class="translate-text-card">
+              <textarea id="trans-output" class="brutal-textarea" rows="7" placeholder="Translation will appear here..." readonly></textarea>
+              <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="btn-trans-copy" class="btn-brutal btn-brutal-secondary" style="padding: 6px 12px; font-size: 11px;">COPY</button>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Live Tool Activity Pill -->
-        <div id="chat-tool-activity" class="tool-activity-strip hidden">
-          <div class="tool-spinner-ring"></div>
-          <span id="chat-tool-activity-label">Executing tool...</span>
-        </div>
-
-        <!-- Bottom Chat Input Dock -->
-        <div class="chat-dock-container">
-          <!-- Quick Action Task Pills -->
-          <div class="chat-quick-actions" id="chat-quick-actions">
-            <button class="action-chip" data-task="email" title="Draft an Email">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <span>Draft Email</span>
-            </button>
-            <button class="action-chip" data-task="translate" title="Live Translation Studio">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span>Live Translate</span>
-            </button>
-            <button class="action-chip" id="chip-translate-draft" title="Translate Draft in Input Box">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span>Translate Draft</span>
-            </button>
-            <button class="action-chip" data-task="summarize" title="Summarize Text">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
-              <span>Summarize</span>
-            </button>
-            <button class="action-chip" data-task="grammar" title="Polish & Fix Grammar">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-              <span>Fix Grammar</span>
-            </button>
-            <button class="action-chip" data-task="system" title="Mac System Status">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></svg>
-              <span>System Status</span>
-            </button>
-            <button class="action-chip" data-task="calc" title="Calculator">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-              <span>Calculate</span>
-            </button>
-          </div>
-          <div class="chat-dock glass-panel">
-            <button id="btn-voice-input" class="btn-dock-mic" title="Voice Input">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            </button>
-            <textarea id="chat-input" placeholder="Message FRIDAY... (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
-            <button id="btn-send-message" class="btn-dock-send" title="Send Message (Enter)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div id="trans-error-banner" style="color: var(--color-danger); font-weight: 800; font-size: 12px; display: none;"></div>
+            <button id="btn-execute-translate" class="btn-brutal btn-brutal-primary">
+              <span>TRANSLATE TEXT</span>
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- ===================================================================
-           VIEW 2: DEDICATED VOICE MODE VIEW
-           =================================================================== -->
-      <div id="view-voice" class="view-panel">
-        <div class="voice-mode-container glass-panel">
-          <div class="voice-top-row">
-            <div class="voice-top-left">
-              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Back to Chat</span>
-              </button>
-              <span class="voice-title">VOCAL INTERFACE</span>
-            </div>
-            <button id="btn-exit-voice" class="btn-ghost-sm" data-to="chat">Return (Esc)</button>
-          </div>
-
-          <!-- Central Reactive Visualizer Orb -->
-          <div class="voice-orb-stage">
-            <div id="central-voice-orb" class="central-voice-orb online" title="Click to speak / interrupt">
-              <div class="orb-ring ring-1"></div>
-              <div class="orb-ring ring-2"></div>
-              <div class="orb-core">
-                <span id="voice-orb-icon">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                </span>
-              </div>
-            </div>
-            
-            <!-- Real-time audio-reactive waveform -->
-            <canvas id="voice-waveform-canvas" class="voice-waveform-canvas" width="360" height="60"></canvas>
-
-            <div id="voice-state-banner" class="voice-state-text">STANDBY — READY</div>
-            
-            <!-- Live Streaming Sentence Caption -->
-            <div id="voice-live-caption" class="voice-live-caption"></div>
-
-            <div class="voice-controls-row">
-              <button id="btn-voice-interrupt" class="btn-ghost-sm voice-interrupt-btn hidden" title="Interrupt FRIDAY">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                <span>Interrupt (Space)</span>
-              </button>
-              <label class="voice-continuous-toggle" title="Continuous turn-taking without clicking">
-                <input type="checkbox" id="chk-continuous-voice" checked />
-                <span>Continuous Conversation</span>
-              </label>
-            </div>
-
-            <p class="voice-hint">Click the orb or press <kbd>Space</kbd> to talk. Barge in anytime while FRIDAY speaks.</p>
-          </div>
-
-          <!-- Voice Transcript Feed -->
-          <div class="voice-transcript-feed glass-panel">
-            <div class="transcript-header">Live Voice Transcript</div>
-            <div id="voice-transcript-content" class="transcript-content">
-              <p class="placeholder-msg">Say something like: <em>"FRIDAY, what is the weather in Tokyo?"</em> or <em>"Calculate 450 divided by 15"</em>.</p>
-            </div>
-          </div>
+      <!-- ====================================================================
+           VIEW 4: EMAIL & TASKS (#tasks)
+           ==================================================================== -->
+      <section id="view-tasks" class="view-panel">
+        <div class="tasks-tabs-row">
+          <button class="tab-btn-brutal active" data-task-tab="email">DRAFT EMAIL</button>
+          <button class="tab-btn-brutal" data-task-tab="analyze">ANALYZE TEXT</button>
         </div>
-      </div>
 
-      <!-- ===================================================================
-           VIEW: LIVE TRANSLATOR (GO 1.0)
-           =================================================================== -->
-      <div id="view-translate" class="view-panel">
-        <div class="translate-container glass-panel">
-          <!-- Top Bar -->
-          <div class="translate-top-bar">
-            <div class="translate-title-group">
-              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Back to Chat</span>
-              </button>
+        <!-- Tab 1: Draft Email -->
+        <div id="pane-task-email" class="tasks-pane active">
+          <div class="brutal-card">
+            <div class="brutal-card-header">
+              <span class="brutal-card-title">Email Configuration</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
               <div>
-                <h2>GO 1.0 Live Translator</h2>
-                <p class="translate-subtitle">Real-time multilingual neural translation powered by custom Gemma 2 2B</p>
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Recipient / Name</label>
+                <input id="email-recipient" class="brutal-input" type="text" placeholder="e.g. Alex (Engineering Lead)">
               </div>
-            </div>
-            <div class="translate-top-controls">
-              <div class="style-select-wrap">
-                <label for="trans-style-select">Tone / Style:</label>
-                <select id="trans-style-select" class="custom-select-sm">
-                  <option value="Natural / Conversational" selected>Natural / Conversational</option>
-                  <option value="Formal / Business">Formal / Business</option>
-                  <option value="Casual / Colloquial">Casual / Colloquial</option>
-                  <option value="Technical / Precise">Technical / Precise</option>
+              <div>
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Tone</label>
+                <select id="email-tone" class="brutal-select">
+                  <option value="Professional">Professional</option>
+                  <option value="Direct">Direct & Concise</option>
+                  <option value="Casual">Casual & Friendly</option>
+                  <option value="Polite">Polite & Warm</option>
                 </select>
               </div>
-              <label class="auto-trans-toggle" title="Automatically translate when typing stops">
-                <input type="checkbox" id="trans-auto-check" checked>
-                <span>Live Auto-Translate</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Dual-Pane Translation Grid -->
-          <div class="translate-grid">
-            <!-- Left Pane: Source Text -->
-            <div class="translate-card source-card">
-              <div class="card-header-bar">
-                <div class="lang-selector-group">
-                  <label for="trans-source-lang">Source:</label>
-                  <select id="trans-source-lang" class="custom-select-sm">
-                    <option value="Auto-Detect" selected>Auto-Detect Language</option>
-                    <option value="English">English</option>
-                    <option value="Spanish">Spanish (Español)</option>
-                    <option value="French">French (Français)</option>
-                    <option value="German">German (Deutsch)</option>
-                    <option value="Hindi">Hindi (हिंदी)</option>
-                    <option value="Japanese">Japanese (日本語)</option>
-                    <option value="Chinese">Chinese (Mandarin)</option>
-                    <option value="Italian">Italian (Italiano)</option>
-                    <option value="Portuguese">Portuguese (Português)</option>
-                    <option value="Russian">Russian (Русский)</option>
-                    <option value="Arabic">Arabic (العربية)</option>
-                    <option value="Korean">Korean (한국어)</option>
-                  </select>
-                  <span id="trans-detected-badge" class="detected-badge hidden">Detected: English</span>
-                </div>
-                <div class="card-tools">
-                  <button id="btn-trans-mic" class="tool-btn" title="Dictate with Microphone">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                  </button>
-                  <button id="btn-trans-clear" class="tool-btn" title="Clear Text">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <textarea id="trans-source-input" class="translate-textarea" placeholder="Type, paste, or speak text to translate..."></textarea>
-
-              <div class="card-footer-bar">
-                <div class="char-stats">
-                  <span id="trans-source-chars">0 characters</span> &bull; <span id="trans-source-words">0 words</span>
-                </div>
-                <div class="quick-phrase-strip">
-                  <span class="phrase-lbl">Samples:</span>
-                  <button class="phrase-chip" data-phrase="Hello, thank you for reaching out. Let's schedule a meeting for Friday.">Meeting</button>
-                  <button class="phrase-chip" data-phrase="Could you please review the attached project proposal by tomorrow?">Proposal</button>
-                  <button class="phrase-chip" data-phrase="Artificial intelligence empowers developers to build incredible tools.">AI Tech</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Middle Action Divider -->
-            <div class="translate-middle-actions">
-              <button id="btn-trans-swap" class="btn-swap-lang" title="Swap Source & Target Languages">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m8 3 4 8 5-5M16 21l-4-8-5 5"/></svg>
-              </button>
-              <button id="btn-trans-execute" class="btn-primary-glow trans-go-btn" title="Translate Now (⌘Enter)">
-                <span class="btn-spinner hidden" id="trans-spinner"></span>
-                <span>Translate</span>
-                <kbd>↵</kbd>
-              </button>
-            </div>
-
-            <!-- Right Pane: Target Output -->
-            <div class="translate-card target-card">
-              <div class="card-header-bar">
-                <div class="lang-selector-group">
-                  <label for="trans-target-lang">Target:</label>
-                  <select id="trans-target-lang" class="custom-select-sm">
-                    <option value="Spanish" selected>Spanish (Español)</option>
-                    <option value="French">French (Français)</option>
-                    <option value="German">German (Deutsch)</option>
-                    <option value="Hindi">Hindi (हिंदी)</option>
-                    <option value="Japanese">Japanese (日本語)</option>
-                    <option value="Chinese">Chinese (Mandarin)</option>
-                    <option value="Italian">Italian (Italiano)</option>
-                    <option value="Portuguese">Portuguese (Português)</option>
-                    <option value="Russian">Russian (Русский)</option>
-                    <option value="Arabic">Arabic (العربية)</option>
-                    <option value="Korean">Korean (한국어)</option>
-                    <option value="English">English</option>
-                  </select>
-                </div>
-                <div class="card-tools">
-                  <button id="btn-trans-speak" class="tool-btn" title="Listen Aloud (Speech Synthesis)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-                  </button>
-                  <button id="btn-trans-copy" class="tool-btn" title="Copy Translation">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  </button>
-                  <span id="trans-copy-toast" class="copy-toast hidden">Copied!</span>
-                </div>
-              </div>
-
-              <div id="trans-target-output" class="translate-output-display" tabindex="0">
-                <span class="trans-placeholder">Translation will appear here in real-time...</span>
-              </div>
-
-              <div class="card-footer-bar">
-                <div class="char-stats">
-                  <span id="trans-target-chars">0 characters</span> &bull; <span id="trans-target-words">0 words</span>
-                </div>
-                <div class="target-footer-actions">
-                  <button id="btn-trans-send-chat" class="tool-btn-pill" title="Send translation into active chat">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    <span>Insert to Chat</span>
-                  </button>
-                  <div id="trans-status-tag" class="model-tag">GO 1.0 Neural Engine</div>
-                </div>
-              </div>
-
-              <!-- Contextual Nuance Notes -->
-              <div id="trans-nuance-card" class="nuance-notes-card hidden">
-                <div class="nuance-header">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                  <span>Linguistic Nuance & Notes</span>
-                </div>
-                <p id="trans-nuance-text" class="nuance-body"></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================================================================
-           VIEW: EMAIL & BASIC TASKS STUDIO (GO 1.0)
-           =================================================================== -->
-      <div id="view-tasks" class="view-panel">
-        <div class="tasks-studio-container glass-panel">
-          <!-- Top Bar -->
-          <div class="tasks-top-bar">
-            <div class="tasks-title-group">
-              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Back to Chat</span>
-              </button>
               <div>
-                <h2>GO 1.0 Task Studio</h2>
-                <p class="tasks-subtitle">Automate everyday LLM workflows: structured emails, executive summaries & text polish</p>
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Key Points</label>
+                <textarea id="email-points" class="brutal-textarea" rows="4" placeholder="Enter main points to cover in the draft..."></textarea>
               </div>
-            </div>
-            <!-- Sub-tab Switcher -->
-            <div class="tasks-subtab-bar">
-              <button class="subtab-btn active" data-subtab="email">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                <span>Email Drafter</span>
-              </button>
-              <button class="subtab-btn" data-subtab="analyze">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
-                <span>Text Analysis & Polish</span>
-              </button>
+              <button id="btn-generate-email" class="btn-brutal btn-brutal-primary">GENERATE DRAFT</button>
             </div>
           </div>
 
-          <!-- Sub-View 1: Email Drafter -->
-          <div id="subtab-email-content" class="subtab-content active">
-            <div class="email-drafter-grid">
-              <!-- Left Form -->
-              <div class="task-form-card">
-                <div class="form-section-title">Email Configuration</div>
-
-                <!-- Template Presets -->
-                <div class="preset-chips-wrap">
-                  <span class="preset-label">Templates:</span>
-                  <button class="preset-chip active" data-preset="follow_up">Business Follow-up</button>
-                  <button class="preset-chip" data-preset="proposal">Project Proposal</button>
-                  <button class="preset-chip" data-preset="reschedule">Reschedule Call</button>
-                  <button class="preset-chip" data-preset="extension">Deadline Extension</button>
-                  <button class="preset-chip" data-preset="thank_you">Interview Thank-You</button>
-                </div>
-
-                <div class="task-form-fields">
-                  <div class="input-row">
-                    <div class="form-group-sm">
-                      <label for="email-recipient">Recipient Name / Title:</label>
-                      <input type="text" id="email-recipient" class="custom-input-sm" value="Alex Chen (Engineering Lead)" placeholder="e.g. Hiring Manager, Client, Dr. Smith">
-                    </div>
-                    <div class="form-group-sm">
-                      <label for="email-tone">Tone:</label>
-                      <select id="email-tone" class="custom-select-sm">
-                        <option value="Professional" selected>Professional & Courteous</option>
-                        <option value="Executive">Executive & Direct</option>
-                        <option value="Friendly">Friendly & Collaborative</option>
-                        <option value="Persuasive">Persuasive Pitch</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="form-group-sm">
-                    <label for="email-points">Key Points & Context:</label>
-                    <textarea id="email-points" class="custom-textarea-sm" rows="5" placeholder="List key points...">Thank them for Tuesday's demo of the local AI assistant. Confirm that our performance testing passed with 60 tok/sec on Apple Silicon. Propose a brief 20-minute catch-up on Friday at 3 PM.</textarea>
-                  </div>
-
-                  <button id="btn-generate-email" class="btn-primary-glow btn-wide">
-                    <span class="btn-spinner hidden" id="email-spinner"></span>
-                    <span>Generate Structured Email</span>
-                    <kbd>⌘↵</kbd>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Right Email Preview -->
-              <div class="task-result-card">
-                <div class="result-header-bar">
-                  <span class="result-title">Email Preview</span>
-                  <div class="result-actions">
-                    <button id="btn-email-copy" class="btn-ghost-xs" title="Copy to Clipboard">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                      <span>Copy Email</span>
-                    </button>
-                    <button id="btn-email-to-chat" class="btn-ghost-xs" title="Send to Chat">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                      <span>Open in Chat</span>
-                    </button>
-                    <button id="btn-email-speak" class="btn-ghost-xs" title="Read Aloud">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                      <span>Listen</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="email-preview-paper">
-                  <div class="email-header-fields">
-                    <div class="email-row"><span class="email-meta-lbl">Subject:</span> <strong id="preview-email-subject" class="email-meta-val">Awaiting generation...</strong></div>
-                    <div class="email-row"><span class="email-meta-lbl">To:</span> <span id="preview-email-to" class="email-meta-val">Alex Chen (Engineering Lead)</span></div>
-                  </div>
-                  <div class="email-divider"></div>
-                  <div id="preview-email-body" class="email-body-content">
-                    Click <strong>"Generate Structured Email"</strong> to compose an executive-ready draft.
-                  </div>
-                </div>
-              </div>
+          <div class="brutal-card">
+            <div class="brutal-card-header">
+              <span class="brutal-card-title">Generated Email Preview</span>
+              <span class="brutal-badge local">SAFE PREVIEW</span>
             </div>
-          </div>
-
-          <!-- Sub-View 2: Text Analysis & Polish -->
-          <div id="subtab-analyze-content" class="subtab-content">
-            <div class="analysis-grid">
-              <!-- Left Form -->
-              <div class="task-form-card">
-                <div class="form-section-title">Select Text Transformation</div>
-
-                <div class="analysis-action-chips">
-                  <button class="analysis-chip active" data-action="summarize">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
-                    <span>Summarize (TL;DR)</span>
-                  </button>
-                  <button class="analysis-chip" data-action="extract_points">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                    <span>Extract Action Items</span>
-                  </button>
-                  <button class="analysis-chip" data-action="grammar_fix">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-                    <span>Fix Grammar & Polish</span>
-                  </button>
-                  <button class="analysis-chip" data-action="tone_shift">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    <span>Executive Tone Shift</span>
-                  </button>
-                </div>
-
-                <div class="task-form-fields">
-                  <div class="form-group-sm">
-                    <label for="analyze-input">Input Document / Notes / Paragraph:</label>
-                    <textarea id="analyze-input" class="custom-textarea-sm" rows="7" placeholder="Paste notes, transcripts, or unpolished text here..."></textarea>
-                  </div>
-
-                  <div class="action-footer-row">
-                    <span id="analyze-input-stats" class="char-stats">0 words</span>
-                    <button id="btn-run-analysis" class="btn-primary-glow">
-                      <span class="btn-spinner hidden" id="analyze-spinner"></span>
-                      <span>Run Analysis</span>
-                      <kbd>⌘↵</kbd>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Right Result -->
-              <div class="task-result-card">
-                <div class="result-header-bar">
-                  <span class="result-title">Transformed Output</span>
-                  <div class="result-actions">
-                    <button id="btn-analyze-copy" class="btn-ghost-xs" title="Copy to Clipboard">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                      <span>Copy Output</span>
-                    </button>
-                    <button id="btn-analyze-speak" class="btn-ghost-xs" title="Read Aloud">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                      <span>Listen</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div id="analyze-result-display" class="analysis-output-display">
-                  <p class="trans-placeholder">Results will appear here with instant structural formatting...</p>
-                </div>
-              </div>
+            <textarea id="email-preview" class="brutal-textarea" rows="11" placeholder="Structured email preview will appear here..." readonly></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+              <button id="btn-copy-email" class="btn-brutal btn-brutal-secondary">COPY DRAFT</button>
+              <button id="btn-open-mail" class="btn-brutal btn-brutal-primary">OPEN MAIL CLIENT</button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ===================================================================
-           VIEW 3: SYSTEM DASHBOARD VIEW
-           =================================================================== -->
-      <div id="view-dashboard" class="view-panel">
-        <div class="dashboard-scroll glass-panel">
-          <div class="dash-header">
-            <div class="header-nav-left">
-              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Back to Chat</span>
-              </button>
-              <h2>System Telemetry & Health</h2>
+        <!-- Tab 2: Analyze Text -->
+        <div id="pane-task-analyze" class="tasks-pane">
+          <div class="brutal-card">
+            <div class="brutal-card-header">
+              <span class="brutal-card-title">Analysis Mode</span>
             </div>
-            <button id="btn-refresh-dash" class="btn-ghost-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-              <span>Refresh Metrics</span>
-            </button>
-          </div>
-
-          <!-- Status Grid -->
-          <div class="dash-grid">
-            <div class="dash-card">
-              <span class="dash-card-lbl">Local LLM Engine</span>
-              <div class="dash-card-val"><span class="status-dot green"></span> <span id="dash-llm-status">Connected</span></div>
-              <span class="dash-card-sub" id="dash-llm-model">Model: Gemma 2 (2.6B)</span>
-            </div>
-
-            <div class="dash-card">
-              <span class="dash-card-lbl">SQLite Database</span>
-              <div class="dash-card-val"><span class="status-dot green"></span> Connected</div>
-              <span class="dash-card-sub">WAL Mode Enabled (friday.db)</span>
-            </div>
-
-            <div class="dash-card">
-              <span class="dash-card-lbl">Dual-Tier Memory</span>
-              <div class="dash-card-val"><span class="status-dot green"></span> Active</div>
-              <span class="dash-card-sub" id="dash-mem-count">0 Persistent Memories</span>
-            </div>
-
-            <div class="dash-card">
-              <span class="dash-card-lbl">Tool Registry</span>
-              <div class="dash-card-val"><span class="status-dot green"></span> 6 Tools Active</div>
-              <span class="dash-card-sub">Search, Math, Time, Weather, Sys, File</span>
-            </div>
-          </div>
-
-          <!-- Activity Summary Counters -->
-          <div class="dash-section-title">Lifetime Session Activity</div>
-          <div class="dash-grid-stats">
-            <div class="stat-box">
-              <span class="stat-num" id="dash-stat-messages">0</span>
-              <span class="stat-name">Messages Exchanged</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-num" id="dash-stat-tools">0</span>
-              <span class="stat-name">Tool Invocations</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-num" id="dash-stat-memories">0</span>
-              <span class="stat-name">Memories Stored</span>
-            </div>
-          </div>
-
-          <!-- Hardware Telemetry Gauge Cards -->
-          <div class="dash-section-title">Laptop Hardware Telemetry</div>
-          <div class="hw-gauges-grid">
-            <div class="hw-gauge-card">
-              <div class="hw-gauge-title">Battery Level</div>
-              <div class="hw-gauge-big" id="dash-hw-batt">100%</div>
-              <span class="hw-gauge-sub" id="dash-hw-batt-status">AC Power Attached</span>
-            </div>
-            <div class="hw-gauge-card">
-              <div class="hw-gauge-title">Total RAM</div>
-              <div class="hw-gauge-big" id="dash-hw-ram">16.0 GB</div>
-              <span class="hw-gauge-sub" id="dash-hw-arch">Apple ARM64 Metal</span>
-            </div>
-            <div class="hw-gauge-card">
-              <div class="hw-gauge-title">Storage Free</div>
-              <div class="hw-gauge-big" id="dash-hw-disk">655 GB</div>
-              <span class="hw-gauge-sub">Root Volume</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================================================================
-           VIEW 5: SETTINGS VIEW
-           =================================================================== -->
-      <div id="view-settings" class="view-panel">
-        <div class="settings-container glass-panel">
-          <div class="settings-header">
-            <div class="header-nav-left">
-              <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Back to Chat</span>
-              </button>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
               <div>
-                <h2>System & Model Configuration</h2>
-                <p class="settings-desc">Runtime parameters are stored locally and take effect immediately.</p>
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Task Type</label>
+                <select id="analyze-task-type" class="brutal-select">
+                  <option value="summarize">Executive Summary</option>
+                  <option value="grammar">Grammar & Polish</option>
+                  <option value="action_items">Extract Action Items</option>
+                  <option value="tone">Tone & Sentiment Analysis</option>
+                </select>
               </div>
+              <div>
+                <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Source Content</label>
+                <textarea id="analyze-input" class="brutal-textarea" rows="8" placeholder="Paste report, notes, or message to analyze..."></textarea>
+              </div>
+              <button id="btn-run-analysis" class="btn-brutal btn-brutal-primary">RUN LOCAL ANALYSIS</button>
             </div>
           </div>
 
-          <form id="settings-form" class="settings-form">
-            <div class="form-group">
-              <label for="set-model">Local LLM Model</label>
-              <select id="set-model" class="custom-select">
-                <option value="go1.0" selected>GO 1.0 (goo1) — Custom Evolved Gemma 2 (Emails, Translation, Analysis)</option>
-                <option value="gemma2:2b">Google Gemma 2 (2B) — Base Foundation Model</option>
+          <div class="brutal-card">
+            <div class="brutal-card-header">
+              <span class="brutal-card-title">Analysis Output</span>
+            </div>
+            <textarea id="analyze-output" class="brutal-textarea" rows="12" placeholder="Analysis results will appear here..." readonly></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+              <button id="btn-copy-analysis" class="btn-brutal btn-brutal-secondary">COPY RESULT</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 5: DASHBOARD & RECENT ACTION LEDGER (#dashboard)
+           ==================================================================== -->
+      <section id="view-dashboard" class="view-panel">
+        <div class="telemetry-grid">
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>LOCAL LLM</span>
+              <span class="brutal-badge local">DEVICE</span>
+            </div>
+            <div id="dash-llm-status" class="telemetry-val">gemma2:2b</div>
+            <span style="font-size: 11px; color: var(--color-ink-muted);">Offline neural engine</span>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>MEMORY RECALL</span>
+              <span class="brutal-badge local">WAL DB</span>
+            </div>
+            <div id="dash-memory-count" class="telemetry-val">0</div>
+            <span style="font-size: 11px; color: var(--color-ink-muted);">Facts & Preferences stored</span>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>REGISTERED TOOLS</span>
+              <span class="brutal-badge local">ALLOWLIST</span>
+            </div>
+            <div id="dash-tools-count" class="telemetry-val">6</div>
+            <span style="font-size: 11px; color: var(--color-ink-muted);">AST, Weather, Hardware, Files</span>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>CORE LATENCY</span>
+              <span class="brutal-badge local">REAL-TIME</span>
+            </div>
+            <div id="dash-latency" class="telemetry-val">12ms</div>
+            <span style="font-size: 11px; color: var(--color-ink-muted);">FastAPI event loop response</span>
+          </div>
+        </div>
+
+        <!-- Interactive Recent Action Ledger -->
+        <div class="brutal-card">
+          <div class="brutal-card-header">
+            <div>
+              <span class="brutal-card-title">Recent Action Ledger</span>
+              <div style="font-size: 11px; color: var(--color-ink-muted); margin-top: 2px;">Audit trail of executed local and network actions with execution duration</div>
+            </div>
+            <button id="btn-clear-ledger" class="btn-brutal btn-brutal-secondary" style="padding: 4px 10px; font-size: 10px;">CLEAR LOG</button>
+          </div>
+
+          <div class="ledger-table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Tool Name</th>
+                  <th>Input Arguments</th>
+                  <th>Locality</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 6: SETTINGS & PERMISSION CENTER (#settings)
+           ==================================================================== -->
+      <section id="view-settings" class="view-panel">
+        <div class="brutal-card">
+          <div class="settings-section-title">THEME & INTERFACE</div>
+          <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <button class="btn-brutal btn-brutal-secondary" id="btn-set-dark">DARK THEME</button>
+            <button class="btn-brutal btn-brutal-secondary" id="btn-set-light">LIGHT THEME</button>
+            <button class="btn-brutal btn-brutal-secondary" id="btn-set-system">SYSTEM AUTO</button>
+          </div>
+
+          <div class="settings-section-title">MODEL PARAMETERS</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Active Model</label>
+              <select id="settings-model" class="brutal-select">
+                <option value="gemma2:2b">gemma2:2b (Fast Local)</option>
+                <option value="go1.0">go1.0 (FRIDAY Custom Neural)</option>
+                <option value="llama3.2">llama3.2 (Dense)</option>
               </select>
-              <span class="field-hint">Ollama runtime model tag</span>
             </div>
-
-            <div class="form-group">
-              <label for="set-temp">Temperature: <span id="set-temp-val">0.30</span></label>
-              <input type="range" id="set-temp" min="0.1" max="1.0" step="0.05" value="0.30" class="custom-range">
-              <span class="field-hint">Controls randomness. Lower values provide deterministic, accurate tool calls.</span>
-            </div>
-
-            <div class="form-group">
-              <label for="set-max-tokens">Max Output Tokens: <span id="set-tokens-val">512</span></label>
-              <input type="range" id="set-max-tokens" min="128" max="2048" step="64" value="512" class="custom-range">
-              <span class="field-hint">Maximum token count for assistant responses</span>
-            </div>
-
-            <div class="form-checkbox-group">
-              <label class="switch">
-                <input type="checkbox" id="set-memory" checked>
-                <span class="slider round"></span>
-              </label>
-              <div class="switch-info">
-                <span class="switch-title">Enable Long-Term Memory</span>
-                <span class="switch-desc">Persist user facts, preferences, and project context across sessions</span>
-              </div>
-            </div>
-
-            <div class="form-checkbox-group">
-              <label class="switch">
-                <input type="checkbox" id="set-voice" checked>
-                <span class="slider round"></span>
-              </label>
-              <div class="switch-info">
-                <span class="switch-title">Enable Vocal Response (TTS)</span>
-                <span class="switch-desc">Allow FRIDAY to speak responses aloud with free high-fidelity Neural TTS</span>
-              </div>
-            </div>
-
-            <div class="form-group" id="group-voice-select">
-              <label for="set-voice-persona">Neural Voice Persona</label>
-              <select id="set-voice-persona" class="custom-select">
-                <option value="aria" selected>FRIDAY Standard (Aria — Futuristic AI)</option>
-                <option value="sonia">JARVIS Style (Sonia — British Accent)</option>
-                <option value="jenny">Friendly Assistant (Jenny — Natural US)</option>
-                <option value="guy">Technical Male (Guy — Deep Tech)</option>
-                <option value="neerja">Indian English (Neerja)</option>
+            <div>
+              <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">Voice Persona</label>
+              <select id="settings-voice" class="brutal-select">
+                <option value="aria">FRIDAY Standard (Aria)</option>
+                <option value="sonia">JARVIS Style (Sonia)</option>
+                <option value="jenny">Friendly Assistant (Jenny)</option>
+                <option value="guy">Technical Specialist (Guy)</option>
               </select>
-              <span class="field-hint">Studio-grade free Neural TTS with automatic offline browser fallback</span>
-              <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
-                <button type="button" id="btn-test-voice" class="hud-btn glow-cyan" style="padding: 6px 14px; font-size: 0.75rem; gap: 6px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-                  <span>Test Selected Voice</span>
-                </button>
-                <span id="voice-test-feedback" style="font-size: 0.75rem; color: var(--accent-cyan);"></span>
-              </div>
             </div>
-
-            <div class="settings-actions">
-              <button type="button" id="btn-save-settings" class="btn-primary-glow">Save Settings</button>
-              <span id="settings-saved-feedback" class="feedback-saved hidden">✓ Settings saved successfully</span>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- ===================================================================
-           VIEW 6: ABOUT VIEW
-           =================================================================== -->
-      <div id="view-about" class="view-panel">
-        <div class="about-container glass-panel">
-          <div class="about-hero">
-            <div class="about-hero-left">
-              <div class="about-logo" title="FRIDAY">
-                <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
-                  <path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/>
-                  <circle cx="34" cy="35" r="3.5" fill="currentColor"/>
-                </svg>
-              </div>
-              <div>
-                <h2>FRIDAY</h2>
-                <p class="about-tagline">Personal Local AI Assistant</p>
-              </div>
-            </div>
-            <button class="btn-back-chat btn-ghost-sm" data-to="chat" title="Back to Chat (Esc)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              <span>Back to Chat</span>
-            </button>
           </div>
 
-          <div class="about-body">
-            <p>FRIDAY is an autonomous personal AI assistant built from the ground up for on-device local execution. Inspired by futuristic AI systems, it couples local open-weight language models with a deterministic backend orchestrator, pluggable tool suite, dual-tier memory, and responsive vocal interaction.</p>
-
-            <h3>Core Architectural Principles</h3>
-            <ul class="about-principles">
-              <li><strong>LLM = Intelligence</strong>: The language model reasons and decides intent.</li>
-              <li><strong>Backend = Control</strong>: Deterministic FastAPI modules control all system permissions.</li>
-              <li><strong>Tools = Actions</strong>: Pluggable tools perform verified actions (search, math, telemetry).</li>
-              <li><strong>Memory = Context</strong>: SQLite persistence retains facts across conversation boundaries.</li>
-              <li><strong>Frontend = Experience</strong>: Futuristic minimalist HUD engineered for presentation impact.</li>
-            </ul>
-
-            <h3>Technology Stack</h3>
-            <div class="tech-tags-grid">
-              <span class="tech-tag">FastAPI</span>
-              <span class="tech-tag">Python 3.14</span>
-              <span class="tech-tag">WebSockets</span>
-              <span class="tech-tag">SQLite (WAL)</span>
-              <span class="tech-tag">Ollama</span>
-              <span class="tech-tag">Google Gemma 2</span>
-              <span class="tech-tag">Web Speech API</span>
-              <span class="tech-tag">Apple Silicon MPS</span>
+          <div class="settings-section-title">PERMISSION CENTER</div>
+          <div class="permission-center-grid">
+            <div class="permission-card">
+              <div class="permission-info">
+                <h4>Microphone Access</h4>
+                <p>Required for local push-to-talk audio transcription. Audio is never stored or uploaded.</p>
+              </div>
+              <button id="btn-perm-mic" class="btn-brutal btn-brutal-primary" style="padding: 6px 12px; font-size: 11px;">GRANTED</button>
             </div>
 
-            <div class="about-footer">
-              <span>Created for College Project Expo &bull; Version 2.0.0</span>
+            <div class="permission-card">
+              <div class="permission-info">
+                <h4>Workspace File Inspection</h4>
+                <p>Confined strictly to project directory. Reading outside workspace is blocked.</p>
+              </div>
+              <button id="btn-perm-files" class="btn-brutal btn-brutal-primary" style="padding: 6px 12px; font-size: 11px;">ENABLED</button>
+            </div>
+
+            <div class="permission-card">
+              <div class="permission-info">
+                <h4>Contextual Screen Access</h4>
+                <p>Opt-in only. Zero silent background screen capture.</p>
+              </div>
+              <button id="btn-perm-screen" class="btn-brutal btn-brutal-secondary" style="padding: 6px 12px; font-size: 11px;">DISABLED</button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 7: ABOUT ARCHITECTURE (#about)
+           ==================================================================== -->
+      <section id="view-about" class="view-panel">
+        <div class="brutal-card">
+          <div class="brutal-card-header">
+            <span class="brutal-card-title">Architectural Principles & Boundaries</span>
+            <span class="brutal-badge local">VISIBLE INTELLIGENCE</span>
+          </div>
+
+          <p style="margin-bottom: 12px;">FRIDAY is designed as a **visible, controllable local assistant** rather than an opaque cloud daemon. Every capability has an explicit privacy boundary:</p>
+
+          <div class="about-ascii-box">
+┌────────────────────────────────────────────────────────────────────────┐
+│                   FRIDAY LOCAL INTELLIGENCE ARCHITECTURE               │
+├────────────────────────────────────────────────────────────────────────┤
+│ 1. LOCAL FOUNDATION MODEL: Ollama (gemma2:2b / go1.0) on Apple Silicon │
+│ 2. DETERMINISTIC TOOLS: Safe AST Math, Time, System Hardware, Files    │
+│ 3. PRIVACY GUARANTEE: Zero telemetry retention, strictly opt-in memory │
+│ 4. TRUST GATE: Dangerous actions require explicit modal approval       │
+└────────────────────────────────────────────────────────────────────────┘
+          </div>
+
+          <div style="margin-top: 16px; font-size: 13px; line-height: 1.6;">
+            <p><strong>• Push-To-Talk:</strong> Voice recognition in browser runs exclusively when you hold or press the talk button. No fake always-on background promises.</p>
+            <p><strong>• Safe Tools:</strong> Dangerous destructive operations are blocked or gated by an interactive confirmation prompt before execution.</p>
+            <p><strong>• Memory Inspection:</strong> Memories are stored in local SQLite WAL (`friday.db`). You can review, search, and delete facts anytime.</p>
+          </div>
+        </div>
+      </section>
 
     </main>
-  </div>
 
-  <!-- Mobile Bottom Navigation Bar (< 840px) -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
-    <button class="mob-nav-btn active" data-view="chat" title="Chat">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span>Chat</span>
-    </button>
-    <button class="mob-nav-btn" data-view="voice" title="Voice">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-      <span>Voice</span>
-    </button>
-    <button class="mob-nav-btn" data-view="translate" title="Translate">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      <span>Translate</span>
-    </button>
-    <button class="mob-nav-btn" data-view="tasks" title="Tasks">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-      <span>Tasks</span>
-    </button>
-    <button class="mob-nav-btn" id="btn-mob-drawer-toggle" title="Menu & More">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      <span>Menu</span>
-    </button>
-  </nav>
+    <!-- MOBILE 5-ITEM BOTTOM NAVIGATION -->
+    <div class="mobile-bottom-bar" aria-label="Mobile Navigation">
+      <nav>
+        <a href="#chat" class="mob-nav-link active" data-view="chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Chat</span>
+        </a>
+        <a href="#voice" class="mob-nav-link" data-view="voice">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          <span>Voice</span>
+        </a>
+        <a href="#translate" class="mob-nav-link" data-view="translate">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Trans</span>
+        </a>
+        <a href="#tasks" class="mob-nav-link" data-view="tasks">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <span>Tasks</span>
+        </a>
+        <a href="#dashboard" class="mob-nav-link" data-view="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="7" height="9" x="3" y="3"/><rect width="7" height="5" x="14" y="3"/><rect width="7" height="9" x="14" y="12"/><rect width="7" height="5" x="3" y="16"/></svg>
+          <span>Dash</span>
+        </a>
+      </nav>
+    </div>
 
-  <!-- Keyboard Shortcuts Cheat Sheet Modal (Neo-Brutalist) -->
-  <div id="shortcuts-modal" class="friday-modal-backdrop hidden">
-    <div class="friday-modal-card" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title">
-      <div class="friday-modal-header">
-        <div class="modal-title-group">
-          <span class="modal-sparkle">✦</span>
-          <h3 id="shortcuts-modal-title">Keyboard Shortcuts</h3>
-          <span class="modal-badge">SPEED HUD</span>
+    <!-- SENSITIVE TOOL CONFIRMATION MODAL -->
+    <div id="modal-tool-confirm" class="modal-backdrop hidden">
+      <div class="modal-brutal-window">
+        <div class="modal-title">Action Approval Required</div>
+        <p id="modal-confirm-msg">The assistant requested execution of a system action:</p>
+        <div class="brutal-card" style="padding: 12px; background: var(--color-surface-subtle);">
+          <pre id="modal-confirm-details" class="font-mono" style="font-size: 12px;"></pre>
         </div>
-        <button id="btn-close-shortcuts" class="btn-icon-sm" title="Close (Esc)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-
-      <div class="shortcuts-modal-body">
-        <div class="shortcuts-section">
-          <div class="shortcuts-group-title">VIEW NAVIGATION</div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Assistant Chat</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>1</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Voice Mode</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>2</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Live Translator</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>3</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Task & Email Studio</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>4</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">System Dashboard</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>5</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">System Settings</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>6</kbd></div>
-          </div>
+        <div class="modal-actions-row">
+          <button id="btn-reject-action" class="btn-brutal btn-brutal-secondary">REJECT</button>
+          <button id="btn-approve-action" class="btn-brutal btn-brutal-primary">APPROVE ACTION</button>
         </div>
-
-        <div class="shortcuts-section">
-          <div class="shortcuts-group-title">CORE ACTIONS</div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">New Conversation</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>K</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Toggle Sidebar</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>B</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Focus Chat Input</span>
-            <div class="shortcut-keys"><kbd>⌘</kbd><kbd>/</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Return to Chat / Close Modal</span>
-            <div class="shortcut-keys"><kbd>Esc</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Push-to-Talk (in Voice View)</span>
-            <div class="shortcut-keys"><kbd>Space</kbd></div>
-          </div>
-          <div class="shortcuts-row">
-            <span class="shortcut-desc">Open this Shortcuts Cheat Sheet</span>
-            <div class="shortcut-keys"><kbd>?</kbd></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="friday-modal-footer">
-        <span>FRIDAY v2.0 • Press <kbd>Esc</kbd> to dismiss</span>
       </div>
     </div>
+
   </div>
 
-  <script src="app.js?v=4.0"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

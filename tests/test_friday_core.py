@@ -86,6 +86,10 @@ def test_tools():
         fm = FileManagerTool()
         bad_find = await fm.execute({"action": "find", "target": "test; rm -rf /"})
         assert "error" in bad_find.lower() or "invalid" in bad_find.lower()
+        blocked_read = await fm.execute({"action": "read", "target": "/etc/passwd"})
+        assert "access denied" in blocked_read.lower()
+        traversal_read = await fm.execute({"action": "read", "target": "../../sensitive.txt"})
+        assert "access denied" in traversal_read.lower()
 
         # Time Tool
         t_tool = TimeTool()

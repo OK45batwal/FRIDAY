@@ -1,575 +1,428 @@
-// ==========================================================================
-// FRIDAY — Local AI Assistant (Frontend Controller v2.0)
-// ==========================================================================
+/**
+ * FRIDAY — Local Intelligence Console (v2.5)
+ * Architecture: Hash Router, Yellow Brutalism Design System, Trust Ledger, and Permission Center.
+ */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // App Shell & Layout Elements
-  const appLayout = document.getElementById("app-layout");
-  const btnSidebarCollapse = document.getElementById("btn-sidebar-collapse");
-  const btnSidebarToggleCanvas = document.getElementById("btn-sidebar-toggle-canvas");
-  const sidebarBackdrop = document.getElementById("sidebar-backdrop");
-  const btnMobDrawerToggle = document.getElementById("btn-mob-drawer-toggle");
-  const canvasBreadcrumbView = document.getElementById("canvas-breadcrumb-view");
-  const canvasPills = document.querySelectorAll(".canvas-pill");
-  const mobNavBtns = document.querySelectorAll(".mob-nav-btn");
-  const chatHeaderActions = document.getElementById("chat-header-actions");
-  const chipTranslateDraft = document.getElementById("chip-translate-draft");
-  const btnTransSendChat = document.getElementById("btn-trans-send-chat");
-  const statusPillTop = document.getElementById("status-pill-top");
-  const statusLabelTop = document.getElementById("status-label-top");
+  "use strict";
 
-  // DOM Navigation & Views
-  const navItems = document.querySelectorAll(".nav-item");
-  const viewPanels = document.querySelectorAll(".view-panel");
-
-  // Status Indicator
-  const statusPill = document.getElementById("status-pill");
-  const statusLabel = document.getElementById("status-label");
-
-  // Mini Hardware Footer
-  const miniBatt = document.getElementById("mini-batt");
-  const miniRam = document.getElementById("mini-ram");
-  const miniDisk = document.getElementById("mini-disk");
-
-  // Conversations Elements
-  const btnNewChat = document.getElementById("btn-new-chat");
-  const convList = document.getElementById("conversations-list");
-  const convCountBadge = document.getElementById("conv-count-badge");
-  const activeChatTitle = document.getElementById("active-chat-title");
-  const activeModelBadge = document.getElementById("active-model-badge");
-  const activeModelName = document.getElementById("active-model-name");
-  const btnExportChat = document.getElementById("btn-export-chat");
-  const btnRenameChat = document.getElementById("btn-rename-chat");
-  const btnDeleteChat = document.getElementById("btn-delete-chat");
-  const btnOpenShortcuts = document.getElementById("btn-open-shortcuts");
-  const btnCloseShortcuts = document.getElementById("btn-close-shortcuts");
-  const shortcutsModal = document.getElementById("shortcuts-modal");
-
-  // Chat Elements
-  const chatStreamArea = document.getElementById("chat-stream-area");
-  const chatWelcomeCard = document.getElementById("chat-welcome-card");
-  const chatInput = document.getElementById("chat-input");
-  const btnSendMessage = document.getElementById("btn-send-message");
-  const btnVoiceInput = document.getElementById("btn-voice-input");
-  const toolActivityStrip = document.getElementById("chat-tool-activity");
-  const toolActivityLabel = document.getElementById("chat-tool-activity-label");
-
-  // Voice Mode Elements
-  const btnExitVoice = document.getElementById("btn-exit-voice");
-  const centralVoiceOrb = document.getElementById("central-voice-orb");
-  const voiceStateBanner = document.getElementById("voice-state-banner");
-  const voiceOrbIcon = document.getElementById("voice-orb-icon");
-  const voiceTranscriptContent = document.getElementById("voice-transcript-content");
-
-  // Dashboard Elements
-  const btnRefreshDash = document.getElementById("btn-refresh-dash");
-  const dashLlmStatus = document.getElementById("dash-llm-status");
-  const dashLlmModel = document.getElementById("dash-llm-model");
-  const dashMemCount = document.getElementById("dash-mem-count");
-  const dashStatMessages = document.getElementById("dash-stat-messages");
-  const dashStatTools = document.getElementById("dash-stat-tools");
-  const dashStatMemories = document.getElementById("dash-stat-memories");
-  const dashHwBatt = document.getElementById("dash-hw-batt");
-  const dashHwBattStatus = document.getElementById("dash-hw-batt-status");
-  const dashHwRam = document.getElementById("dash-hw-ram");
-  const dashHwArch = document.getElementById("dash-hw-arch");
-  const dashHwDisk = document.getElementById("dash-hw-disk");
-
-  // Expo Demo Elements
-  const insIntent = document.getElementById("ins-intent");
-  const insTool = document.getElementById("ins-tool");
-  const insArgs = document.getElementById("ins-args");
-  const insTime = document.getElementById("ins-time");
-  const insRawOutput = document.getElementById("ins-raw-output");
-
-  // Settings Elements
-  const setModel = document.getElementById("set-model");
-  const setTemp = document.getElementById("set-temp");
-  const setTempVal = document.getElementById("set-temp-val");
-  const setMaxTokens = document.getElementById("set-max-tokens");
-  const setTokensVal = document.getElementById("set-tokens-val");
-  const setMemory = document.getElementById("set-memory");
-  const setVoice = document.getElementById("set-voice");
-  const setVoicePersona = document.getElementById("set-voice-persona");
-  const btnTestVoice = document.getElementById("btn-test-voice");
-  const voiceTestFeedback = document.getElementById("voice-test-feedback");
-  const btnSaveSettings = document.getElementById("btn-save-settings");
-  const settingsSavedFeedback = document.getElementById("settings-saved-feedback");
-
-  // State
+  // ==========================================================================
+  // 1. Core State & Element Selectors
+  // ==========================================================================
   let currentConversationId = null;
-  let lastUserPrompt = "";
   let isGenerating = false;
+  let currentAbortController = null;
+  let voiceWs = null;
+  let voiceAudioQueue = [];
+  let isPlayingVoiceQueue = false;
+  let currentAudio = null;
   let isListening = false;
   let speechRecognition = null;
-  let ws = null;
+  let activeTheme = localStorage.getItem("friday_theme") || "dark";
 
-  // Toast notification helper
-  function showToast(text, duration = 2400) {
-    const existing = document.querySelectorAll(".friday-toast");
-    existing.forEach((t) => t.remove());
-
-    const toast = document.createElement("div");
-    toast.className = "friday-toast";
-    toast.innerHTML = `<span>✦</span><span>${escapeHtml(text)}</span>`;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(8px)";
-      setTimeout(() => toast.remove(), 250);
-    }, duration);
+  // Memory & Action Ledger (Stored in Session)
+  let actionLedger = [];
+  try {
+    const savedLedger = sessionStorage.getItem("friday_action_ledger");
+    if (savedLedger) actionLedger = JSON.parse(savedLedger);
+  } catch (e) {
+    actionLedger = [];
   }
 
-  // ==========================================================================
-  // 0. Neo-Brutalist Theme Controller (Dark & Light)
-  // ==========================================================================
-  const btnThemeToggle = document.getElementById("btn-theme-toggle");
-  const btnThemeToggleTop = document.getElementById("btn-theme-toggle-top");
-
-  function applyTheme(theme) {
-    document.body.setAttribute("data-theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("friday_theme", theme);
-
-    const isDark = theme === "dark";
-    const sunSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-    const moonSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    const iconHtml = isDark ? moonSvg : sunSvg;
-    const label = isDark ? "DARK" : "LIGHT";
-
-    if (btnThemeToggle) {
-      const iconEl = btnThemeToggle.querySelector(".theme-icon");
-      const labelEl = btnThemeToggle.querySelector(".theme-label");
-      if (iconEl) iconEl.innerHTML = iconHtml;
-      if (labelEl) labelEl.textContent = label;
-    }
-    if (btnThemeToggleTop) {
-      const iconEl = btnThemeToggleTop.querySelector(".theme-icon");
-      const labelEl = btnThemeToggleTop.querySelector(".theme-label");
-      if (iconEl) iconEl.innerHTML = iconHtml;
-      if (labelEl) labelEl.textContent = label;
-    }
-  }
-
-  function toggleTheme() {
-    const currentTheme = document.body.getAttribute("data-theme") || "dark";
-    const nextTheme = currentTheme === "dark" ? "light" : "dark";
-    applyTheme(nextTheme);
-  }
-
-  const initialTheme = localStorage.getItem("friday_theme") || "dark";
-  applyTheme(initialTheme);
-
-  if (btnThemeToggle) btnThemeToggle.addEventListener("click", toggleTheme);
-  if (btnThemeToggleTop) btnThemeToggleTop.addEventListener("click", toggleTheme);
-
-  // ==========================================================================
-  // 1. Navigation & View Switching & Layout Control
-  // ==========================================================================
-  const VIEW_TITLES = {
-    chat: "Assistant Chat",
-    voice: "Voice Mode",
-    translate: "Live Translator",
-    tasks: "Email & Tasks",
-    dashboard: "System Dashboard",
-    settings: "System Settings",
-    about: "About Architecture",
+  // Permissions State
+  const permissions = {
+    mic: localStorage.getItem("friday_perm_mic") !== "revoked",
+    files: localStorage.getItem("friday_perm_files") !== "disabled",
+    screen: localStorage.getItem("friday_perm_screen") === "enabled",
   };
 
-  function toggleSidebar(force) {
-    if (!appLayout) return;
-    const isMobile = window.innerWidth <= 840;
-    if (isMobile) {
-      const willOpen = typeof force === "boolean" ? force : !appLayout.classList.contains("sidebar-open");
-      appLayout.classList.toggle("sidebar-open", willOpen);
-    } else {
-      const willCollapse = typeof force === "boolean" ? force : !appLayout.classList.contains("sidebar-collapsed");
-      appLayout.classList.toggle("sidebar-collapsed", willCollapse);
-      try {
-        localStorage.setItem("friday_sidebar_collapsed", willCollapse ? "true" : "false");
-      } catch (e) {}
+  // Drafts State (Preserved across view transitions)
+  const drafts = {
+    chat: "",
+    transSource: "",
+    emailRecipient: "",
+    emailPoints: "",
+    analyzeInput: "",
+  };
+
+  // Elements
+  const headerViewTitle = document.getElementById("header-view-title");
+  const headerSubTitle = document.getElementById("header-sub-title");
+  const btnToggleTheme = document.getElementById("btn-toggle-theme");
+  const themeModeLabel = document.getElementById("theme-mode-label");
+  const btnSetDark = document.getElementById("btn-set-dark");
+  const btnSetLight = document.getElementById("btn-set-light");
+  const btnSetSystem = document.getElementById("btn-set-system");
+
+  // Rail & Navigation
+  const railBtns = document.querySelectorAll(".rail-btn");
+  const mobNavLinks = document.querySelectorAll(".mob-nav-link");
+  const viewPanels = document.querySelectorAll(".view-panel");
+
+  // Chat Elements
+  const chatMessages = document.getElementById("chat-messages");
+  const chatInput = document.getElementById("chat-input");
+  const btnSendMessage = document.getElementById("btn-send-message");
+  const btnCancelGen = document.getElementById("btn-cancel-gen");
+  const btnNewChat = document.getElementById("btn-new-chat");
+  const convList = document.getElementById("conversations-list");
+  const convSearchInput = document.getElementById("conv-search-input");
+  const convCountBadge = document.getElementById("conv-count-badge");
+
+  // Voice Elements
+  const btnPushToTalk = document.getElementById("btn-push-to-talk");
+  const pttLabel = document.getElementById("ptt-label");
+  const voiceStateLabel = document.getElementById("voice-state-label");
+  const voiceLiveCaption = document.getElementById("voice-live-caption");
+  const voiceWaveformCanvas = document.getElementById("voice-waveform-canvas");
+
+  // Translate Elements
+  const transSourceLang = document.getElementById("trans-source-lang");
+  const transTargetLang = document.getElementById("trans-target-lang");
+  const btnTransSwap = document.getElementById("btn-trans-swap");
+  const transSourceInput = document.getElementById("trans-source-input");
+  const transOutput = document.getElementById("trans-output");
+  const transCharCount = document.getElementById("trans-char-count");
+  const btnExecuteTranslate = document.getElementById("btn-execute-translate");
+  const btnTransCopy = document.getElementById("btn-trans-copy");
+  const transErrorBanner = document.getElementById("trans-error-banner");
+
+  // Tasks Elements
+  const taskTabBtns = document.querySelectorAll(".tab-btn-brutal");
+  const paneTaskEmail = document.getElementById("pane-task-email");
+  const paneTaskAnalyze = document.getElementById("pane-task-analyze");
+  const emailRecipient = document.getElementById("email-recipient");
+  const emailTone = document.getElementById("email-tone");
+  const emailPoints = document.getElementById("email-points");
+  const btnGenerateEmail = document.getElementById("btn-generate-email");
+  const emailPreview = document.getElementById("email-preview");
+  const btnCopyEmail = document.getElementById("btn-copy-email");
+  const btnOpenMail = document.getElementById("btn-open-mail");
+  const analyzeTaskType = document.getElementById("analyze-task-type");
+  const analyzeInput = document.getElementById("analyze-input");
+  const btnRunAnalysis = document.getElementById("btn-run-analysis");
+  const analyzeOutput = document.getElementById("analyze-output");
+  const btnCopyAnalysis = document.getElementById("btn-copy-analysis");
+
+  // Dashboard & Ledger Elements
+  const dashLlmStatus = document.getElementById("dash-llm-status");
+  const dashMemoryCount = document.getElementById("dash-memory-count");
+  const dashToolsCount = document.getElementById("dash-tools-count");
+  const ledgerTableBody = document.getElementById("ledger-table-body");
+  const btnClearLedger = document.getElementById("btn-clear-ledger");
+
+  // Settings & Permissions Elements
+  const settingsModel = document.getElementById("settings-model");
+  const settingsVoice = document.getElementById("settings-voice");
+  const btnPermMic = document.getElementById("btn-perm-mic");
+  const btnPermFiles = document.getElementById("btn-perm-files");
+  const btnPermScreen = document.getElementById("btn-perm-screen");
+
+  // Modals
+  const modalToolConfirm = document.getElementById("modal-tool-confirm");
+  const modalConfirmDetails = document.getElementById("modal-confirm-details");
+  const btnApproveAction = document.getElementById("btn-approve-action");
+  const btnRejectAction = document.getElementById("btn-reject-action");
+  let pendingToolApprovalResolver = null;
+
+  // ==========================================================================
+  // 2. Hash Router Engine (#chat, #voice, #translate, #tasks, #dashboard, #settings, #about)
+  // ==========================================================================
+  const VIEW_TITLES = {
+    chat: "ASSISTANT CHAT",
+    voice: "VOICE MODE",
+    translate: "LIVE TRANSLATOR",
+    tasks: "EMAIL & TASKS",
+    dashboard: "INTELLIGENCE DASHBOARD",
+    settings: "SETTINGS & PERMISSIONS",
+    about: "ABOUT ARCHITECTURE",
+  };
+
+  function saveCurrentDrafts() {
+    if (chatInput) drafts.chat = chatInput.value;
+    if (transSourceInput) drafts.transSource = transSourceInput.value;
+    if (emailRecipient) drafts.emailRecipient = emailRecipient.value;
+    if (emailPoints) drafts.emailPoints = emailPoints.value;
+    if (analyzeInput) drafts.analyzeInput = analyzeInput.value;
+  }
+
+  function restoreDrafts() {
+    if (chatInput && drafts.chat) chatInput.value = drafts.chat;
+    if (transSourceInput && drafts.transSource) {
+      transSourceInput.value = drafts.transSource;
+      transCharCount.textContent = drafts.transSource.length;
     }
+    if (emailRecipient && drafts.emailRecipient) emailRecipient.value = drafts.emailRecipient;
+    if (emailPoints && drafts.emailPoints) emailPoints.value = drafts.emailPoints;
+    if (analyzeInput && drafts.analyzeInput) analyzeInput.value = drafts.analyzeInput;
   }
 
-  // Restore saved desktop collapse state
-  if (appLayout && window.innerWidth > 840) {
-    try {
-      if (localStorage.getItem("friday_sidebar_collapsed") === "true") {
-        appLayout.classList.add("sidebar-collapsed");
-      }
-    } catch (e) {}
-  }
+  function routeToView(viewName) {
+    saveCurrentDrafts();
+    const cleanView = (viewName || "chat").replace("#", "").toLowerCase();
+    const targetView = VIEW_TITLES[cleanView] ? cleanView : "chat";
 
-  if (btnSidebarCollapse) btnSidebarCollapse.addEventListener("click", () => toggleSidebar());
-  if (btnSidebarToggleCanvas) btnSidebarToggleCanvas.addEventListener("click", () => toggleSidebar());
-  if (btnMobDrawerToggle) btnMobDrawerToggle.addEventListener("click", () => toggleSidebar(true));
-  if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", () => toggleSidebar(false));
-
-  function switchView(viewName) {
-    navItems.forEach((btn) => {
-      btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
-    });
-    canvasPills.forEach((btn) => {
-      btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
-    });
-    mobNavBtns.forEach((btn) => {
-      btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
-    });
+    // Update Panes
     viewPanels.forEach((panel) => {
-      panel.classList.toggle("active", panel.id === `view-${viewName}`);
+      const isTarget = panel.id === `view-${targetView}`;
+      panel.classList.toggle("active", isTarget);
     });
 
-    if (canvasBreadcrumbView) {
-      canvasBreadcrumbView.textContent = VIEW_TITLES[viewName] || viewName.toUpperCase();
-    }
-
-    if (chatHeaderActions) {
-      chatHeaderActions.style.display = viewName === "chat" ? "flex" : "none";
-    }
-
-    document.querySelectorAll(".chat-only-crumb").forEach((el) => {
-      el.style.display = viewName === "chat" ? "inline" : "none";
+    // Update Nav Links (Desktop & Mobile)
+    railBtns.forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-view") === targetView);
+    });
+    mobNavLinks.forEach((link) => {
+      link.classList.toggle("active", link.getAttribute("data-view") === targetView);
     });
 
-    if (appLayout && window.innerWidth <= 840) {
-      appLayout.classList.remove("sidebar-open");
+    // Update Header Breadcrumbs
+    if (headerViewTitle) headerViewTitle.textContent = VIEW_TITLES[targetView];
+    if (headerSubTitle) {
+      headerSubTitle.textContent = targetView === "chat" && currentConversationId ? "Active Session" : "Ready";
     }
 
-    if (viewName === "dashboard") loadDashboardData();
-    if (viewName === "settings") loadSettings();
+    // Refresh view-specific dynamic data
+    if (targetView === "dashboard") loadDashboardData();
+    if (targetView === "settings") loadSettingsData();
+
+    restoreDrafts();
   }
 
-  navItems.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const view = btn.getAttribute("data-view");
-      if (view) switchView(view);
-    });
-  });
-
-  canvasPills.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const view = btn.getAttribute("data-view");
-      if (view) switchView(view);
-    });
-  });
-
-  mobNavBtns.forEach((btn) => {
-    if (btn.id === "btn-mob-drawer-toggle") return;
-    btn.addEventListener("click", () => {
-      const view = btn.getAttribute("data-view");
-      if (view) switchView(view);
-    });
-  });
-
-  // Back to Chat buttons across all panels
-  document.querySelectorAll(".btn-back-chat").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      switchView("chat");
-      chatInput.focus();
-    });
-  });
-
-  btnExitVoice.addEventListener("click", () => switchView("chat"));
-
-  // Shortcuts Modal Controllers
-  function openShortcutsModal() {
-    if (shortcutsModal) shortcutsModal.classList.remove("hidden");
-  }
-
-  function closeShortcutsModal() {
-    if (shortcutsModal) shortcutsModal.classList.add("hidden");
-  }
-
-  if (btnOpenShortcuts) btnOpenShortcuts.addEventListener("click", openShortcutsModal);
-  if (btnCloseShortcuts) btnCloseShortcuts.addEventListener("click", closeShortcutsModal);
-  if (shortcutsModal) {
-    shortcutsModal.addEventListener("click", (e) => {
-      if (e.target === shortcutsModal) closeShortcutsModal();
-    });
-  }
-
-  // Universal Keyboard Shortcuts (⌘1..6, ⌘B, ⌘K, ?, Escape)
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (shortcutsModal && !shortcutsModal.classList.contains("hidden")) {
-        closeShortcutsModal();
-        return;
-      }
-      if (appLayout && appLayout.classList.contains("sidebar-open")) {
-        appLayout.classList.remove("sidebar-open");
-        return;
-      }
-      switchView("chat");
-      chatInput.focus();
-      return;
-    }
-
-    // Open shortcuts cheat sheet on '?' when not inside an input/textarea
-    if (e.key === "?" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
-      e.preventDefault();
-      if (shortcutsModal && !shortcutsModal.classList.contains("hidden")) {
-        closeShortcutsModal();
-      } else {
-        openShortcutsModal();
-      }
-      return;
-    }
-
-    if (e.metaKey || e.ctrlKey) {
-      if (e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        toggleSidebar();
-      }
-      else if (e.key === "1") { e.preventDefault(); switchView("chat"); }
-      else if (e.key === "2") { e.preventDefault(); switchView("voice"); }
-      else if (e.key === "3") { e.preventDefault(); switchView("translate"); }
-      else if (e.key === "4") { e.preventDefault(); switchView("tasks"); }
-      else if (e.key === "5") { e.preventDefault(); switchView("dashboard"); }
-      else if (e.key === "6") { e.preventDefault(); switchView("settings"); }
-      else if (e.key.toLowerCase() === "t") { e.preventDefault(); switchView("translate"); }
-      else if (e.key.toLowerCase() === "e") { e.preventDefault(); switchView("tasks"); }
-      else if (e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        btnNewChat.click();
-      }
-    }
+  window.addEventListener("hashchange", () => {
+    routeToView(window.location.hash);
   });
 
   // ==========================================================================
-  // 2. State & Indicator Manager
+  // 3. Theme Engine (Yellow Brutalism: Dark / Light / System)
   // ==========================================================================
-  function setAssistantState(state) {
-    // states: ONLINE, LISTENING, THINKING, USING_TOOL, SPEAKING, ERROR
-    const normalized = state.toUpperCase().replace(" ", "_");
-    if (statusPill) statusPill.className = `status-indicator ${normalized.toLowerCase()}`;
-    if (statusLabel) statusLabel.textContent = normalized.replace("_", " ");
-    if (statusPillTop) statusPillTop.className = `status-indicator ${normalized.toLowerCase()}`;
-    if (statusLabelTop) statusLabelTop.textContent = normalized.replace("_", " ");
+  function applyTheme(themeName) {
+    activeTheme = themeName;
+    localStorage.setItem("friday_theme", themeName);
 
-    if (centralVoiceOrb) {
-      centralVoiceOrb.className = `central-voice-orb ${normalized.toLowerCase()}`;
-      voiceStateBanner.textContent = `${normalized.replace("_", " ")}...`;
-      if (normalized === "LISTENING") {
-        voiceOrbIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
-      } else if (normalized === "THINKING") {
-        voiceOrbIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
-      } else if (normalized === "SPEAKING") {
-        voiceOrbIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
-      } else if (normalized === "USING_TOOL") {
-        voiceOrbIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
-      } else {
-        voiceOrbIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
-      }
+    let effectiveTheme = themeName;
+    if (themeName === "system") {
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
+
+    document.documentElement.setAttribute("data-theme", effectiveTheme);
+    if (themeModeLabel) {
+      themeModeLabel.textContent = themeName.toUpperCase();
+    }
+
+    // Highlight button in settings
+    [btnSetDark, btnSetLight, btnSetSystem].forEach((b) => {
+      if (b) b.classList.remove("btn-brutal-primary");
+    });
+    if (themeName === "dark" && btnSetDark) btnSetDark.classList.add("btn-brutal-primary");
+    if (themeName === "light" && btnSetLight) btnSetLight.classList.add("btn-brutal-primary");
+    if (themeName === "system" && btnSetSystem) btnSetSystem.classList.add("btn-brutal-primary");
   }
 
+  btnToggleTheme.addEventListener("click", () => {
+    const next = activeTheme === "dark" ? "light" : activeTheme === "light" ? "system" : "dark";
+    applyTheme(next);
+  });
+
+  if (btnSetDark) btnSetDark.addEventListener("click", () => applyTheme("dark"));
+  if (btnSetLight) btnSetLight.addEventListener("click", () => applyTheme("light"));
+  if (btnSetSystem) btnSetSystem.addEventListener("click", () => applyTheme("system"));
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (activeTheme === "system") applyTheme("system");
+  });
+
+  applyTheme(activeTheme);
+
   // ==========================================================================
-  // 3. Health & Telemetry Polling
+  // 4. Action Ledger & Audit Trail
   // ==========================================================================
-  async function loadDashboardData() {
+  function recordAction(toolName, args, locality, durationMs, status) {
+    const entry = {
+      timestamp: new Date().toLocaleTimeString(),
+      tool: toolName,
+      args: typeof args === "object" ? JSON.stringify(args) : String(args),
+      locality: locality || "DEVICE",
+      duration: `${durationMs}ms`,
+      status: status || "SUCCESS",
+    };
+    actionLedger.unshift(entry);
+    if (actionLedger.length > 40) actionLedger.pop();
     try {
-      const res = await fetch("/api/health");
-      if (res.ok) {
-        const data = await res.json();
-        const sys = data.system || {};
-        const act = data.activity || {};
+      sessionStorage.setItem("friday_action_ledger", JSON.stringify(actionLedger));
+    } catch (e) {}
+    renderLedger();
+  }
 
-        // Sidebar Mini Stats
-        miniBatt.textContent = sys.battery_pct || "100%";
-        miniRam.textContent = `${sys.ram_gb || 16}G`;
-        miniDisk.textContent = `${sys.disk_free_gb || 600}G`;
-
-        // Dashboard Elements
-        dashLlmStatus.textContent = data.llm ? "Connected" : "Disconnected";
-        dashLlmModel.textContent = `Model: ${data.system?.arch ? 'Gemma 2 (2.6B)' : 'Local'}`;
-        dashMemCount.textContent = `${act.total_memories || 0} Persistent Memories`;
-
-        dashStatMessages.textContent = act.total_messages || 0;
-        dashStatTools.textContent = act.total_tool_calls || 0;
-        dashStatMemories.textContent = act.total_memories || 0;
-
-        dashHwBatt.textContent = sys.battery_pct || "100%";
-        dashHwBattStatus.textContent = sys.battery_status || "AC Power";
-        dashHwRam.textContent = `${sys.ram_gb || 16.0} GB`;
-        dashHwArch.textContent = `${sys.arch || 'Apple Silicon'} (${sys.os ? sys.os.split('-')[0] : 'macOS'})`;
-        dashHwDisk.textContent = `${sys.disk_free_gb || 600} GB`;
-      }
-    } catch (e) {
-      console.warn("Could not load health metrics:", e);
+  function renderLedger() {
+    if (!ledgerTableBody) return;
+    if (actionLedger.length === 0) {
+      ledgerTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--color-ink-muted); padding: 18px;">No local actions executed yet. Ask FRIDAY to run a calculation, inspect battery, or search workspace files.</td></tr>`;
+      return;
     }
+    ledgerTableBody.innerHTML = actionLedger
+      .map(
+        (a) => `
+        <tr>
+          <td>${a.timestamp}</td>
+          <td><strong style="color: var(--color-primary);">${escapeHtml(a.tool)}</strong></td>
+          <td style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(a.args)}">${escapeHtml(a.args)}</td>
+          <td><span class="brutal-badge ${a.locality.toLowerCase()}">${a.locality}</span></td>
+          <td>${a.duration}</td>
+          <td><span style="color: ${a.status === "SUCCESS" ? "var(--color-success)" : "var(--color-danger)"}; font-weight: 800;">${a.status}</span></td>
+        </tr>
+      `
+      )
+      .join("");
+  }
+
+  if (btnClearLedger) {
+    btnClearLedger.addEventListener("click", () => {
+      actionLedger = [];
+      sessionStorage.removeItem("friday_action_ledger");
+      renderLedger();
+    });
   }
 
   // ==========================================================================
-  // 4. Conversation History Management
+  // 5. Tool Confirmation Modal (Trust & Safety Layer)
+  // ==========================================================================
+  function requestToolApproval(toolName, args) {
+    return new Promise((resolve) => {
+      pendingToolApprovalResolver = resolve;
+      modalConfirmDetails.textContent = `Action: ${toolName}\nArguments:\n${JSON.stringify(args, null, 2)}`;
+      modalToolConfirm.classList.remove("hidden");
+    });
+  }
+
+  btnApproveAction.addEventListener("click", () => {
+    modalToolConfirm.classList.add("hidden");
+    if (pendingToolApprovalResolver) {
+      pendingToolApprovalResolver(true);
+      pendingToolApprovalResolver = null;
+    }
+  });
+
+  btnRejectAction.addEventListener("click", () => {
+    modalToolConfirm.classList.add("hidden");
+    if (pendingToolApprovalResolver) {
+      pendingToolApprovalResolver(false);
+      pendingToolApprovalResolver = null;
+    }
+  });
+
+  // ==========================================================================
+  // 6. Permission Center Controller
+  // ==========================================================================
+  function updatePermissionUI() {
+    if (btnPermMic) {
+      btnPermMic.textContent = permissions.mic ? "GRANTED" : "REVOKED";
+      btnPermMic.className = `btn-brutal ${permissions.mic ? "btn-brutal-primary" : "btn-brutal-secondary"}`;
+    }
+    if (btnPermFiles) {
+      btnPermFiles.textContent = permissions.files ? "ENABLED" : "DISABLED";
+      btnPermFiles.className = `btn-brutal ${permissions.files ? "btn-brutal-primary" : "btn-brutal-secondary"}`;
+    }
+    if (btnPermScreen) {
+      btnPermScreen.textContent = permissions.screen ? "ENABLED" : "DISABLED";
+      btnPermScreen.className = `btn-brutal ${permissions.screen ? "btn-brutal-primary" : "btn-brutal-secondary"}`;
+    }
+  }
+
+  if (btnPermMic) {
+    btnPermMic.addEventListener("click", () => {
+      permissions.mic = !permissions.mic;
+      localStorage.setItem("friday_perm_mic", permissions.mic ? "granted" : "revoked");
+      updatePermissionUI();
+    });
+  }
+
+  if (btnPermFiles) {
+    btnPermFiles.addEventListener("click", () => {
+      permissions.files = !permissions.files;
+      localStorage.setItem("friday_perm_files", permissions.files ? "enabled" : "disabled");
+      updatePermissionUI();
+    });
+  }
+
+  if (btnPermScreen) {
+    btnPermScreen.addEventListener("click", () => {
+      permissions.screen = !permissions.screen;
+      localStorage.setItem("friday_perm_screen", permissions.screen ? "enabled" : "disabled");
+      updatePermissionUI();
+    });
+  }
+
+  updatePermissionUI();
+
+  // ==========================================================================
+  // 7. Conversation Management (SQLite WAL Backend)
   // ==========================================================================
   let cachedConversations = [];
-  const convSearchInput = document.getElementById("conv-search-input");
-  const btnQuickNewConv = document.getElementById("btn-quick-new-conv");
-
-  if (btnQuickNewConv) {
-    btnQuickNewConv.addEventListener("click", createNewConversation);
-  }
-
-  if (convSearchInput) {
-    convSearchInput.addEventListener("input", (e) => {
-      renderConversationsList(e.target.value.trim().toLowerCase());
-    });
-  }
-
-  function formatRelativeTime(dateStr) {
-    if (!dateStr) return "";
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return "";
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMin = Math.floor(diffMs / 60000);
-      const diffHr = Math.floor(diffMin / 60);
-      const diffDays = Math.floor(diffHr / 24);
-
-      if (diffMin < 1) return "Just now";
-      if (diffMin < 60) return `${diffMin}m ago`;
-      if (diffHr < 24) return `${diffHr}h ago`;
-      if (diffDays === 1) return "Yesterday";
-      if (diffDays < 7) return `${diffDays}d ago`;
-      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    } catch {
-      return "";
-    }
-  }
 
   async function loadConversations() {
     try {
       const res = await fetch("/api/conversations");
       if (res.ok) {
         cachedConversations = await res.json();
-        convCountBadge.textContent = cachedConversations.length;
-        const query = convSearchInput ? convSearchInput.value.trim().toLowerCase() : "";
-        renderConversationsList(query);
+        if (convCountBadge) convCountBadge.textContent = cachedConversations.length;
+        renderConversationsList(convSearchInput ? convSearchInput.value.trim().toLowerCase() : "");
       }
     } catch (e) {
       console.warn("Failed to load conversations:", e);
     }
   }
 
-  function renderConversationsList(filterQuery = "") {
+  function renderConversationsList(query = "") {
+    if (!convList) return;
     convList.innerHTML = "";
 
-    const filtered = filterQuery
-      ? cachedConversations.filter((c) => (c.title || "").toLowerCase().includes(filterQuery))
+    const filtered = query
+      ? cachedConversations.filter((c) => (c.title || "").toLowerCase().includes(query))
       : cachedConversations;
 
-    if (cachedConversations.length === 0) {
-      convList.innerHTML = `
-        <div class="conv-empty-state">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span>No saved sessions</span>
-          <button class="btn-start-chat-hint" type="button">Start a chat <kbd>⌘K</kbd></button>
-        </div>
-      `;
-      const hintBtn = convList.querySelector(".btn-start-chat-hint");
-      if (hintBtn) hintBtn.addEventListener("click", createNewConversation);
-      return;
-    }
-
     if (filtered.length === 0) {
-      convList.innerHTML = `
-        <div class="conv-empty-state">
-          <span style="font-size:0.75rem;">No chats matching "${escapeHtml(filterQuery)}"</span>
-        </div>
-      `;
+      convList.innerHTML = `<div style="padding: 12px; font-size: 11px; color: var(--color-ink-muted); text-align: center;">No saved chats</div>`;
       return;
     }
 
-    filtered.forEach((conv) => {
-      const item = document.createElement("div");
-      const isActive = conv.id === currentConversationId;
-      item.className = `conv-item ${isActive ? "active" : ""}`;
-      item.setAttribute("data-id", conv.id);
-
-      const timeText = formatRelativeTime(conv.updated_at || conv.created_at);
-
-      item.innerHTML = `
-        <div class="conv-item-main">
-          <span class="conv-item-icon">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </span>
-          <div class="conv-item-meta">
-            <span class="conv-title-text" title="${escapeHtml(conv.title)}">${escapeHtml(conv.title)}</span>
-            ${timeText ? `<span class="conv-time-text">${timeText}</span>` : ""}
-          </div>
-        </div>
+    filtered.forEach((c) => {
+      const div = document.createElement("div");
+      div.className = `conv-item ${c.id === currentConversationId ? "active" : ""}`;
+      div.innerHTML = `
+        <div class="conv-item-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
         <div class="conv-item-actions">
-          <button class="btn-conv-action btn-conv-rename" title="Rename conversation" type="button">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-          </button>
-          <button class="btn-conv-action btn-conv-delete" title="Delete conversation" type="button">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          <button class="btn-conv-action delete" title="Delete chat">✕</button>
         </div>
       `;
-
-      item.querySelector(".conv-item-main").addEventListener("click", () => {
-        selectConversation(conv.id, conv.title);
+      div.querySelector(".conv-item-title").addEventListener("click", () => {
+        selectConversation(c.id, c.title);
       });
-
-      const renameBtn = item.querySelector(".btn-conv-rename");
-      renameBtn.addEventListener("click", async (e) => {
+      div.querySelector(".btn-conv-action.delete").addEventListener("click", async (e) => {
         e.stopPropagation();
-        const newTitle = prompt("Enter new title for this chat:", conv.title);
-        if (newTitle && newTitle.trim()) {
-          try {
-            await fetch(`/api/conversations/${conv.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ title: newTitle.trim() }),
-            });
-            if (conv.id === currentConversationId) {
-              activeChatTitle.textContent = newTitle.trim();
-            }
-            await loadConversations();
-          } catch (err) {
-            console.error("Rename failed:", err);
+        if (confirm(`Delete "${c.title}"?`)) {
+          await fetch(`/api/conversations/${c.id}`, { method: "DELETE" });
+          if (c.id === currentConversationId) {
+            currentConversationId = null;
+            chatMessages.innerHTML = "";
           }
+          await loadConversations();
         }
       });
-
-      const deleteBtn = item.querySelector(".btn-conv-delete");
-      deleteBtn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (confirm(`Delete "${conv.title}"?`)) {
-          try {
-            await fetch(`/api/conversations/${conv.id}`, { method: "DELETE" });
-            if (conv.id === currentConversationId) {
-              currentConversationId = null;
-              activeChatTitle.textContent = "New Conversation";
-              chatStreamArea.innerHTML = "";
-            }
-            await loadConversations();
-          } catch (err) {
-            console.error("Delete failed:", err);
-          }
-        }
-      });
-
-      convList.appendChild(item);
+      convList.appendChild(div);
     });
   }
 
   async function selectConversation(convId, title) {
     currentConversationId = convId;
-    activeChatTitle.textContent = title || "Conversation";
-
-    // Mark active in sidebar
+    if (headerSubTitle) headerSubTitle.textContent = title || "Active Session";
     document.querySelectorAll(".conv-item").forEach((el) => {
-      el.classList.toggle("active", el.getAttribute("data-id") === convId);
+      el.classList.toggle("active", el.querySelector(".conv-item-title")?.textContent === title);
     });
 
-    // Switch view to chat if we're on another tab
-    switchView("chat");
+    routeToView("chat");
+    window.location.hash = "chat";
 
-    // Fetch messages
     try {
       const res = await fetch(`/api/conversations/${convId}`);
       if (res.ok) {
@@ -577,30 +430,21 @@ document.addEventListener("DOMContentLoaded", () => {
         renderConversationMessages(data.messages || []);
       }
     } catch (e) {
-      console.error("Failed to load conversation messages:", e);
+      console.error("Failed to load messages:", e);
     }
   }
 
-  function renderConversationMessages(messages) {
-    if (chatWelcomeCard) chatWelcomeCard.remove();
-    chatStreamArea.innerHTML = "";
-
-    if (messages.length === 0) {
-      chatStreamArea.innerHTML = `<div class="welcome-hero-card glass-panel"><h2>Conversation Started</h2><p class="hero-description">Ask FRIDAY anything to begin.</p></div>`;
-      return;
-    }
-
-    messages.forEach((msg) => {
-      if (msg.role === "user") {
-        appendUserMessage(msg.content);
-      } else if (msg.role === "assistant") {
-        const assistantElem = createAssistantMessage();
-        const textElem = assistantElem.querySelector(".msg-body");
-        textElem.innerHTML = renderMarkdown(msg.content);
+  function renderConversationMessages(msgs) {
+    if (!chatMessages) return;
+    chatMessages.innerHTML = "";
+    msgs.forEach((m) => {
+      if (m.role === "user") appendUserMessage(m.content);
+      else if (m.role === "assistant") {
+        const card = createAssistantCard();
+        card.querySelector(".msg-content").innerHTML = renderMarkdown(m.content);
       }
     });
-
-    chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   async function createNewConversation() {
@@ -611,11 +455,11 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ title: "New Conversation" }),
       });
       if (res.ok) {
-        const conv = await res.json();
-        currentConversationId = conv.id;
-        activeChatTitle.textContent = conv.title;
-        chatStreamArea.innerHTML = "";
-        switchView("chat");
+        const c = await res.json();
+        currentConversationId = c.id;
+        chatMessages.innerHTML = "";
+        routeToView("chat");
+        window.location.hash = "chat";
         await loadConversations();
         chatInput.focus();
       }
@@ -624,571 +468,114 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  btnNewChat.addEventListener("click", createNewConversation);
-
-  btnRenameChat.addEventListener("click", async () => {
-    if (!currentConversationId) return;
-    const newTitle = prompt("Enter new title for this session:", activeChatTitle.textContent);
-    if (newTitle && newTitle.trim()) {
-      try {
-        await fetch(`/api/conversations/${currentConversationId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: newTitle.trim() }),
-        });
-        activeChatTitle.textContent = newTitle.trim();
-        await loadConversations();
-      } catch (e) {
-        console.error("Rename failed:", e);
-      }
-    }
-  });
-
-  btnDeleteChat.addEventListener("click", async () => {
-    if (!currentConversationId) return;
-    if (confirm("Delete this conversation session?")) {
-      try {
-        await fetch(`/api/conversations/${currentConversationId}`, { method: "DELETE" });
-        currentConversationId = null;
-        activeChatTitle.textContent = "New Conversation";
-        chatStreamArea.innerHTML = "";
-        await loadConversations();
-      } catch (e) {
-        console.error("Delete failed:", e);
-      }
-    }
-  });
-
-  if (btnExportChat) {
-    btnExportChat.addEventListener("click", async () => {
-      if (!currentConversationId) {
-        showToast("No active conversation session to export.");
-        return;
-      }
-      try {
-        const res = await fetch(`/api/conversations/${currentConversationId}/export?format=markdown`);
-        if (!res.ok) throw new Error("Export failed");
-        const data = await res.json();
-        const blob = new Blob([data.content || ""], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = data.filename || "conversation.md";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        showToast("Session exported as Markdown! 📄");
-      } catch (err) {
-        console.error("Export error:", err);
-        showToast("Failed to export conversation.");
-      }
+  if (btnNewChat) btnNewChat.addEventListener("click", createNewConversation);
+  if (convSearchInput) {
+    convSearchInput.addEventListener("input", (e) => {
+      renderConversationsList(e.target.value.trim().toLowerCase());
     });
   }
 
   // ==========================================================================
-  // 5. Chat UI Streaming & Event Handling
+  // 8. Chat Streaming with Trace & Tool Renderers
   // ==========================================================================
   function appendUserMessage(text) {
-    if (chatWelcomeCard) chatWelcomeCard.remove();
-
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "chat-msg user";
-    msgDiv.innerHTML = `
-      <div class="msg-avatar" title="You">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <div class="msg-body">
-        <p>${escapeHtml(text)}</p>
-      </div>
-    `;
-    chatStreamArea.appendChild(msgDiv);
-    chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
-  }
-
-  function createAssistantMessage() {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "chat-msg assistant";
-    const currentModelName = document.getElementById("active-model-name")?.textContent || "GO 1.0";
-    msgDiv.innerHTML = `
-      <div class="msg-avatar" title="FRIDAY">
-        <svg width="16" height="16" viewBox="0 0 48 48" fill="none"><path d="M14 10H34C34.55 10 35 10.45 35 11V15C35 15.55 34.55 16 34 16H20V21H30C30.55 21 31 21.45 31 22V26C31 26.55 30.55 27 30 27H20V37C20 37.55 19.55 38 19 38H15C14.45 38 14 37.55 14 37V10Z" fill="currentColor"/><circle cx="34" cy="35" r="3.5" fill="currentColor"/></svg>
-      </div>
-      <div class="msg-body-wrapper">
-        <div class="tool-slot"></div>
-        <div class="msg-body">
-          <span class="live-tokens"></span>
-          <span class="cursor-blink"></span>
+    const row = document.createElement("div");
+    row.className = "message-row";
+    row.innerHTML = `
+      <div class="message-card user">
+        <div class="msg-header">
+          <span>YOU</span>
+          <span class="font-mono">${new Date().toLocaleTimeString()}</span>
         </div>
-        <div class="msg-translation-card hidden">
-          <div class="msg-trans-header">
-            <span class="msg-trans-lang-tag">SPANISH</span>
-            <div class="msg-trans-actions">
-              <button class="btn-msg-trans-speak" title="Listen pronunciation">🔊 Speak</button>
-              <button class="btn-msg-trans-copy" title="Copy translation">📋 Copy</button>
-              <button class="btn-msg-trans-close" title="Close translation">✕</button>
-            </div>
-          </div>
-          <div class="msg-trans-body"></div>
-        </div>
-        <div class="msg-meta-row">
-          <span class="assistant-tag">${escapeHtml(currentModelName)} • Edge</span>
-          <div class="message-actions-bar">
-            <button class="msg-action-btn btn-msg-copy" title="Copy response">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-              <span>Copy</span>
-            </button>
-            <div class="msg-translate-wrap">
-              <button class="msg-action-btn btn-msg-translate" title="Live Translate Response">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span>Translate</span>
-              </button>
-              <div class="msg-translate-dropdown hidden">
-                <button data-lang="Spanish">Spanish (Español)</button>
-                <button data-lang="French">French (Français)</button>
-                <button data-lang="German">German (Deutsch)</button>
-                <button data-lang="Hindi">Hindi (हिंदी)</button>
-                <button data-lang="Japanese">Japanese (日本語)</button>
-                <button data-lang="Chinese">Chinese (Mandarin)</button>
-                <button data-lang="Italian">Italian (Italiano)</button>
-                <button data-lang="Portuguese">Portuguese (Português)</button>
-                <button data-lang="Russian">Russian (Русский)</button>
-                <button data-lang="Arabic">Arabic (العربية)</button>
-                <button data-lang="Korean">Korean (한국어)</button>
-                <button data-lang="English">English</button>
-              </div>
-            </div>
-            <button class="msg-action-btn btn-msg-speak" title="Read Aloud">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-              <span>Speak</span>
-            </button>
-            <button class="msg-action-btn btn-msg-retry" title="Regenerate">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-              <span>Retry</span>
-            </button>
-          </div>
-          <span>• ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
+        <div class="msg-content">${escapeHtml(text)}</div>
       </div>
     `;
-
-    const copyBtn = msgDiv.querySelector(".btn-msg-copy");
-    copyBtn.addEventListener("click", async () => {
-      const text = msgDiv.querySelector(".msg-body").innerText;
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("Copied to clipboard!");
-        copyBtn.classList.add("active");
-        setTimeout(() => copyBtn.classList.remove("active"), 2000);
-      } catch (e) {}
-    });
-
-    // In-Chat Translation
-    const transWrap = msgDiv.querySelector(".msg-translate-wrap");
-    const transBtn = msgDiv.querySelector(".btn-msg-translate");
-    const transMenu = msgDiv.querySelector(".msg-translate-dropdown");
-    const transCard = msgDiv.querySelector(".msg-translation-card");
-    const transLangTag = msgDiv.querySelector(".msg-trans-lang-tag");
-    const transBody = msgDiv.querySelector(".msg-trans-body");
-    const transSpeakBtn = msgDiv.querySelector(".btn-msg-trans-speak");
-    const transCopyBtn = msgDiv.querySelector(".btn-msg-trans-copy");
-    const transCloseBtn = msgDiv.querySelector(".btn-msg-trans-close");
-
-    transBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      transMenu.classList.toggle("hidden");
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!transWrap.contains(e.target)) {
-        transMenu.classList.add("hidden");
-      }
-    });
-
-    transMenu.querySelectorAll("button").forEach((langBtn) => {
-      langBtn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const targetLang = langBtn.getAttribute("data-lang");
-        transMenu.classList.add("hidden");
-
-        const text = msgDiv.querySelector(".msg-body").innerText.trim();
-        if (!text) return;
-
-        transBtn.classList.add("active");
-        transBtn.querySelector("span").textContent = "Translating...";
-
-        try {
-          const res = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: text,
-              source_lang: "Auto-Detect",
-              target_lang: targetLang,
-              style: "Natural / Conversational",
-            }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const translated = data.translated_text || "";
-
-          transLangTag.textContent = `${data.target_lang || targetLang}`;
-          transBody.textContent = translated;
-          transCard.classList.remove("hidden");
-          chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
-        } catch (err) {
-          showToast(`Translation error: ${err.message}`);
-        } finally {
-          transBtn.classList.remove("active");
-          transBtn.querySelector("span").textContent = "Translate";
-        }
-      });
-    });
-
-    transSpeakBtn.addEventListener("click", () => {
-      const text = transBody.textContent;
-      if (text && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        const langStr = (transLangTag.textContent || "").toLowerCase();
-        if (langStr.includes("span")) utterance.lang = "es-ES";
-        else if (langStr.includes("fren")) utterance.lang = "fr-FR";
-        else if (langStr.includes("germ")) utterance.lang = "de-DE";
-        else if (langStr.includes("hin")) utterance.lang = "hi-IN";
-        else if (langStr.includes("jap")) utterance.lang = "ja-JP";
-        else if (langStr.includes("chin") || langStr.includes("mand")) utterance.lang = "zh-CN";
-        else if (langStr.includes("ita")) utterance.lang = "it-IT";
-        else if (langStr.includes("port")) utterance.lang = "pt-PT";
-        else if (langStr.includes("russ")) utterance.lang = "ru-RU";
-        else if (langStr.includes("arab")) utterance.lang = "ar-SA";
-        else if (langStr.includes("kore")) utterance.lang = "ko-KR";
-        else utterance.lang = "en-US";
-        window.speechSynthesis.speak(utterance);
-      }
-    });
-
-    transCopyBtn.addEventListener("click", async () => {
-      const text = transBody.textContent;
-      if (text) {
-        await navigator.clipboard.writeText(text);
-        showToast("Translation copied!");
-      }
-    });
-
-    transCloseBtn.addEventListener("click", () => {
-      transCard.classList.add("hidden");
-    });
-
-    const speakBtn = msgDiv.querySelector(".btn-msg-speak");
-    let isSpeaking = false;
-    speakBtn.addEventListener("click", async () => {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        isSpeaking = false;
-        speakBtn.classList.remove("active");
-        speakBtn.querySelector("span").textContent = "Speak";
-      } else {
-        const text = msgDiv.querySelector(".msg-body").innerText;
-        if (!text) return;
-        isSpeaking = true;
-        speakBtn.classList.add("active");
-        speakBtn.querySelector("span").textContent = "Stop";
-        try {
-          await speakText(text);
-        } finally {
-          isSpeaking = false;
-          speakBtn.classList.remove("active");
-          speakBtn.querySelector("span").textContent = "Speak";
-        }
-      }
-    });
-
-    const retryBtn = msgDiv.querySelector(".btn-msg-retry");
-    retryBtn.addEventListener("click", () => {
-      if (lastUserPrompt && !isGenerating) {
-        sendMessage(lastUserPrompt);
-      }
-    });
-
-    chatStreamArea.appendChild(msgDiv);
-    chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
-    return msgDiv;
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  function renderToolWidget(toolName, result, args) {
-    const card = document.createElement("div");
-    card.className = "tool-widget-card";
-    const name = (toolName || "").toLowerCase();
-    const rawText = String(result || "").trim();
-
-    // Widget Header
-    const header = document.createElement("div");
-    header.className = "tw-header";
-    header.innerHTML = `
-      <div class="tw-header-left">
-        <span>⚡</span>
-        <span>${escapeHtml((toolName || "TOOL").toUpperCase())}</span>
-        <span class="tw-header-badge">VERIFIED</span>
+  function createAssistantCard() {
+    const row = document.createElement("div");
+    row.className = "message-row";
+    row.innerHTML = `
+      <div class="message-card assistant">
+        <div class="msg-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="color: var(--color-primary);">FRIDAY</strong>
+            <span class="brutal-badge local" style="padding: 1px 4px; font-size: 9px;">ON-DEVICE</span>
+          </div>
+          <span class="msg-time font-mono">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="trace-container"></div>
+        <div class="tool-widgets-container"></div>
+        <div class="msg-content"></div>
       </div>
-      <button class="tw-copy-btn" title="Copy Output">COPY</button>
     `;
-    const copyBtn = header.querySelector(".tw-copy-btn");
-    copyBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      navigator.clipboard.writeText(rawText);
-      showToast("Output copied to clipboard");
-    });
-    card.appendChild(header);
-
-    // 1. system_info
-    if (name.includes("system_info")) {
-      const battMatch = rawText.match(/Battery:\s*(\d+)%?\s*\((.*?)\)/i) || rawText.match(/Battery:\s*(.*)/i);
-      const battPct = battMatch && battMatch[1] && !isNaN(parseInt(battMatch[1])) ? parseInt(battMatch[1]) : 100;
-      const battStat = battMatch && battMatch[2] ? battMatch[2] : (battMatch ? battMatch[1] : "Active");
-
-      const ramMatch = rawText.match(/Total RAM:\s*([\d\.]+)\s*GB/i);
-      const ramGb = ramMatch ? ramMatch[1] : "16.0";
-
-      const diskMatch = rawText.match(/Disk Storage:\s*([\d\.]+)\s*GB\s*free\s*of\s*([\d\.]+)\s*GB/i);
-      const diskFree = diskMatch ? parseFloat(diskMatch[1]) : 0;
-      const diskTotal = diskMatch ? parseFloat(diskMatch[2]) : 100;
-      const diskUsedPct = diskTotal > 0 ? Math.round(((diskTotal - diskFree) / diskTotal) * 100) : 50;
-
-      const osMatch = rawText.match(/Operating System:\s*(.*)/i);
-      const osStr = osMatch ? osMatch[1] : "macOS";
-      const archMatch = rawText.match(/Processor Architecture:\s*(.*)/i);
-      const archStr = archMatch ? archMatch[1] : "arm64";
-
-      const grid = document.createElement("div");
-      grid.className = "tw-gauge-grid";
-      grid.innerHTML = `
-        <div class="tw-gauge-item">
-          <div class="tw-gauge-label-row">
-            <span>BATTERY</span>
-            <span class="tw-gauge-val">${battPct}%</span>
-          </div>
-          <div class="tw-gauge-track">
-            <div class="tw-gauge-bar ${battPct < 20 ? 'red' : (battPct < 50 ? 'amber' : 'green')}" style="width: ${battPct}%"></div>
-          </div>
-          <div class="tw-gauge-label-row" style="margin-top: 2px;">
-            <span style="font-size: 0.60rem; color: var(--text-dim);">${escapeHtml(battStat)}</span>
-          </div>
-        </div>
-        <div class="tw-gauge-item">
-          <div class="tw-gauge-label-row">
-            <span>STORAGE</span>
-            <span class="tw-gauge-val">${diskUsedPct}% USED</span>
-          </div>
-          <div class="tw-gauge-track">
-            <div class="tw-gauge-bar ${diskUsedPct > 85 ? 'red' : 'green'}" style="width: ${diskUsedPct}%"></div>
-          </div>
-          <div class="tw-gauge-label-row" style="margin-top: 2px;">
-            <span style="font-size: 0.60rem; color: var(--text-dim);">${diskFree}GB free of ${diskTotal}GB</span>
-          </div>
-        </div>
-        <div class="tw-gauge-item">
-          <div class="tw-gauge-label-row">
-            <span>TOTAL RAM</span>
-            <span class="tw-gauge-val">${ramGb} GB</span>
-          </div>
-          <div class="tw-gauge-track">
-            <div class="tw-gauge-bar green" style="width: 100%"></div>
-          </div>
-          <div class="tw-gauge-label-row" style="margin-top: 2px;">
-            <span style="font-size: 0.60rem; color: var(--text-dim);">Unified Memory</span>
-          </div>
-        </div>
-      `;
-      card.appendChild(grid);
-
-      const meta = document.createElement("div");
-      meta.className = "tw-meta-pills";
-      meta.innerHTML = `
-        <span class="tw-pill">OS: ${escapeHtml(osStr.slice(0, 30))}</span>
-        <span class="tw-pill">ARCH: ${escapeHtml(archStr)}</span>
-      `;
-      card.appendChild(meta);
-      return card;
-    }
-
-    // 2. calculator
-    if (name.includes("calculator")) {
-      const resMatch = rawText.match(/Result:\s*(.*?)\s*=\s*(.*)/i);
-      const expr = resMatch ? resMatch[1] : (args?.expression || args?.expr || "Expression");
-      const answer = resMatch ? resMatch[2] : rawText;
-
-      const calcDiv = document.createElement("div");
-      calcDiv.className = "tw-calc-display";
-      calcDiv.innerHTML = `
-        <div class="tw-calc-expr">EXPR: ${escapeHtml(expr)}</div>
-        <div class="tw-calc-result-row">
-          <span style="font-size: 0.70rem; color: var(--text-dim);">ANSWER =</span>
-          <span class="tw-calc-answer">${escapeHtml(answer)}</span>
-        </div>
-      `;
-      card.appendChild(calcDiv);
-      return card;
-    }
-
-    // 3. weather
-    if (name.includes("weather")) {
-      const cityMatch = rawText.match(/Weather for\s*(.*?):/i);
-      const city = cityMatch ? cityMatch[1] : (args?.location || "Current Location");
-      const tempMatch = rawText.match(/Temperature:\s*([\d\.\-]+°?C?)/i);
-      const temp = tempMatch ? tempMatch[1] : "--°C";
-      const feelsMatch = rawText.match(/Feels like\s*([\d\.\-]+°?C?)/i);
-      const feels = feelsMatch ? feelsMatch[1] : "";
-      const humMatch = rawText.match(/Humidity:\s*([\d]+%?)/i);
-      const hum = humMatch ? humMatch[1] : "--";
-      const windMatch = rawText.match(/Wind Speed:\s*([\d\.\-]+\s*km\/h)/i);
-      const wind = windMatch ? windMatch[1] : "--";
-
-      const weatherDiv = document.createElement("div");
-      weatherDiv.className = "tw-weather-card";
-      weatherDiv.innerHTML = `
-        <div class="tw-weather-info">
-          <span class="tw-weather-city">📍 ${escapeHtml(city)}</span>
-          ${feels ? `<span class="tw-weather-sub">Feels like ${escapeHtml(feels)}</span>` : ""}
-          <div class="tw-weather-stats" style="margin-top: 4px;">
-            <span>💧 Humidity: ${escapeHtml(hum)}</span>
-            <span>💨 Wind: ${escapeHtml(wind)}</span>
-          </div>
-        </div>
-        <div class="tw-weather-temp">${escapeHtml(temp)}</div>
-      `;
-      card.appendChild(weatherDiv);
-      return card;
-    }
-
-    // 4. time
-    if (name.includes("time")) {
-      const dateMatch = rawText.match(/Date:\s*(.*)/i);
-      const dateStr = dateMatch ? dateMatch[1] : new Date().toLocaleDateString();
-      const timeMatch = rawText.match(/Time:\s*(.*)/i);
-      const timeStr = timeMatch ? timeMatch[1] : new Date().toLocaleTimeString();
-      const tzMatch = rawText.match(/Timezone:\s*(.*)/i);
-      const tzStr = tzMatch ? tzMatch[1] : Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      const clockDiv = document.createElement("div");
-      clockDiv.className = "tw-clock-card";
-      clockDiv.innerHTML = `
-        <div class="tw-clock-time">${escapeHtml(timeStr)}</div>
-        <div class="tw-clock-date">${escapeHtml(dateStr)}</div>
-        <span class="tw-clock-tz">${escapeHtml(tzStr)}</span>
-      `;
-      card.appendChild(clockDiv);
-      return card;
-    }
-
-    // 5. search
-    if (name.includes("search")) {
-      const lines = rawText.split("\n").filter(l => l.trim().length > 0);
-      const listDiv = document.createElement("div");
-      listDiv.className = "tw-search-items";
-
-      lines.slice(0, 5).forEach((line, idx) => {
-        const item = document.createElement("div");
-        item.className = "tw-search-item";
-        item.innerHTML = `
-          <div class="tw-search-title">#${idx + 1} ${escapeHtml(line.slice(0, 80))}</div>
-          ${line.length > 80 ? `<div class="tw-search-snippet">${escapeHtml(line.slice(80, 240))}...</div>` : ""}
-        `;
-        listDiv.appendChild(item);
-      });
-      card.appendChild(listDiv);
-      return card;
-    }
-
-    // 6. file_manager
-    if (name.includes("file")) {
-      const lines = rawText.split("\n").filter(l => l.trim().length > 0);
-      const listDiv = document.createElement("div");
-      listDiv.className = "tw-file-list";
-
-      lines.slice(0, 8).forEach(line => {
-        const row = document.createElement("div");
-        row.className = "tw-file-row";
-        const isDir = line.endsWith("/") || line.includes("<DIR>");
-        row.innerHTML = `
-          <span>${isDir ? "📁" : "📄"}</span>
-          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(line)}</span>
-        `;
-        listDiv.appendChild(row);
-      });
-      card.appendChild(listDiv);
-      return card;
-    }
-
-    // Default Fallback
-    const rawPre = document.createElement("pre");
-    rawPre.style.cssText = "font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-main); white-space: pre-wrap; margin: 0; line-height: 1.5;";
-    rawPre.textContent = rawText;
-    card.appendChild(rawPre);
-    return card;
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return row.querySelector(".message-card");
   }
 
-  function createToolAccordion(slotElem, toolName, args) {
-    const acc = document.createElement("div");
-    acc.className = "thought-accordion";
-    acc._toolName = toolName;
-    acc._toolArgs = args;
-    const argsSummary = args ? JSON.stringify(args).slice(0, 32) : "";
-    acc.innerHTML = `
-      <details class="thought-details" open>
-        <summary class="thought-summary">
-          <span class="thought-icon">⚙️</span>
-          <span>Tool Execution: <strong>${escapeHtml(toolName.toUpperCase())}</strong></span>
-          ${argsSummary ? `<span class="thought-badge">${escapeHtml(argsSummary)}</span>` : ""}
-        </summary>
-        <div class="thought-body tool-accordion-body">
-          <div style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
-            <div class="tool-spinner-ring"></div>
-            <span>Acquiring telemetry data...</span>
-          </div>
-        </div>
-      </details>
-    `;
+  function renderToolWidget(toolName, args, result) {
+    const div = document.createElement("div");
+    div.className = "tool-widget-card";
+    const locality = toolName === "web_search" || toolName === "weather" ? "NETWORK" : "DEVICE";
 
-    slotElem.appendChild(acc);
-    chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
-    return acc;
+    div.innerHTML = `
+      <div class="tool-widget-header">
+        <span>TOOL: <strong>${escapeHtml(toolName)}</strong></span>
+        <span class="brutal-badge ${locality.toLowerCase()}">${locality}</span>
+      </div>
+      <div class="tool-widget-body">
+        <pre style="margin-bottom: 6px; color: var(--color-ink-muted);">ARG: ${escapeHtml(JSON.stringify(args))}</pre>
+        <pre style="background: var(--color-surface); padding: 8px; border: 1px solid var(--color-border); overflow-x: auto;">${escapeHtml(result || "Executed.")}</pre>
+      </div>
+    `;
+    return div;
   }
 
-  async function sendMessage(promptText) {
-    if (!promptText || isGenerating) return;
-
-    lastUserPrompt = promptText;
+  async function sendMessage(text) {
+    if (!text || isGenerating) return;
     isGenerating = true;
     btnSendMessage.disabled = true;
-    appendUserMessage(promptText);
+    if (btnCancelGen) btnCancelGen.style.display = "inline-flex";
+
+    appendUserMessage(text);
     chatInput.value = "";
-    adjustTextareaHeight(chatInput);
+    drafts.chat = "";
 
-    setAssistantState("THINKING");
+    const card = createAssistantCard();
+    const traceContainer = card.querySelector(".trace-container");
+    const widgetsContainer = card.querySelector(".tool-widgets-container");
+    const msgContent = card.querySelector(".msg-content");
 
-    const assistantElem = createAssistantMessage();
-    const toolSlot = assistantElem.querySelector(".tool-slot");
-    const tokenSpan = assistantElem.querySelector(".live-tokens");
-    const cursor = assistantElem.querySelector(".cursor-blink");
+    // Live Execution Trace
+    traceContainer.innerHTML = `
+      <div class="execution-trace-pill">
+        <span class="spinner"></span>
+        <span>Thinking locally (gemma2:2b / go1.0)...</span>
+      </div>
+    `;
 
-    let activeAccordion = null;
+    currentAbortController = new AbortController();
     let accumulatedText = "";
-    let tStart = Date.now();
+    const startTime = performance.now();
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: currentAbortController.signal,
         body: JSON.stringify({
-          prompt: promptText,
+          message: text,
           conversation_id: currentConversationId,
         }),
       });
 
-      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const decoder = new TextDecoder();
       let buffer = "";
 
       while (true) {
@@ -1197,684 +584,484 @@ document.addEventListener("DOMContentLoaded", () => {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n\n");
-        buffer = lines.pop();
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const rawJson = line.replace("data: ", "").trim();
-            if (!rawJson) continue;
-
-            try {
-              const ev = JSON.parse(rawJson);
-
-              if (ev.type === "conversation_created") {
-                currentConversationId = ev.conversation_id;
-                await loadConversations();
-
-              } else if (ev.type === "assistant_state") {
-                setAssistantState(ev.state);
-
-              } else if (ev.type === "intent_detected") {
-                if (insIntent) insIntent.textContent = ev.intent;
-
-              } else if (ev.type === "tool_started") {
-                toolActivityLabel.textContent = `Using tool: ${ev.tool}...`;
-                toolActivityStrip.classList.remove("hidden");
-                activeAccordion = createToolAccordion(toolSlot, ev.tool, ev.arguments);
-
-                if (insTool) insTool.textContent = ev.tool;
-                if (insArgs) insArgs.textContent = JSON.stringify(ev.arguments || {});
-
-              } else if (ev.type === "tool_completed") {
-                toolActivityStrip.classList.add("hidden");
-                if (activeAccordion) {
-                  const body = activeAccordion.querySelector(".tool-accordion-body, .thought-body");
-                  if (body) {
-                    body.innerHTML = "";
-                    const widget = renderToolWidget(ev.tool || activeAccordion._toolName, ev.result, ev.arguments || activeAccordion._toolArgs);
-                    body.appendChild(widget);
-                  }
-                }
-                if (insRawOutput) insRawOutput.textContent = ev.result || "Complete.";
-
-              } else if (ev.type === "assistant_token") {
-                accumulatedText += ev.content;
-                tokenSpan.innerHTML = renderMarkdown(accumulatedText);
-                chatStreamArea.scrollTop = chatStreamArea.scrollHeight;
-
-              } else if (ev.type === "assistant_finished") {
-                if (insTime) insTime.textContent = `${ev.duration || ((Date.now() - tStart)/1000).toFixed(2)}s`;
-                setAssistantState("ONLINE");
-
-                // Speak aloud if voice enabled
-                if (setVoice?.checked && accumulatedText) {
-                  speakText(accumulatedText);
-                }
-
-              } else if (ev.type === "error") {
-                tokenSpan.innerHTML += `<p style="color:#ef4444;">[Error: ${escapeHtml(ev.message)}]</p>`;
-                setAssistantState("ERROR");
-              }
-            } catch (jsonErr) {
-              console.warn("Parse chunk error:", jsonErr);
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            if (ev.type === "conversation_created") {
+              currentConversationId = ev.conversation_id;
+              await loadConversations();
+            } else if (ev.type === "tool_started") {
+              const locality = ev.tool === "web_search" || ev.tool === "weather" ? "NETWORK" : "DEVICE";
+              traceContainer.innerHTML = `
+                <div class="execution-trace-pill">
+                  <span class="spinner"></span>
+                  <span>Executing tool: ${escapeHtml(ev.tool)}...</span>
+                </div>
+              `;
+            } else if (ev.type === "tool_completed") {
+              const locality = ev.tool === "web_search" || ev.tool === "weather" ? "NETWORK" : "DEVICE";
+              const dur = Math.round(performance.now() - startTime);
+              recordAction(ev.tool, ev.arguments, locality, dur, "SUCCESS");
+              widgetsContainer.appendChild(renderToolWidget(ev.tool, ev.arguments, ev.result));
+              traceContainer.innerHTML = "";
+            } else if (ev.type === "assistant_token") {
+              traceContainer.innerHTML = "";
+              accumulatedText += ev.content;
+              msgContent.innerHTML = renderMarkdown(accumulatedText);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else if (ev.type === "error") {
+              msgContent.innerHTML += `<div style="color: var(--color-danger); font-weight: 800;">Error: ${escapeHtml(ev.message)}</div>`;
             }
-          }
+          } catch (err) {}
         }
       }
-
     } catch (err) {
-      console.error("Chat generation failed:", err);
-      tokenSpan.innerHTML += `<p style="color:#ef4444;">[Failed to communicate with FRIDAY: ${escapeHtml(err.message)}]</p>`;
-      setAssistantState("ERROR");
+      if (err.name === "AbortError") {
+        msgContent.innerHTML += `<p style="color: var(--color-warning);">[Generation cancelled by user]</p>`;
+      } else {
+        msgContent.innerHTML = `<div style="color: var(--color-danger); font-weight: 800;">Local engine error: ${escapeHtml(err.message)}</div>`;
+      }
     } finally {
-      if (cursor) cursor.remove();
-      toolActivityStrip.classList.add("hidden");
       isGenerating = false;
       btnSendMessage.disabled = false;
-      setAssistantState("ONLINE");
-      chatInput.focus();
-      loadDashboardData();
+      if (btnCancelGen) btnCancelGen.style.display = "none";
+      currentAbortController = null;
+      traceContainer.innerHTML = "";
+      await loadConversations();
     }
   }
 
-  btnSendMessage.addEventListener("click", () => {
-    const text = chatInput.value.trim();
-    if (text) sendMessage(text);
-  });
-
+  btnSendMessage.addEventListener("click", () => sendMessage(chatInput.value.trim()));
   chatInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      const text = chatInput.value.trim();
-      if (text && !isGenerating) sendMessage(text);
+      sendMessage(chatInput.value.trim());
     }
   });
 
-  chatInput.addEventListener("input", () => adjustTextareaHeight(chatInput));
-
-  function adjustTextareaHeight(el) {
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  if (btnCancelGen) {
+    btnCancelGen.addEventListener("click", () => {
+      if (currentAbortController) currentAbortController.abort();
+    });
   }
-
-  // Quick chips click
-  document.addEventListener("click", (e) => {
-    const chip = e.target.closest(".quick-chip");
-    if (chip) {
-      const text = chip.getAttribute("data-text");
-      if (text) sendMessage(text);
-    }
-  });
-
-  // Global Shortcuts
-  window.addEventListener("keydown", (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-      e.preventDefault();
-      createNewConversation();
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key === "/") {
-      e.preventDefault();
-      chatInput.focus();
-    }
-  });
 
   // ==========================================================================
-  // 6. Voice Interaction (WebSocket Pipeline, Streaming TTS, Barge-in, Waveform)
+  // 9. Voice Console (Honest States & Waveform)
   // ==========================================================================
-  const voiceWaveformCanvas = document.getElementById("voice-waveform-canvas");
-  const voiceLiveCaption = document.getElementById("voice-live-caption");
-  const btnVoiceInterrupt = document.getElementById("btn-voice-interrupt");
-  const chkContinuousVoice = document.getElementById("chk-continuous-voice");
-
-  let voiceWs = null;
-  let voiceWsReconnectTimer = null;
-  let voiceAudioQueue = [];
-  let isPlayingVoiceQueue = false;
-  let currentAudio = null;
-  let canvasCtx = voiceWaveformCanvas ? voiceWaveformCanvas.getContext("2d") : null;
-  let visualizerAnimFrame = null;
-  let visualizerPhase = 0;
-
-  // Waveform Visualizer — Teenage Engineering TP-7 Segmented Digital Audio Meters
-  function drawWaveform() {
-    if (!canvasCtx || !voiceWaveformCanvas) return;
-    const width = voiceWaveformCanvas.width;
-    const height = voiceWaveformCanvas.height;
-    canvasCtx.clearRect(0, 0, width, height);
-
-    visualizerPhase += 0.07;
-
-    let baseColor = "#00e599"; // Phosphor Green (Online)
-    let glowColor = "rgba(0, 229, 153, 0.35)";
-    let amplitude = 4;
-    let frequency = 0.18;
-
-    if (assistantState === "SPEAKING") {
-      baseColor = "#ff5500"; // Signal Orange
-      glowColor = "rgba(255, 85, 0, 0.45)";
-      amplitude = 18 + Math.sin(visualizerPhase * 2) * 5;
-      frequency = 0.22;
-    } else if (assistantState === "LISTENING" || isListening) {
-      baseColor = "#ef4444"; // Vivid Alert Red
-      glowColor = "rgba(239, 68, 68, 0.45)";
-      amplitude = 16 + Math.cos(visualizerPhase * 2.5) * 6;
-      frequency = 0.26;
-    } else if (assistantState === "THINKING") {
-      baseColor = "#ffb700"; // Industrial Amber
-      glowColor = "rgba(255, 183, 0, 0.4)";
-      amplitude = 10 + Math.sin(visualizerPhase * 1.5) * 4;
-      frequency = 0.20;
-    } else {
-      // ONLINE / STANDBY
-      baseColor = "rgba(0, 229, 153, 0.6)";
-      glowColor = "rgba(0, 229, 153, 0.2)";
-      amplitude = 3.5 + Math.sin(visualizerPhase * 0.6) * 1.5;
-      frequency = 0.15;
+  function setVoiceState(state) {
+    if (voiceStateLabel) {
+      voiceStateLabel.textContent = state;
+      voiceStateLabel.setAttribute("data-state", state);
     }
-
-    const numBars = 32;
-    const barWidth = 4;
-    const gap = (width - numBars * barWidth) / (numBars - 1);
-    const centerY = height / 2;
-
-    canvasCtx.save();
-    canvasCtx.shadowBlur = 8;
-    canvasCtx.shadowColor = glowColor;
-
-    for (let i = 0; i < numBars; i++) {
-      const x = i * (barWidth + gap);
-      // Windowing function to taper edges gracefully (hanning window)
-      const window = Math.sin((i / (numBars - 1)) * Math.PI);
-      const wave = Math.sin(i * frequency + visualizerPhase);
-      const barHeight = Math.max(3, Math.abs(wave) * amplitude * window + 2);
-
-      // Draw top and bottom symmetrical bar (instrument style meter)
-      canvasCtx.fillStyle = baseColor;
-      canvasCtx.beginPath();
-      if (typeof canvasCtx.roundRect === "function") {
-        canvasCtx.roundRect(x, centerY - barHeight, barWidth, barHeight * 2, 2);
-      } else {
-        canvasCtx.rect(x, centerY - barHeight, barWidth, barHeight * 2);
-      }
-      canvasCtx.fill();
+    if (pttLabel) {
+      if (state === "LISTENING") pttLabel.textContent = "LISTENING (SPEAK NOW)";
+      else if (state === "THINKING") pttLabel.textContent = "THINKING LOCALLY...";
+      else if (state === "SPEAKING") pttLabel.textContent = "SPEAKING RESPONSE";
+      else pttLabel.textContent = "HOLD OR CLICK TO TALK";
     }
-    canvasCtx.restore();
-
-    visualizerAnimFrame = requestAnimationFrame(drawWaveform);
-  }
-
-  if (voiceWaveformCanvas) {
-    drawWaveform();
-  }
-
-  // Barge-In & Interruption
-  function bargeInInterrupt() {
-    console.log("Barge-in triggered: interrupting speech and clearing queue.");
-    // 1. Stop audio element
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
-    // 2. Clear queued sentences
-    voiceAudioQueue.forEach((item) => {
-      if (item.url) URL.revokeObjectURL(item.url);
-    });
-    voiceAudioQueue = [];
-    isPlayingVoiceQueue = false;
-
-    // 3. Stop browser synthesis
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-
-    // 4. Notify server pipeline
-    if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
-      voiceWs.send(JSON.stringify({ type: "barge_in" }));
-    }
-
-    // 5. Update UI
-    if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-    if (voiceLiveCaption) voiceLiveCaption.textContent = "[Interrupted]";
-    setAssistantState("LISTENING");
-  }
-
-  if (btnVoiceInterrupt) {
-    btnVoiceInterrupt.addEventListener("click", () => {
-      bargeInInterrupt();
-      if (!isListening) toggleVoiceInput();
-    });
-  }
-
-  // Voice Queue Playback
-  function playNextInAudioQueue() {
-    if (voiceAudioQueue.length === 0) {
-      isPlayingVoiceQueue = false;
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-      setAssistantState("ONLINE");
-
-      // Continuous turn-taking mode
-      if (chkContinuousVoice?.checked && document.getElementById("view-voice").classList.contains("active")) {
-        setTimeout(() => {
-          if (!isListening && !isPlayingVoiceQueue && document.getElementById("view-voice").classList.contains("active")) {
-            console.log("Continuous mode: automatically listening for next turn...");
-            toggleVoiceInput();
-          }
-        }, 600);
-      }
-      return;
-    }
-
-    isPlayingVoiceQueue = true;
-    if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
-    setAssistantState("SPEAKING");
-
-    const item = voiceAudioQueue.shift();
-    if (voiceLiveCaption && item.sentence) {
-      voiceLiveCaption.textContent = item.sentence;
-    }
-
-    currentAudio = new Audio(item.url);
-    currentAudio.onended = () => {
-      URL.revokeObjectURL(item.url);
-      currentAudio = null;
-      playNextInAudioQueue();
-    };
-    currentAudio.onerror = (e) => {
-      console.warn("Audio queue chunk playback error:", e);
-      URL.revokeObjectURL(item.url);
-      currentAudio = null;
-      playNextInAudioQueue();
-    };
-
-    currentAudio.play().catch((err) => {
-      console.warn("Audio play prevented:", err);
-      playNextInAudioQueue();
-    });
-  }
-
-  function queueAudioChunk(base64Data, sentence, mimeType = "audio/mp4", isLast = false) {
-    try {
-      const binaryStr = atob(base64Data);
-      const len = binaryStr.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: mimeType });
-      const audioUrl = URL.createObjectURL(blob);
-      voiceAudioQueue.push({ url: audioUrl, sentence, isLast });
-
-      if (!isPlayingVoiceQueue) {
-        playNextInAudioQueue();
-      }
-    } catch (e) {
-      console.error("Failed to decode audio chunk:", e);
+    if (btnPushToTalk) {
+      btnPushToTalk.classList.toggle("active-listening", state === "LISTENING");
     }
   }
 
-  // WebSocket Full-Duplex Connection
-  function initVoiceWebSocket() {
-    if (voiceWs && (voiceWs.readyState === WebSocket.OPEN || voiceWs.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
+  // Segmented Canvas Meter
+  let audioCtx, analyser, dataArray;
+  function initAudioMeter() {
+    if (!voiceWaveformCanvas) return;
+    const ctx = voiceWaveformCanvas.getContext("2d");
+    function draw() {
+      requestAnimationFrame(draw);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, voiceWaveformCanvas.width, voiceWaveformCanvas.height);
 
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${proto}//${window.location.host}/ws/voice`;
+      const numBars = 36;
+      const barWidth = 10;
+      const gap = 4;
+      const startX = (voiceWaveformCanvas.width - numBars * (barWidth + gap)) / 2;
 
-    try {
-      voiceWs = new WebSocket(wsUrl);
-
-      voiceWs.onopen = () => {
-        console.log("Voice WebSocket connected to", wsUrl);
-      };
-
-      voiceWs.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "audio") {
-            queueAudioChunk(msg.chunk, msg.sentence, msg.mime, msg.is_last);
-          } else if (msg.type === "token") {
-            // Live token in voice caption if not currently playing audio
-            if (!isPlayingVoiceQueue && voiceLiveCaption) {
-              voiceLiveCaption.textContent = (voiceLiveCaption.textContent + msg.content).slice(-90);
-            }
-          } else if (msg.type === "state") {
-            if (msg.state === "LISTENING") {
-              if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-            }
-            setAssistantState(msg.state);
-          } else if (msg.type === "finished") {
-            if (msg.full_text) {
-              const p = document.createElement("p");
-              p.innerHTML = `<strong>FRIDAY:</strong> ${renderMarkdown(msg.full_text)}`;
-              voiceTranscriptContent.appendChild(p);
-              voiceTranscriptContent.scrollTop = voiceTranscriptContent.scrollHeight;
-            }
-          } else if (msg.type === "interrupted") {
-            if (voiceLiveCaption) voiceLiveCaption.textContent = "[Interrupted]";
-          }
-        } catch (err) {
-          console.warn("WS message parse error:", err);
+      for (let i = 0; i < numBars; i++) {
+        let h = 4;
+        if (isListening) {
+          h = Math.max(4, Math.sin(Date.now() / 150 + i) * 20 + 22);
+        } else if (isPlayingVoiceQueue) {
+          h = Math.max(4, Math.cos(Date.now() / 180 + i) * 16 + 18);
         }
-      };
-
-      voiceWs.onclose = () => {
-        console.log("Voice WebSocket closed. Reconnecting in 3s...");
-        clearTimeout(voiceWsReconnectTimer);
-        voiceWsReconnectTimer = setTimeout(initVoiceWebSocket, 3000);
-      };
-
-      voiceWs.onerror = (err) => {
-        console.warn("Voice WebSocket error:", err);
-      };
-    } catch (e) {
-      console.warn("Could not create Voice WebSocket:", e);
+        ctx.fillStyle = isListening ? "#FF675E" : isPlayingVoiceQueue ? "#5EEB83" : "#FFE600";
+        ctx.fillRect(startX + i * (barWidth + gap), (voiceWaveformCanvas.height - h) / 2, barWidth, h);
+      }
     }
+    draw();
   }
+  initAudioMeter();
 
+  function initVoiceWebSocket() {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    try {
+      voiceWs = new WebSocket(`${proto}//${window.location.host}/ws/voice`);
+      voiceWs.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "state") setVoiceState(msg.state);
+          else if (msg.type === "token" && voiceLiveCaption) {
+            voiceLiveCaption.textContent = (voiceLiveCaption.textContent + msg.content).slice(-120);
+          } else if (msg.type === "audio") {
+            queueVoiceAudio(msg.chunk, msg.mime || "audio/mpeg");
+          }
+        } catch (err) {}
+      };
+    } catch (e) {}
+  }
   initVoiceWebSocket();
 
-  function initVoiceRecognition() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
-      console.warn("Web Speech API not supported in this browser.");
-      return null;
-    }
-    const rec = new SpeechRec();
-    rec.continuous = false;
-    rec.interimResults = true;
-    rec.lang = "en-US";
-
-    rec.onstart = () => {
-      isListening = true;
-      btnVoiceInput.classList.add("listening");
-      setAssistantState("LISTENING");
-      if (voiceLiveCaption) voiceLiveCaption.textContent = "Listening...";
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-    };
-
-    rec.onresult = (event) => {
-      let interim = "";
-      let finalTranscript = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const trans = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += trans;
-        } else {
-          interim += trans;
-        }
-      }
-
-      if (interim && voiceLiveCaption) {
-        voiceLiveCaption.textContent = `"${interim}"`;
-      }
-
-      if (finalTranscript) {
-        if (voiceLiveCaption) voiceLiveCaption.textContent = `"${finalTranscript}"`;
-
-        // Append to voice feed
-        const p = document.createElement("p");
-        p.innerHTML = `<strong>You:</strong> ${escapeHtml(finalTranscript)}`;
-        voiceTranscriptContent.appendChild(p);
-        voiceTranscriptContent.scrollTop = voiceTranscriptContent.scrollHeight;
-
-        // If Voice WebSocket is online, stream directly via WebSocket for instant speech synthesis
-        const selectedVoice = (setVoicePersona ? setVoicePersona.value : null) || localStorage.getItem("friday_voice") || "aria";
-        if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
-          setAssistantState("THINKING");
-          voiceWs.send(JSON.stringify({
-            type: "user_speech",
-            text: finalTranscript,
-            conversation_id: currentConversationId,
-            voice: selectedVoice,
-          }));
-        } else {
-          // Fallback to HTTP SSE
-          sendMessage(finalTranscript);
-        }
-      }
-    };
-
-    rec.onerror = (e) => {
-      console.warn("Speech recognition error:", e);
-      isListening = false;
-      btnVoiceInput.classList.remove("listening");
-      setAssistantState("ONLINE");
-    };
-
-    rec.onend = () => {
-      isListening = false;
-      btnVoiceInput.classList.remove("listening");
-      if (!isPlayingVoiceQueue && assistantState === "LISTENING") {
-        setAssistantState("ONLINE");
-      }
-    };
-
-    return rec;
-  }
-
-  speechRecognition = initVoiceRecognition();
-
-  function toggleVoiceInput() {
-    if (isPlayingVoiceQueue || assistantState === "SPEAKING") {
-      // User tapped orb while speaking -> Barge-in!
-      bargeInInterrupt();
-      if (speechRecognition) {
-        try { speechRecognition.start(); } catch (e) {}
-      }
-      return;
-    }
-
-    if (!speechRecognition) {
-      showToast("Speech recognition is not supported in this browser. Please use Chrome/Safari or keyboard text.", 3200);
-      return;
-    }
-    if (isListening) {
-      speechRecognition.stop();
-    } else {
-      try {
-        speechRecognition.start();
-      } catch (e) {
-        console.warn("Speech recognition start failed:", e);
-      }
-    }
-  }
-
-  btnVoiceInput.addEventListener("click", toggleVoiceInput);
-  if (centralVoiceOrb) centralVoiceOrb.addEventListener("click", toggleVoiceInput);
-
-  // Hold / Tap Space to talk or barge-in in voice mode
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" && document.getElementById("view-voice").classList.contains("active")) {
-      if (document.activeElement !== chatInput) {
-        e.preventDefault();
-        toggleVoiceInput();
-      }
-    }
-  });
-
-  async function speakText(text) {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-
-    const cleanSpeech = voice_clean_text(text);
-    if (!cleanSpeech) return;
-
+  function queueVoiceAudio(b64Data, mime) {
     try {
-      setAssistantState("SPEAKING");
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
-      const selectedVoice = (setVoicePersona ? setVoicePersona.value : null) || localStorage.getItem("friday_voice") || "aria";
+      const binary = atob(b64Data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mime });
+      const url = URL.createObjectURL(blob);
+      voiceAudioQueue.push(url);
+      if (!isPlayingVoiceQueue) playNextVoiceAudio();
+    } catch (e) {}
+  }
 
-      const res = await fetch("/api/voice/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: cleanSpeech,
-          voice: selectedVoice,
-        }),
-      });
+  function playNextVoiceAudio() {
+    if (voiceAudioQueue.length === 0) {
+      isPlayingVoiceQueue = false;
+      setVoiceState("READY");
+      return;
+    }
+    isPlayingVoiceQueue = true;
+    setVoiceState("SPEAKING");
+    const url = voiceAudioQueue.shift();
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => {
+      URL.revokeObjectURL(url);
+      playNextVoiceAudio();
+    };
+    currentAudio.onerror = () => {
+      URL.revokeObjectURL(url);
+      playNextVoiceAudio();
+    };
+    currentAudio.play().catch(() => playNextVoiceAudio());
+  }
 
-      if (res.ok) {
-        const blob = await res.blob();
-        const audioUrl = URL.createObjectURL(blob);
-        currentAudio = new Audio(audioUrl);
-        currentAudio.onended = () => {
-          setAssistantState("ONLINE");
-          if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-          URL.revokeObjectURL(audioUrl);
-          currentAudio = null;
-        };
-        currentAudio.onerror = () => {
-          fallbackBrowserSpeech(cleanSpeech);
-        };
-        await currentAudio.play();
+  // Push-To-Talk Events
+  if (btnPushToTalk) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      speechRecognition = new SpeechRec();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = true;
+      speechRecognition.onstart = () => {
+        isListening = true;
+        setVoiceState("LISTENING");
+        if (voiceLiveCaption) voiceLiveCaption.textContent = "Listening locally...";
+      };
+      speechRecognition.onresult = (ev) => {
+        let transcript = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          transcript += ev.results[i][0].transcript;
+        }
+        if (voiceLiveCaption) voiceLiveCaption.textContent = `"${transcript}"`;
+        if (ev.results[0].isFinal && transcript.trim()) {
+          setVoiceState("THINKING");
+          if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+            voiceWs.send(JSON.stringify({ type: "user_speech", text: transcript.trim() }));
+          } else {
+            sendMessage(transcript.trim());
+          }
+        }
+      };
+      speechRecognition.onend = () => {
+        isListening = false;
+        if (!isPlayingVoiceQueue) setVoiceState("READY");
+      };
+      speechRecognition.onerror = () => {
+        isListening = false;
+        setVoiceState("READY");
+      };
+    }
+
+    btnPushToTalk.addEventListener("click", () => {
+      if (!permissions.mic) {
+        alert("Microphone permission is currently REVOKED in the Settings Permission Center.");
         return;
       }
+      if (!speechRecognition) {
+        alert("Speech Recognition API is not supported in this browser.");
+        return;
+      }
+      if (isListening) speechRecognition.stop();
+      else {
+        try {
+          speechRecognition.start();
+        } catch (e) {}
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 10. Live Translator (#translate)
+  // ==========================================================================
+  if (transSourceInput) {
+    transSourceInput.addEventListener("input", () => {
+      transCharCount.textContent = transSourceInput.value.length;
+      drafts.transSource = transSourceInput.value;
+      transErrorBanner.style.display = "none";
+    });
+  }
+
+  if (btnTransSwap) {
+    btnTransSwap.addEventListener("click", () => {
+      const src = transSourceLang.value;
+      const tgt = transTargetLang.value;
+      if (src !== "Auto-Detect") {
+        transSourceLang.value = tgt;
+        transTargetLang.value = src;
+      }
+      const tmp = transSourceInput.value;
+      transSourceInput.value = transOutput.value;
+      transOutput.value = tmp;
+      transCharCount.textContent = transSourceInput.value.length;
+    });
+  }
+
+  if (btnExecuteTranslate) {
+    btnExecuteTranslate.addEventListener("click", async () => {
+      const text = transSourceInput.value.trim();
+      if (!text) {
+        transErrorBanner.textContent = "Please enter text to translate.";
+        transErrorBanner.style.display = "block";
+        return;
+      }
+      btnExecuteTranslate.disabled = true;
+      btnExecuteTranslate.textContent = "TRANSLATING...";
+      transErrorBanner.style.display = "none";
+
+      const startTime = performance.now();
+      try {
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            source_lang: transSourceLang.value,
+            target_lang: transTargetLang.value,
+          }),
+        });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const data = await res.json();
+        transOutput.value = data.translated_text || "";
+        const dur = Math.round(performance.now() - startTime);
+        recordAction("translate", { from: transSourceLang.value, to: transTargetLang.value }, "DEVICE", dur, "SUCCESS");
+      } catch (err) {
+        transErrorBanner.textContent = `Translation failed: ${err.message}. Click to retry.`;
+        transErrorBanner.style.display = "block";
+      } finally {
+        btnExecuteTranslate.disabled = false;
+        btnExecuteTranslate.textContent = "TRANSLATE TEXT";
+      }
+    });
+  }
+
+  if (btnTransCopy) {
+    btnTransCopy.addEventListener("click", () => {
+      if (transOutput.value) {
+        navigator.clipboard.writeText(transOutput.value);
+        btnTransCopy.textContent = "COPIED!";
+        setTimeout(() => (btnTransCopy.textContent = "COPY"), 1500);
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 11. Tasks Engine (#tasks: Email & Analyze)
+  // ==========================================================================
+  taskTabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-task-tab");
+      taskTabBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      paneTaskEmail.classList.toggle("active", tab === "email");
+      paneTaskAnalyze.classList.toggle("active", tab === "analyze");
+    });
+  });
+
+  if (btnGenerateEmail) {
+    btnGenerateEmail.addEventListener("click", async () => {
+      const points = emailPoints.value.trim();
+      if (!points) {
+        alert("Please enter key points for the email.");
+        return;
+      }
+      btnGenerateEmail.disabled = true;
+      btnGenerateEmail.textContent = "DRAFTING LOCALLY...";
+      const startTime = performance.now();
+      try {
+        const res = await fetch("/api/tasks/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipient: emailRecipient.value.trim() || "Colleague",
+            tone: emailTone.value,
+            key_points: points,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        emailPreview.value = data.full_text || `${data.subject}\n\n${data.body}`;
+        const dur = Math.round(performance.now() - startTime);
+        recordAction("task_email_draft", { tone: emailTone.value }, "DEVICE", dur, "SUCCESS");
+      } catch (err) {
+        alert(`Email generation failed: ${err.message}`);
+      } finally {
+        btnGenerateEmail.disabled = false;
+        btnGenerateEmail.textContent = "GENERATE DRAFT";
+      }
+    });
+  }
+
+  if (btnCopyEmail) {
+    btnCopyEmail.addEventListener("click", () => {
+      if (emailPreview.value) {
+        navigator.clipboard.writeText(emailPreview.value);
+        btnCopyEmail.textContent = "COPIED!";
+        setTimeout(() => (btnCopyEmail.textContent = "COPY DRAFT"), 1500);
+      }
+    });
+  }
+
+  if (btnOpenMail) {
+    btnOpenMail.addEventListener("click", () => {
+      if (emailPreview.value) {
+        const lines = emailPreview.value.split("\n\n");
+        const subj = lines[0]?.replace("Subject: ", "") || "Draft from FRIDAY";
+        const body = lines.slice(1).join("\n\n");
+        window.open(`mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`);
+      }
+    });
+  }
+
+  if (btnRunAnalysis) {
+    btnRunAnalysis.addEventListener("click", async () => {
+      const content = analyzeInput.value.trim();
+      if (!content) {
+        alert("Please paste text to analyze.");
+        return;
+      }
+      btnRunAnalysis.disabled = true;
+      btnRunAnalysis.textContent = "ANALYZING...";
+      const startTime = performance.now();
+      try {
+        const res = await fetch("/api/tasks/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: content,
+            task_type: analyzeTaskType.value,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        analyzeOutput.value = data.result || JSON.stringify(data, null, 2);
+        const dur = Math.round(performance.now() - startTime);
+        recordAction("task_text_analyze", { type: analyzeTaskType.value }, "DEVICE", dur, "SUCCESS");
+      } catch (err) {
+        alert(`Analysis failed: ${err.message}`);
+      } finally {
+        btnRunAnalysis.disabled = false;
+        btnRunAnalysis.textContent = "RUN LOCAL ANALYSIS";
+      }
+    });
+  }
+
+  if (btnCopyAnalysis) {
+    btnCopyAnalysis.addEventListener("click", () => {
+      if (analyzeOutput.value) {
+        navigator.clipboard.writeText(analyzeOutput.value);
+        btnCopyAnalysis.textContent = "COPIED!";
+        setTimeout(() => (btnCopyAnalysis.textContent = "COPY RESULT"), 1500);
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 12. Dashboard & Settings Data Loaders
+  // ==========================================================================
+  async function loadDashboardData() {
+    renderLedger();
+    try {
+      const [resHealth, resTools, resMemory] = await Promise.all([
+        fetch("/api/health"),
+        fetch("/api/tools"),
+        fetch("/api/memory"),
+      ]);
+
+      if (resHealth.ok) {
+        const h = await resHealth.json();
+        if (dashLlmStatus) dashLlmStatus.textContent = h.llm_model || "gemma2:2b";
+      }
+      if (resTools.ok) {
+        const t = await resTools.json();
+        if (dashToolsCount) dashToolsCount.textContent = (t.tools || []).length;
+      }
+      if (resMemory.ok) {
+        const m = await resMemory.json();
+        if (dashMemoryCount) dashMemoryCount.textContent = (m.memories || []).length;
+      }
     } catch (e) {
-      console.warn("Neural TTS request failed, falling back to browser speech:", e);
+      console.warn("Telemetry refresh warning:", e);
     }
-
-    fallbackBrowserSpeech(cleanSpeech);
   }
 
-  function voice_clean_text(text) {
-    return text
-      .replace(/```[\s\S]*?```/g, " code omitted ")
-      .replace(/[*_#`~>|]/g, "")
-      .trim();
-  }
-
-  function fallbackBrowserSpeech(text) {
-    if (!window.speechSynthesis) {
-      setAssistantState("ONLINE");
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(text.slice(0, 400));
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
-    utterance.onstart = () => {
-      setAssistantState("SPEAKING");
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.remove("hidden");
-    };
-    utterance.onend = () => {
-      setAssistantState("ONLINE");
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-    };
-    utterance.onerror = () => {
-      setAssistantState("ONLINE");
-      if (btnVoiceInterrupt) btnVoiceInterrupt.classList.add("hidden");
-    };
-    window.speechSynthesis.speak(utterance);
-  }
-
-
-
-  // ==========================================================================
-  // 8. Settings Management
-  // ==========================================================================
-  async function loadSettings() {
+  async function loadSettingsData() {
     try {
       const res = await fetch("/api/settings");
       if (res.ok) {
         const s = await res.json();
-        if (setModel && s.llm_model) {
-          setModel.value = s.llm_model;
-        }
-        if (activeModelBadge) {
-          activeModelBadge.textContent = s.llm_model === "go1.0" ? "GO 1.0 (goo1)" : (s.llm_model || "GO 1.0 (goo1)");
-        }
-        const activeModelName = document.getElementById("active-model-name");
-        if (activeModelName && s.llm_model) {
-          activeModelName.textContent = s.llm_model === "go1.0" ? "GO 1.0" : (s.llm_model === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
-        }
-        setTemp.value = s.temperature;
-        setTempVal.textContent = parseFloat(s.temperature).toFixed(2);
-        setMaxTokens.value = s.max_tokens;
-        setTokensVal.textContent = s.max_tokens;
-        setMemory.checked = s.enable_memory;
-        setVoice.checked = s.enable_voice;
+        if (settingsModel && s.llm_model) settingsModel.value = s.llm_model;
       }
     } catch (e) {}
-
-    // Load saved voice persona
-    if (setVoicePersona) {
-      const savedPersona = localStorage.getItem("friday_voice") || "aria";
-      setVoicePersona.value = savedPersona;
-    }
   }
 
-  if (setVoicePersona) {
-    setVoicePersona.addEventListener("change", () => {
-      localStorage.setItem("friday_voice", setVoicePersona.value);
-    });
-  }
-
-  if (btnTestVoice) {
-    btnTestVoice.addEventListener("click", async () => {
-      btnTestVoice.disabled = true;
-      if (voiceTestFeedback) voiceTestFeedback.textContent = "Synthesizing...";
-      try {
-        await speakText("All systems online. FRIDAY neural voice synthesizer is functioning at peak efficiency.");
-        if (voiceTestFeedback) {
-          voiceTestFeedback.textContent = "Voice active";
-          setTimeout(() => { if (voiceTestFeedback) voiceTestFeedback.textContent = ""; }, 3000);
-        }
-      } catch (err) {
-        if (voiceTestFeedback) voiceTestFeedback.textContent = "Test failed";
-      } finally {
-        btnTestVoice.disabled = false;
-      }
-    });
-  }
-
-  setTemp.addEventListener("input", (e) => setTempVal.textContent = parseFloat(e.target.value).toFixed(2));
-  setMaxTokens.addEventListener("input", (e) => setTokensVal.textContent = e.target.value);
-
-  btnSaveSettings.addEventListener("click", async () => {
-    try {
-      if (setVoicePersona) {
-        localStorage.setItem("friday_voice", setVoicePersona.value);
-      }
-      const modelVal = setModel ? setModel.value : "go1.0";
+  if (settingsModel) {
+    settingsModel.addEventListener("change", async () => {
       await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          llm_model: modelVal,
-          temperature: parseFloat(setTemp.value),
-          max_tokens: parseInt(setMaxTokens.value, 10),
-          enable_memory: setMemory.checked,
-          enable_voice: setVoice.checked,
-        }),
+        body: JSON.stringify({ llm_model: settingsModel.value }),
       });
-      if (activeModelBadge) {
-        activeModelBadge.textContent = modelVal === "go1.0" ? "GO 1.0 (goo1)" : modelVal;
+    });
+  }
+
+  // ==========================================================================
+  // 13. Universal Keyboard Shortcuts (⌘1..6, ⌘K, Enter)
+  // ==========================================================================
+  window.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "6") {
+      e.preventDefault();
+      const views = ["chat", "voice", "translate", "tasks", "dashboard", "settings"];
+      const target = views[parseInt(e.key) - 1];
+      if (target) {
+        window.location.hash = target;
+        routeToView(target);
       }
-      const activeModelName = document.getElementById("active-model-name");
-      if (activeModelName) {
-        activeModelName.textContent = modelVal === "go1.0" ? "GO 1.0" : (modelVal === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
-      }
-      settingsSavedFeedback.classList.remove("hidden");
-      setTimeout(() => settingsSavedFeedback.classList.add("hidden"), 2500);
-    } catch (e) {
-      console.error("Save settings error:", e);
+    } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      createNewConversation();
     }
   });
 
-  btnRefreshDash.addEventListener("click", loadDashboardData);
-
   // ==========================================================================
-  // 9. Markdown Parser Utility
+  // 14. Markdown & Helper Utilities
   // ==========================================================================
   function escapeHtml(str) {
     if (!str) return "";
-    return str
+    return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -1884,688 +1071,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderMarkdown(md) {
     if (!md) return "";
-    // Clean raw tool call syntax if it ever leaks in stream
-    let clean = md
-      .replace(/```(?:tool|json)?\s*\{[\s\S]*?"tool"[\s\S]*?\}\s*```/g, "")
-      .replace(/\{"tool":\s*"[^"]+".*?\}/g, "")
-      .trim();
-    if (!clean) return "";
+    let html = escapeHtml(md);
 
-    let html = escapeHtml(clean);
+    // Code blocks
+    html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, '<pre class="font-mono" style="background: #000000; color: #FFE600; padding: 12px; border: 2px solid var(--color-border); margin: 8px 0; overflow-x: auto;"><code>$2</code></pre>');
 
-    // Code blocks ```code```
-    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-    // Inline code `code`
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Bold **text**
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code class="font-mono" style="background: var(--color-surface-subtle); padding: 2px 5px; border: 1px solid var(--color-border);">$1</code>');
+
+    // Bold & italics
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    // URLs
-    html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">↗ $1</a>');
-    // Bullet lines: * text or - text
-    html = html.replace(/(?:^|\n)[*-]\s+(.+)/g, '<br>&bull; $1');
-    // Newlines to <br>
-    html = html.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-    return html;
+    // Line breaks to paragraphs
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    return `<p>${html}</p>`;
   }
 
-  // ==========================================================================
-  // 10. GO 1.0 Live Translator Controller
-  // ==========================================================================
-  function initLiveTranslator() {
-    const sourceLang = document.getElementById("trans-source-lang");
-    const targetLang = document.getElementById("trans-target-lang");
-    const styleSelect = document.getElementById("trans-style-select");
-    const autoCheck = document.getElementById("trans-auto-check");
-    const sourceInput = document.getElementById("trans-source-input");
-    const targetOutput = document.getElementById("trans-target-output");
-    const btnSwap = document.getElementById("btn-trans-swap");
-    const btnExecute = document.getElementById("btn-trans-execute");
-    const btnClear = document.getElementById("btn-trans-clear");
-    const btnMic = document.getElementById("btn-trans-mic");
-    const btnCopy = document.getElementById("btn-trans-copy");
-    const btnSpeak = document.getElementById("btn-trans-speak");
-    const detectedBadge = document.getElementById("trans-detected-badge");
-    const nuanceCard = document.getElementById("trans-nuance-card");
-    const nuanceText = document.getElementById("trans-nuance-text");
-    const copyToast = document.getElementById("trans-copy-toast");
-    const spinner = document.getElementById("trans-spinner");
-    const sourceChars = document.getElementById("trans-source-chars");
-    const sourceWords = document.getElementById("trans-source-words");
-    const targetChars = document.getElementById("trans-target-chars");
-    const targetWords = document.getElementById("trans-target-words");
-    const phraseChips = document.querySelectorAll(".phrase-chip");
-
-    if (!sourceInput || !targetOutput) return;
-
-    let autoDebounceTimer = null;
-    let isTranslating = false;
-    let lastTranslatedText = "";
-
-    function updateSourceStats() {
-      const txt = sourceInput.value;
-      const chars = txt.length;
-      const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
-      if (sourceChars) sourceChars.textContent = `${chars} characters`;
-      if (sourceWords) sourceWords.textContent = `${words} words`;
-    }
-
-    function updateTargetStats(txt) {
-      const chars = txt.length;
-      const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
-      if (targetChars) targetChars.textContent = `${chars} characters`;
-      if (targetWords) targetWords.textContent = `${words} words`;
-    }
-
-    async function executeTranslation() {
-      const text = sourceInput.value.trim();
-      if (!text) {
-        targetOutput.innerHTML = '<span class="trans-placeholder">Translation will appear here in real-time...</span>';
-        updateTargetStats("");
-        if (nuanceCard) nuanceCard.classList.add("hidden");
-        return;
-      }
-      if (text === lastTranslatedText) return;
-      if (isTranslating) return;
-
-      isTranslating = true;
-      if (spinner) spinner.classList.remove("hidden");
-      targetOutput.style.opacity = "0.6";
-
-      try {
-        const payload = {
-          text: text,
-          source_lang: sourceLang ? sourceLang.value : "Auto-Detect",
-          target_lang: targetLang ? targetLang.value : "Spanish",
-          style: styleSelect ? styleSelect.value : "Natural / Conversational",
-        };
-
-        const res = await fetch("/api/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const translated = data.translated_text || "";
-        targetOutput.textContent = translated;
-        targetOutput.style.opacity = "1";
-        lastTranslatedText = text;
-        updateTargetStats(translated);
-
-        if (detectedBadge) {
-          if (data.detected_lang && sourceLang.value === "Auto-Detect") {
-            detectedBadge.textContent = `Detected: ${data.detected_lang}`;
-            detectedBadge.classList.remove("hidden");
-          } else {
-            detectedBadge.classList.add("hidden");
-          }
-        }
-
-        if (nuanceCard && nuanceText) {
-          if (data.nuance_notes) {
-            nuanceText.textContent = data.nuance_notes;
-            nuanceCard.classList.remove("hidden");
-          } else {
-            nuanceCard.classList.add("hidden");
-          }
-        }
-      } catch (err) {
-        console.error("Live translation error:", err);
-        targetOutput.innerHTML = `<span style="color: var(--status-error);">Translation error: ${escapeHtml(err.message)}</span>`;
-        targetOutput.style.opacity = "1";
-      } finally {
-        isTranslating = false;
-        if (spinner) spinner.classList.add("hidden");
-      }
-    }
-
-    sourceInput.addEventListener("input", () => {
-      updateSourceStats();
-      if (autoCheck && autoCheck.checked) {
-        clearTimeout(autoDebounceTimer);
-        const val = sourceInput.value.trim();
-        if (val.length >= 3) {
-          autoDebounceTimer = setTimeout(executeTranslation, 650);
-        }
-      }
-    });
-
-    sourceInput.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        executeTranslation();
-      }
-    });
-
-    if (btnExecute) btnExecute.addEventListener("click", executeTranslation);
-
-    if (btnClear) {
-      btnClear.addEventListener("click", () => {
-        sourceInput.value = "";
-        targetOutput.innerHTML = '<span class="trans-placeholder">Translation will appear here in real-time...</span>';
-        updateSourceStats();
-        updateTargetStats("");
-        lastTranslatedText = "";
-        if (detectedBadge) detectedBadge.classList.add("hidden");
-        if (nuanceCard) nuanceCard.classList.add("hidden");
-        sourceInput.focus();
-      });
-    }
-
-    if (btnSwap) {
-      btnSwap.addEventListener("click", () => {
-        if (!sourceLang || !targetLang) return;
-        const currSrc = sourceLang.value;
-        const currTgt = targetLang.value;
-
-        if (currSrc === "Auto-Detect") {
-          sourceLang.value = currTgt;
-          targetLang.value = "English";
-        } else {
-          sourceLang.value = currTgt;
-          targetLang.value = currSrc;
-        }
-
-        const outText = targetOutput.textContent;
-        if (outText && !targetOutput.querySelector(".trans-placeholder")) {
-          sourceInput.value = outText;
-          updateSourceStats();
-          executeTranslation();
-        }
-      });
-    }
-
-    if (sourceLang) sourceLang.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
-    if (targetLang) targetLang.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
-    if (styleSelect) styleSelect.addEventListener("change", () => { lastTranslatedText = ""; executeTranslation(); });
-
-    phraseChips.forEach((chip) => {
-      chip.addEventListener("click", () => {
-        const phrase = chip.getAttribute("data-phrase");
-        if (phrase) {
-          sourceInput.value = phrase;
-          updateSourceStats();
-          executeTranslation();
-        }
-      });
-    });
-
-    if (btnCopy) {
-      btnCopy.addEventListener("click", () => {
-        const text = targetOutput.textContent;
-        if (text && !targetOutput.querySelector(".trans-placeholder")) {
-          navigator.clipboard.writeText(text).then(() => {
-            if (copyToast) {
-              copyToast.classList.remove("hidden");
-              setTimeout(() => copyToast.classList.add("hidden"), 2000);
-            }
-          });
-        }
-      });
-    }
-
-    if (btnSpeak) {
-      btnSpeak.addEventListener("click", () => {
-        const text = targetOutput.textContent;
-        if (text && !targetOutput.querySelector(".trans-placeholder")) {
-          if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            const tgt = targetLang ? targetLang.value.toLowerCase() : "";
-            if (tgt.includes("span")) utterance.lang = "es-ES";
-            else if (tgt.includes("fren")) utterance.lang = "fr-FR";
-            else if (tgt.includes("germ")) utterance.lang = "de-DE";
-            else if (tgt.includes("hin")) utterance.lang = "hi-IN";
-            else if (tgt.includes("jap")) utterance.lang = "ja-JP";
-            else if (tgt.includes("chin") || tgt.includes("mand")) utterance.lang = "zh-CN";
-            else if (tgt.includes("ita")) utterance.lang = "it-IT";
-            else if (tgt.includes("port")) utterance.lang = "pt-PT";
-            else if (tgt.includes("russ")) utterance.lang = "ru-RU";
-            else if (tgt.includes("arab")) utterance.lang = "ar-SA";
-            else if (tgt.includes("kore")) utterance.lang = "ko-KR";
-            else utterance.lang = "en-US";
-            utterance.rate = 0.95;
-            window.speechSynthesis.speak(utterance);
-          }
-        }
-      });
-    }
-
-    if (btnMic) {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRec) {
-        let transRec = null;
-        let isTransListening = false;
-        btnMic.addEventListener("click", () => {
-          if (isTransListening && transRec) {
-            transRec.stop();
-            return;
-          }
-          transRec = new SpeechRec();
-          transRec.continuous = false;
-          transRec.interimResults = false;
-          transRec.onstart = () => {
-            isTransListening = true;
-            btnMic.style.color = "var(--status-speaking)";
-            btnMic.style.borderColor = "var(--status-speaking)";
-          };
-          transRec.onresult = (evt) => {
-            const transcript = evt.results[0][0].transcript;
-            sourceInput.value = (sourceInput.value ? sourceInput.value + " " : "") + transcript;
-            updateSourceStats();
-            executeTranslation();
-          };
-          transRec.onend = () => {
-            isTransListening = false;
-            btnMic.style.color = "";
-            btnMic.style.borderColor = "";
-          };
-          transRec.onerror = () => {
-            isTransListening = false;
-            btnMic.style.color = "";
-            btnMic.style.borderColor = "";
-          };
-          transRec.start();
-        });
-      } else {
-        btnMic.style.display = "none";
-      }
-    }
-
-    const btnSendChat = document.getElementById("btn-trans-send-chat");
-    if (btnSendChat) {
-      btnSendChat.addEventListener("click", () => {
-        const text = targetOutput.textContent.trim();
-        if (text && !targetOutput.querySelector(".trans-placeholder")) {
-          chatInput.value = text;
-          adjustTextareaHeight(chatInput);
-          switchView("chat");
-          chatInput.focus();
-          showToast("Translation inserted into chat!");
-        } else {
-          showToast("Translate some text first!");
-        }
-      });
-    }
-  }
-
-  // ==========================================================================
-  // 11. GO 1.0 Task Studio Controller (Emails & Analysis)
-  // ==========================================================================
-  function initTaskStudio() {
-    // Sub-tab toggling
-    const subtabBtns = document.querySelectorAll(".tasks-subtab-bar .subtab-btn");
-    const subtabContents = document.querySelectorAll(".tasks-studio-container .subtab-content");
-
-    subtabBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tab = btn.getAttribute("data-subtab");
-        subtabBtns.forEach((b) => b.classList.toggle("active", b === btn));
-        subtabContents.forEach((c) => {
-          c.classList.toggle("active", c.id === `subtab-${tab}-content`);
-        });
-      });
-    });
-
-    // --- Email Drafter ---
-    const emailRecipient = document.getElementById("email-recipient");
-    const emailTone = document.getElementById("email-tone");
-    const emailPoints = document.getElementById("email-points");
-    const btnGenerateEmail = document.getElementById("btn-generate-email");
-    const emailSpinner = document.getElementById("email-spinner");
-    const previewSubject = document.getElementById("preview-email-subject");
-    const previewTo = document.getElementById("preview-email-to");
-    const previewBody = document.getElementById("preview-email-body");
-    const btnEmailCopy = document.getElementById("btn-email-copy");
-    const btnEmailToChat = document.getElementById("btn-email-to-chat");
-    const btnEmailSpeak = document.getElementById("btn-email-speak");
-    const presetChips = document.querySelectorAll(".preset-chip");
-
-    let currentEmailDraft = null;
-
-    const presetTemplates = {
-      follow_up: {
-        recipient: "Alex Chen (Engineering Lead)",
-        points: "Thank them for Tuesday's demo of the local AI assistant. Confirm that our performance testing passed with 60 tok/sec on Apple Silicon. Propose a brief 20-minute catch-up on Friday at 3 PM."
-      },
-      proposal: {
-        recipient: "Executive Leadership Team",
-        points: "Present our new on-device AI system GO 1.0. Highlight zero cloud API latency, 100% private SQLite memory, and agentic tool-calling capabilities. Request approval to pilot across engineering."
-      },
-      reschedule: {
-        recipient: "Sarah Jenkins",
-        points: "Apologize for having to reschedule our sprint retro originally planned for Thursday 2 PM. Propose Friday 10 AM or Monday 11 AM instead as alternatives."
-      },
-      extension: {
-        recipient: "Project Coordinator",
-        points: "Request a 3-day extension on milestone 2 deliverables due to unexpected edge-case validation requirements in the neural laboratory. Assure final quality will be exceptional."
-      },
-      thank_you: {
-        recipient: "Hiring Manager / Tech Lead",
-        points: "Express gratitude for the technical interview today. Highlight our discussion on local LLMs and how my background in distributed systems and PyTorch aligns with their roadmap."
-      }
-    };
-
-    presetChips.forEach((chip) => {
-      chip.addEventListener("click", () => {
-        presetChips.forEach((c) => c.classList.remove("active"));
-        chip.classList.add("active");
-        const presetKey = chip.getAttribute("data-preset");
-        if (presetTemplates[presetKey]) {
-          if (emailRecipient) emailRecipient.value = presetTemplates[presetKey].recipient;
-          if (emailPoints) emailPoints.value = presetTemplates[presetKey].points;
-        }
-      });
-    });
-
-    async function generateEmail() {
-      const recipient = emailRecipient ? emailRecipient.value.trim() : "Colleague";
-      const tone = emailTone ? emailTone.value : "Professional";
-      const points = emailPoints ? emailPoints.value.trim() : "";
-
-      if (!points) {
-        showToast("Please enter key points or details for the email.", 2500);
-        return;
-      }
-
-      if (emailSpinner) emailSpinner.classList.remove("hidden");
-      if (btnGenerateEmail) btnGenerateEmail.disabled = true;
-
-      try {
-        const res = await fetch("/api/tasks/email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipient,
-            tone,
-            key_points: points,
-            purpose: "custom"
-          }),
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        currentEmailDraft = data;
-
-        if (previewSubject) previewSubject.textContent = data.subject || "Subject";
-        if (previewTo) previewTo.textContent = recipient;
-        if (previewBody) {
-          previewBody.innerHTML = escapeHtml(data.salutation) + "<br><br>" +
-            escapeHtml(data.body).replace(/\n/g, "<br>") + "<br><br>" +
-            escapeHtml(data.sign_off).replace(/\n/g, "<br>");
-        }
-      } catch (err) {
-        console.error("Email generation error:", err);
-        if (previewBody) previewBody.innerHTML = `<span style="color: var(--status-error);">Generation error: ${escapeHtml(err.message)}</span>`;
-      } finally {
-        if (emailSpinner) emailSpinner.classList.add("hidden");
-        if (btnGenerateEmail) btnGenerateEmail.disabled = false;
-      }
-    }
-
-    if (btnGenerateEmail) btnGenerateEmail.addEventListener("click", generateEmail);
-
-    if (btnEmailCopy) {
-      btnEmailCopy.addEventListener("click", () => {
-        if (!currentEmailDraft) return;
-        navigator.clipboard.writeText(currentEmailDraft.full_text).then(() => {
-          btnEmailCopy.textContent = "✓ Copied!";
-          setTimeout(() => { btnEmailCopy.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy Email</span>'; }, 2000);
-        });
-      });
-    }
-
-    if (btnEmailToChat) {
-      btnEmailToChat.addEventListener("click", () => {
-        if (!currentEmailDraft) return;
-        switchView("chat");
-        chatInput.value = `Here is the email drafted by GO 1.0:\n\n${currentEmailDraft.full_text}`;
-        chatInput.focus();
-      });
-    }
-
-    if (btnEmailSpeak) {
-      btnEmailSpeak.addEventListener("click", () => {
-        if (!currentEmailDraft) return;
-        speakText(currentEmailDraft.full_text);
-      });
-    }
-
-    // --- Text Analysis & Polish ---
-    const analysisChips = document.querySelectorAll(".analysis-chip");
-    const analyzeInput = document.getElementById("analyze-input");
-    const analyzeInputStats = document.getElementById("analyze-input-stats");
-    const btnRunAnalysis = document.getElementById("btn-run-analysis");
-    const analyzeSpinner = document.getElementById("analyze-spinner");
-    const analyzeResultDisplay = document.getElementById("analyze-result-display");
-    const btnAnalyzeCopy = document.getElementById("btn-analyze-copy");
-    const btnAnalyzeSpeak = document.getElementById("btn-analyze-speak");
-
-    let currentAnalysisAction = "summarize";
-    let currentAnalysisResult = "";
-
-    analysisChips.forEach((chip) => {
-      chip.addEventListener("click", () => {
-        analysisChips.forEach((c) => c.classList.remove("active"));
-        chip.classList.add("active");
-        currentAnalysisAction = chip.getAttribute("data-action");
-      });
-    });
-
-    if (analyzeInput && analyzeInputStats) {
-      analyzeInput.addEventListener("input", () => {
-        const words = analyzeInput.value.trim() ? analyzeInput.value.trim().split(/\s+/).length : 0;
-        analyzeInputStats.textContent = `${words} words`;
-      });
-    }
-
-    async function runAnalysis() {
-      const text = analyzeInput ? analyzeInput.value.trim() : "";
-      if (!text) {
-        showToast("Please paste text to analyze.", 2500);
-        return;
-      }
-
-      if (analyzeSpinner) analyzeSpinner.classList.remove("hidden");
-      if (btnRunAnalysis) btnRunAnalysis.disabled = true;
-
-      try {
-        const res = await fetch("/api/tasks/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text,
-            action: currentAnalysisAction,
-            target_tone: "Executive"
-          }),
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        currentAnalysisResult = data.result || "";
-
-        if (analyzeResultDisplay) {
-          analyzeResultDisplay.innerHTML = renderMarkdown(currentAnalysisResult);
-        }
-      } catch (err) {
-        console.error("Text analysis error:", err);
-        if (analyzeResultDisplay) {
-          analyzeResultDisplay.innerHTML = `<span style="color: var(--status-error);">Analysis error: ${escapeHtml(err.message)}</span>`;
-        }
-      } finally {
-        if (analyzeSpinner) analyzeSpinner.classList.add("hidden");
-        if (btnRunAnalysis) btnRunAnalysis.disabled = false;
-      }
-    }
-
-    if (btnRunAnalysis) btnRunAnalysis.addEventListener("click", runAnalysis);
-
-    if (btnAnalyzeCopy) {
-      btnAnalyzeCopy.addEventListener("click", () => {
-        if (!currentAnalysisResult) return;
-        navigator.clipboard.writeText(currentAnalysisResult).then(() => {
-          btnAnalyzeCopy.textContent = "✓ Copied!";
-          setTimeout(() => { btnAnalyzeCopy.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy Output</span>'; }, 2000);
-        });
-      });
-    }
-
-    if (btnAnalyzeSpeak) {
-      btnAnalyzeSpeak.addEventListener("click", () => {
-        if (currentAnalysisResult) speakText(currentAnalysisResult);
-      });
-    }
-  }
-
-  // ==========================================================================
-  // 12. Chat Quick Action Chips Controller
-  // ==========================================================================
-  function initChatQuickActions() {
-    const actionChips = document.querySelectorAll("#chat-quick-actions .action-chip");
-    actionChips.forEach((chip) => {
-      chip.addEventListener("click", () => {
-        const task = chip.getAttribute("data-task");
-        if (task === "email") {
-          switchView("tasks");
-        } else if (task === "translate") {
-          switchView("translate");
-        } else if (task === "summarize") {
-          chatInput.value = "Summarize the following text into key bullet points:\n";
-          chatInput.focus();
-        } else if (task === "grammar") {
-          chatInput.value = "Please fix the grammar, polish the tone, and explain any corrections:\n";
-          chatInput.focus();
-        } else if (task === "system") {
-          chatInput.value = "What is my current Mac system status, battery, and RAM?";
-          btnSendMessage.click();
-        } else if (task === "calc") {
-          chatInput.value = "Calculate ";
-          chatInput.focus();
-        }
-      });
-    });
-
-    if (chipTranslateDraft) {
-      chipTranslateDraft.addEventListener("click", async () => {
-        const text = chatInput.value.trim();
-        if (!text) {
-          showToast("Type something in the box first to translate!");
-          chatInput.focus();
-          return;
-        }
-        chipTranslateDraft.style.opacity = "0.6";
-        const origLabel = chipTranslateDraft.querySelector("span") ? chipTranslateDraft.querySelector("span").textContent : "";
-        if (chipTranslateDraft.querySelector("span")) {
-          chipTranslateDraft.querySelector("span").textContent = "Translating...";
-        }
-
-        try {
-          const res = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: text,
-              source_lang: "Auto-Detect",
-              target_lang: "Spanish",
-              style: "Natural / Conversational",
-            }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          if (data.translated_text) {
-            chatInput.value = data.translated_text;
-            adjustTextareaHeight(chatInput);
-            showToast(`Translated to ${data.target_lang || "Spanish"}!`);
-          }
-        } catch (err) {
-          showToast(`Translate error: ${err.message}`);
-        } finally {
-          chipTranslateDraft.style.opacity = "1";
-          if (chipTranslateDraft.querySelector("span")) {
-            chipTranslateDraft.querySelector("span").textContent = origLabel;
-          }
-          chatInput.focus();
-        }
-      });
-    }
-  }
-
-  // ==========================================================================
-  // 13. Interactive Model Switcher Popover Controller (Claude / ChatGPT style)
-  // ==========================================================================
-  function initModelSelector() {
-    const btnModelSelector = document.getElementById("btn-model-selector");
-    const modelDropdownMenu = document.getElementById("model-dropdown-menu");
-    const modelSelectorWrapper = document.getElementById("model-selector-wrapper");
-    const activeModelName = document.getElementById("active-model-name");
-    const activeModelTag = document.getElementById("active-model-tag");
-
-    if (!btnModelSelector || !modelDropdownMenu) return;
-
-    btnModelSelector.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isHidden = modelDropdownMenu.classList.contains("hidden");
-      if (isHidden) {
-        modelDropdownMenu.classList.remove("hidden");
-        modelSelectorWrapper?.classList.add("open");
-      } else {
-        modelDropdownMenu.classList.add("hidden");
-        modelSelectorWrapper?.classList.remove("open");
-      }
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!modelSelectorWrapper?.contains(e.target)) {
-        modelDropdownMenu.classList.add("hidden");
-        modelSelectorWrapper?.classList.remove("open");
-      }
-    });
-
-    const modelOptions = modelDropdownMenu.querySelectorAll(".model-option");
-    modelOptions.forEach((opt) => {
-      opt.addEventListener("click", async () => {
-        const modelId = opt.getAttribute("data-model");
-        const rawName = opt.querySelector(".option-name")?.textContent || modelId;
-        const optTag = opt.querySelector(".option-pill-badge")?.textContent || "Custom";
-
-        modelOptions.forEach((o) => o.classList.remove("active"));
-        opt.classList.add("active");
-
-        const displayName = modelId === "go1.0" ? "GO 1.0" : (modelId === "gemma2:2b" ? "Gemma 2" : "Llama 3.2");
-        if (activeModelName) activeModelName.textContent = displayName;
-        if (activeModelTag) activeModelTag.textContent = optTag;
-
-        modelDropdownMenu.classList.add("hidden");
-        modelSelectorWrapper?.classList.remove("open");
-
-        if (setModel) setModel.value = modelId;
-
-        try {
-          await fetch("/api/settings", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ llm_model: modelId }),
-          });
-          showToast(`Active model switched to ${rawName}`);
-        } catch (e) {
-          console.error("Failed to update active model:", e);
-        }
-      });
-    });
-  }
-
-  // Initial Boot
+  // Initial Route & Load
+  routeToView(window.location.hash || "chat");
   loadConversations();
-  loadDashboardData();
-  initLiveTranslator();
-  initTaskStudio();
-  initChatQuickActions();
-  initModelSelector();
-  setInterval(loadDashboardData, 20000); // 20s hardware gauge refresh
-  setAssistantState("ONLINE");
 });

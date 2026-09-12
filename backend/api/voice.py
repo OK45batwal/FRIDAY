@@ -47,7 +47,7 @@ async def synthesize_speech(req: TTSRequest):
     if not req.text or not req.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty.")
 
-    audio_bytes = await voice_service.synthesize_speech(
+    audio_bytes, mime_type = await voice_service.synthesize_speech_with_mime(
         text=req.text,
         voice_key_or_id=req.voice,
         rate=req.rate or "+0%",
@@ -62,7 +62,7 @@ async def synthesize_speech(req: TTSRequest):
         )
 
     # Return audio with appropriate media type
-    return Response(content=audio_bytes, media_type="audio/mpeg")
+    return Response(content=audio_bytes, media_type=mime_type)
 
 
 @router.post("/api/voice/transcribe")

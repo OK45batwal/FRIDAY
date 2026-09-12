@@ -68,3 +68,5 @@ services/core/learning_data/
 *.zip
 *.tar.gz
 *.tgz
+*.app/
+.pytest_cache/

@@ -1,0 +1,26 @@
+{
+  "name": "FRIDAY — Local Intelligence Console",
+  "short_name": "FRIDAY",
+  "description": "Controllable, visible on-device AI assistant with deterministic tool calling and local privacy boundaries.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0E0E0C",
+  "theme_color": "#FFE600",
+  "categories": ["utilities", "productivity", "developer tools"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

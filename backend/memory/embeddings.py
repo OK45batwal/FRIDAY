@@ -9,11 +9,17 @@ Provides:
 import math
 import re
 import httpx
+import zlib
 from typing import List, Optional
 from backend.config.settings import settings
 from backend.utils.logger import get_logger
 
 logger = get_logger("embeddings")
+
+
+def _stable_hash(s: str) -> int:
+    """Deterministic 32-bit hash unaffected by Python's process-randomized hash salt."""
+    return zlib.crc32(s.encode("utf-8")) & 0xFFFFFFFF
 
 
 def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
@@ -63,18 +69,16 @@ class LocalEmbeddingEngine:
 
         vec = [0.0] * self.vector_dim
 
-        # 1. Word token hashed features
+        # 1. Word token hashed features with stable hash
         for token in tokens:
-            h = hash(token)
-            idx = abs(h) % self.vector_dim
+            idx = _stable_hash(token) % self.vector_dim
             weight = 1.0 + min(len(token) / 10.0, 1.0)
             vec[idx] += weight
 
         # 2. Character bi-gram features for subword similarity
         for i in range(len(clean) - 1):
             bigram = clean[i : i + 2]
-            h = hash(bigram)
-            idx = abs(h) % self.vector_dim
+            idx = _stable_hash(bigram) % self.vector_dim
             vec[idx] += 0.5
 
         # Normalize vector

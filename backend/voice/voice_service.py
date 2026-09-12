@@ -153,18 +153,18 @@ class VoiceService:
 
         return None
 
-    async def synthesize_speech(
+    async def synthesize_speech_with_mime(
         self,
         text: str,
         voice_key_or_id: Optional[str] = None,
         rate: str = "+0%",
         pitch: str = "+0Hz",
         prefer_local: bool = False,
-    ) -> Optional[bytes]:
-        """Synthesize text to audio bytes with local-first or cloud neural fallback."""
+    ) -> Tuple[Optional[bytes], str]:
+        """Synthesize text to audio bytes and return (audio_bytes, mime_type)."""
         clean_text = self.clean_text_for_speech(text)
         if not clean_text:
-            return None
+            return None, "audio/mpeg"
 
         # Truncate very long responses for conversational voice (limit ~1200 chars)
         if len(clean_text) > 1200:
@@ -185,11 +185,11 @@ class VoiceService:
 
         # 1. If prefer_local or on macOS, try on-device engine first if requested
         if prefer_local and self._has_say:
-            res = self._synthesize_local_macos(clean_text, voice_key=voice_key)
+            res = await asyncio.to_thread(self._synthesize_local_macos, clean_text, voice_key=voice_key)
             if res:
-                return res[0]
+                return res[0], res[1]
 
-        # 2. Try high-fidelity free Neural TTS (edge-tts)
+        # 2. Try high-fidelity free Neural TTS (edge-tts produces audio/mpeg)
         try:
             logger.info(f"Synthesizing voice with {voice_id} ({len(clean_text)} chars)...")
             communicate = edge_tts.Communicate(clean_text, voice=voice_id, rate=rate, pitch=pitch)
@@ -201,18 +201,36 @@ class VoiceService:
             if audio_chunks:
                 audio_bytes = b"".join(audio_chunks)
                 logger.info(f"TTS synthesis complete: {len(audio_bytes)} bytes.")
-                return audio_bytes
+                return audio_bytes, "audio/mpeg"
 
         except Exception as e:
             logger.info(f"Neural cloud TTS unavailable ({e}), falling back to local on-device engine...")
 
         # 3. Fallback to local on-device engine (macOS say)
         if self._has_say:
-            local_res = self._synthesize_local_macos(clean_text, voice_key=voice_key)
+            local_res = await asyncio.to_thread(self._synthesize_local_macos, clean_text, voice_key=voice_key)
             if local_res:
-                return local_res[0]
+                return local_res[0], local_res[1]
 
-        return None
+        return None, "audio/mpeg"
+
+    async def synthesize_speech(
+        self,
+        text: str,
+        voice_key_or_id: Optional[str] = None,
+        rate: str = "+0%",
+        pitch: str = "+0Hz",
+        prefer_local: bool = False,
+    ) -> Optional[bytes]:
+        """Synthesize text to audio bytes with local-first or cloud neural fallback."""
+        audio_bytes, _ = await self.synthesize_speech_with_mime(
+            text=text,
+            voice_key_or_id=voice_key_or_id,
+            rate=rate,
+            pitch=pitch,
+            prefer_local=prefer_local,
+        )
+        return audio_bytes
 
     async def stream_sentence_audio(
         self,

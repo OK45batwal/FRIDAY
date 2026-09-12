@@ -68,6 +68,7 @@ class FileManagerTool(BaseTool):
 
         elif action == "read":
             expanded_path = os.path.realpath(os.path.abspath(os.path.expanduser(target)))
+            workspace_root = os.path.realpath(os.getcwd())
 
             # Security: Disallow sensitive paths and patterns
             sensitive_patterns = [
@@ -77,6 +78,14 @@ class FileManagerTool(BaseTool):
             path_lower = expanded_path.lower()
             if any(p in path_lower for p in sensitive_patterns):
                 return f"Access Denied: Reading sensitive or system file '{target}' is restricted for security."
+
+            # Security: Prevent path traversal outside authorized workspace root
+            try:
+                common = os.path.commonpath([expanded_path, workspace_root])
+                if common != workspace_root:
+                    return f"Access Denied: Access to '{target}' is outside the authorized workspace."
+            except ValueError:
+                return f"Access Denied: Access to '{target}' is outside the authorized workspace."
 
             if not os.path.exists(expanded_path):
                 return f"Error: File not found at '{expanded_path}'."
