@@ -101,6 +101,7 @@ private fun ProcessTextModal(
             val result = when (mode) {
                 "Professional" -> apiClient.rewriteTone(originalText, "professional")
                 "Casual" -> apiClient.rewriteTone(originalText, "casual")
+                "Concise" -> apiClient.rewriteTone(originalText, "concise")
                 else -> apiClient.fixGrammar(originalText)
             }
             currentResult = result
@@ -223,12 +224,13 @@ private fun ProcessTextModal(
             // Interactive Tone Selector Chips
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 listOf(
                     "Grammar" to "Grammar",
                     "Gmail" to "Professional",
-                    "WhatsApp" to "Casual"
+                    "WhatsApp" to "Casual",
+                    "Summary" to "Concise"
                 ).forEach { (label, mode) ->
                     val isSelected = selectedMode == mode
                     Box(
@@ -243,7 +245,7 @@ private fun ProcessTextModal(
                         Text(
                             text = label,
                             color = if (isSelected) Color.Black else Color(0xFFFFE600),
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
                             fontFamily = FontFamily.Monospace,
                             maxLines = 1
