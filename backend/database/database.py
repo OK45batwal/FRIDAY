@@ -70,6 +70,7 @@ async def get_db_connection():
     """Yield an async SQLite connection with Row factory."""
     async with aiosqlite.connect(DB_PATH) as conn:
         conn.row_factory = aiosqlite.Row
+        await conn.execute("PRAGMA foreign_keys = ON;")
         yield conn
 
 

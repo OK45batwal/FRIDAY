@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 from backend.config.settings import settings
+from backend.database.repositories import SettingsRepository
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -40,15 +41,21 @@ async def update_settings(req: UpdateSettingsRequest):
     """Update runtime settings."""
     if req.llm_model is not None:
         settings.LLM_MODEL = req.llm_model
+        await SettingsRepository.set("llm_model", str(req.llm_model))
     if req.temperature is not None:
         settings.LLM_TEMPERATURE = req.temperature
+        await SettingsRepository.set("temperature", str(req.temperature))
     if req.top_p is not None:
         settings.LLM_TOP_P = req.top_p
+        await SettingsRepository.set("top_p", str(req.top_p))
     if req.max_tokens is not None:
         settings.LLM_MAX_TOKENS = req.max_tokens
+        await SettingsRepository.set("max_tokens", str(req.max_tokens))
     if req.enable_memory is not None:
         settings.ENABLE_MEMORY = req.enable_memory
+        await SettingsRepository.set("enable_memory", str(req.enable_memory).lower())
     if req.enable_voice is not None:
         settings.ENABLE_VOICE = req.enable_voice
+        await SettingsRepository.set("enable_voice", str(req.enable_voice).lower())
 
     return {"status": "updated", "settings": await get_settings()}

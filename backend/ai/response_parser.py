@@ -60,6 +60,24 @@ class ResponseParser:
             except json.JSONDecodeError:
                 pass
 
+        # 3. Match [TOOL_REQUEST: name(args)] syntax (FRIDAY / GO 1.0 distillation protocol)
+        tool_req_match = re.search(r"\[TOOL_REQUEST:\s*([a-zA-Z0-9_\-]+)(?:\((.*?)\))?\s*\]", text, re.DOTALL)
+        if tool_req_match:
+            raw_name = tool_req_match.group(1).strip()
+            raw_args = tool_req_match.group(2)
+            args = {}
+            if raw_args and raw_args.strip():
+                import ast
+                try:
+                    call_node = ast.parse(f"dummy({raw_args})").body[0].value
+                    for kw in call_node.keywords:
+                        args[kw.arg] = ast.literal_eval(kw.value)
+                except Exception:
+                    for k, v1, v2, v3 in re.findall(r"(\w+)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^,\)]+))", raw_args):
+                        val = v1 if v1 else (v2 if v2 else v3.strip())
+                        args[k] = val
+            return {"tool": raw_name, "arguments": args}
+
         return None
 
     @staticmethod
@@ -67,4 +85,5 @@ class ResponseParser:
         """Strip raw tool invocation markup from final user-facing text."""
         cleaned = re.sub(r"```(?:tool|json)?\s*\{.*?\btool\b.*?\}\s*```", "", text, flags=re.DOTALL)
         cleaned = re.sub(r'\{\s*"(?:type"\s*:\s*"tool_call",\s*)?"tool"\s*:\s*"[^"]+".*?\}', "", cleaned, flags=re.DOTALL)
+        cleaned = re.sub(r"\[TOOL_REQUEST:.*?\]", "", cleaned, flags=re.DOTALL)
         return cleaned.strip()

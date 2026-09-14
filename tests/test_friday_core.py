@@ -55,13 +55,24 @@ def test_database_and_repositories():
         val = await SettingsRepository.get("test_key")
         assert val == "test_val"
 
-        # 6. Conversation Export
+        # 6. Conversation Export & Filename Sanitization
         from backend.api.conversations import export_conversation
         export_md = await export_conversation(conv.id, format="markdown")
         assert "Test Session" in export_md["title"]
         assert "Hello FRIDAY" in export_md["content"]
+        assert "/" not in export_md["filename"]
         export_json = await export_conversation(conv.id, format="json")
         assert len(export_json["messages"]) >= 1
+
+        # 7. Foreign Key Cascade Delete Verification
+        del_conv = await ConversationRepository.create("Delete Cascade Test")
+        await MessageRepository.add(del_conv.id, "user", "Message to be cascade deleted")
+        await ConversationRepository.delete(del_conv.id)
+        from backend.database.database import get_db_connection
+        async with get_db_connection() as conn:
+            cursor = await conn.execute("SELECT count(*) FROM messages WHERE conversation_id = ?", (del_conv.id,))
+            remaining = (await cursor.fetchone())[0]
+            assert remaining == 0, f"Expected 0 cascade remaining messages, found {remaining}"
 
     asyncio.run(_test())
 
@@ -81,9 +92,11 @@ def test_tools():
         err_res = await calc.execute({"expression": "__import__('os').system('ls')"})
         assert "error" in err_res.lower()
 
-        # File Manager validation
+        # File Manager validation & search alias
         from backend.tools.file_manager import FileManagerTool
         fm = FileManagerTool()
+        search_res = await fm.execute({"action": "search", "path": ".", "query": "*.md"})
+        assert "found" in search_res.lower()
         bad_find = await fm.execute({"action": "find", "target": "test; rm -rf /"})
         assert "error" in bad_find.lower() or "invalid" in bad_find.lower()
         blocked_read = await fm.execute({"action": "read", "target": "/etc/passwd"})
@@ -129,6 +142,23 @@ def test_response_parser():
     cleaned = ResponseParser.clean_tool_syntax(llm_output)
     assert "To calculate this" in cleaned
     assert "```json" not in cleaned
+
+    # GO 1.0 Distillation TOOL_REQUEST protocol
+    tool_req_output = 'Calculating root:\n[TOOL_REQUEST: calculator(expression="(5041**0.5) * 15.5")]'
+    parsed_req = ResponseParser.parse_tool_call(tool_req_output)
+    assert parsed_req is not None
+    assert parsed_req["tool"] == "calculator"
+    assert parsed_req["arguments"]["expression"] == "(5041**0.5) * 15.5"
+
+    sys_req_output = 'Checking hardware:\n[TOOL_REQUEST: system_status()]'
+    parsed_sys = ResponseParser.parse_tool_call(sys_req_output)
+    assert parsed_sys is not None
+    assert parsed_sys["tool"] == "system_status"
+    assert parsed_sys["arguments"] == {}
+
+    cleaned_req = ResponseParser.clean_tool_syntax(tool_req_output)
+    assert "Calculating root:" in cleaned_req
+    assert "[TOOL_REQUEST:" not in cleaned_req
 
 
 def test_memory_systems():

@@ -26,12 +26,19 @@ class FileManagerTool(BaseTool):
 
     async def execute(self, arguments: Dict[str, Any]) -> str:
         action = arguments.get("action", "find").lower().strip()
-        target = arguments.get("target", "").strip()
+        target = str(
+            arguments.get("target")
+            or arguments.get("query")
+            or arguments.get("pattern")
+            or arguments.get("path")
+            or arguments.get("file")
+            or ""
+        ).strip()
 
         if not target:
             return "Error: Target filename or path must be specified."
 
-        if action == "find":
+        if action in ("find", "search", "list"):
             clean_name = target.replace("'", "").replace('"', "").replace("*", "").strip()
             if not clean_name or not re.match(r"^[\w.\-\s/]+$", clean_name):
                 return "Error: Invalid filename pattern. Allowed characters: letters, digits, dots, hyphens, underscores, slashes."
@@ -66,7 +73,7 @@ class FileManagerTool(BaseTool):
                 lines.append(f"- {m} ({size_kb} KB)")
             return "\n".join(lines)
 
-        elif action == "read":
+        elif action in ("read", "view", "cat"):
             expanded_path = os.path.realpath(os.path.abspath(os.path.expanduser(target)))
             workspace_root = os.path.realpath(os.getcwd())
 

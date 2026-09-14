@@ -1,7 +1,12 @@
-"""Tokenizer implementation supporting BPE via tiktoken with special tokens."""
-
+import os
+from pathlib import Path
 from typing import List, Union, Optional
 import torch
+
+# Ensure offline availability by defaulting to local tiktoken cache directory
+_LOCAL_CACHE = str(Path(__file__).parent / ".cache")
+if "TIKTOKEN_CACHE_DIR" not in os.environ and os.path.isdir(_LOCAL_CACHE):
+    os.environ["TIKTOKEN_CACHE_DIR"] = _LOCAL_CACHE
 
 try:
     import tiktoken
