@@ -68,7 +68,7 @@ async def export_conversation(conv_id: str, format: str = "markdown"):
         content = getattr(m, "content", "") or (m.get("content", "") if isinstance(m, dict) else "")
         sender = "👤 You" if role == "user" else "✦ FRIDAY"
         lines.append(f"### {sender}\n\n{str(content).strip()}\n")
-    safe_filename = re.sub(r'[^\w\-_.]', '_', str(title).strip().replace(' ', '_')).lower() or "conversation"
+    safe_filename = re.sub(r'[^\w\-_.]+', '_', (title or "").lower()).strip('_') or "conversation"
     return {
         "format": "markdown",
         "title": title,

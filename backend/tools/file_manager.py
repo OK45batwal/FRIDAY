@@ -26,14 +26,7 @@ class FileManagerTool(BaseTool):
 
     async def execute(self, arguments: Dict[str, Any]) -> str:
         action = arguments.get("action", "find").lower().strip()
-        target = str(
-            arguments.get("target")
-            or arguments.get("query")
-            or arguments.get("pattern")
-            or arguments.get("path")
-            or arguments.get("file")
-            or ""
-        ).strip()
+        target = str(next((arguments[k] for k in ("target", "query", "pattern", "path", "file") if arguments.get(k)), "")).strip()
 
         if not target:
             return "Error: Target filename or path must be specified."

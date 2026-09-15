@@ -1,6 +1,7 @@
 """Robust Response Parser for Tool Calls and Content."""
 
 import re
+import ast
 import json
 from typing import Optional, Dict, Any
 
@@ -63,19 +64,14 @@ class ResponseParser:
         # 3. Match [TOOL_REQUEST: name(args)] syntax (FRIDAY / GO 1.0 distillation protocol)
         tool_req_match = re.search(r"\[TOOL_REQUEST:\s*([a-zA-Z0-9_\-]+)(?:\((.*?)\))?\s*\]", text, re.DOTALL)
         if tool_req_match:
-            raw_name = tool_req_match.group(1).strip()
-            raw_args = tool_req_match.group(2)
+            raw_name, raw_args = tool_req_match.group(1).strip(), (tool_req_match.group(2) or "").strip()
             args = {}
-            if raw_args and raw_args.strip():
-                import ast
+            if raw_args:
                 try:
                     call_node = ast.parse(f"dummy({raw_args})").body[0].value
-                    for kw in call_node.keywords:
-                        args[kw.arg] = ast.literal_eval(kw.value)
+                    args = {kw.arg: ast.literal_eval(kw.value) for kw in call_node.keywords}
                 except Exception:
-                    for k, v1, v2, v3 in re.findall(r"(\w+)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^,\)]+))", raw_args):
-                        val = v1 if v1 else (v2 if v2 else v3.strip())
-                        args[k] = val
+                    args = {k: v.strip("\"' ") for k, v in re.findall(r"(\w+)\s*=\s*([^,\)]+)", raw_args)}
             return {"tool": raw_name, "arguments": args}
 
         return None
