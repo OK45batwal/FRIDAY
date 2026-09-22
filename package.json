@@ -1,0 +1,29 @@
+{
+  "name": "friday-intelligence-console",
+  "version": "2.5.0",
+  "private": true,
+  "type": "module",
+  "description": "FRIDAY — Autonomous Local AI Assistant & Presentation System",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "bash run.sh",
+    "backend": "./.venv/bin/python -m backend.main",
+    "test": "./.venv/bin/pytest tests/ -v"
+  },
+  "keywords": [
+    "ai",
+    "assistant",
+    "laya",
+    "ollama",
+    "fastapi",
+    "voice",
+    "local-ai"
+  ],
+  "author": "Omkar",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.4.11"
+  }
+}

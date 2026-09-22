@@ -437,6 +437,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderConversationMessages(msgs) {
     if (!chatMessages) return;
     chatMessages.innerHTML = "";
+    if (!msgs || msgs.length === 0) {
+      chatMessages.innerHTML = `
+        <div class="chat-hero-box">
+          <div class="chat-hero-emblem">⚡</div>
+          <div class="chat-hero-title">FRIDAY INTELLIGENCE CONSOLE</div>
+          <div class="chat-hero-desc">
+            System 2.5 • Dual-Engine Local AI Architecture<br>
+            <span style="color: var(--color-primary-light); font-weight: 600;">Laya System 1 Decision Router</span> (On-Device MPS) + 
+            <span style="color: var(--color-secondary); font-weight: 600;">Ollama Foundation Engine</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
     msgs.forEach((m) => {
       if (m.role === "user") appendUserMessage(m.content);
       else if (m.role === "assistant") {
@@ -457,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         const c = await res.json();
         currentConversationId = c.id;
-        chatMessages.innerHTML = "";
+        renderConversationMessages([]);
         routeToView("chat");
         window.location.hash = "chat";
         await loadConversations();
@@ -479,6 +493,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // 8. Chat Streaming with Trace & Tool Renderers
   // ==========================================================================
   function appendUserMessage(text) {
+    // Remove hero if present
+    const hero = chatMessages.querySelector(".chat-hero-box");
+    if (hero) hero.remove();
+
     const row = document.createElement("div");
     row.className = "message-row";
     row.innerHTML = `
@@ -502,10 +520,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="msg-header">
           <div style="display: flex; align-items: center; gap: 8px;">
             <strong style="color: var(--color-primary);">FRIDAY</strong>
-            <span class="brutal-badge local" style="padding: 1px 4px; font-size: 9px;">ON-DEVICE</span>
+            <span class="brutal-badge local" style="padding: 1px 6px; font-size: 9px;">ON-DEVICE</span>
           </div>
           <span class="msg-time font-mono">${new Date().toLocaleTimeString()}</span>
         </div>
+        <div class="laya-pill-container"></div>
         <div class="trace-container"></div>
         <div class="tool-widgets-container"></div>
         <div class="msg-content"></div>
@@ -545,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drafts.chat = "";
 
     const card = createAssistantCard();
+    const layaPillContainer = card.querySelector(".laya-pill-container");
     const traceContainer = card.querySelector(".trace-container");
     const widgetsContainer = card.querySelector(".tool-widgets-container");
     const msgContent = card.querySelector(".msg-content");
@@ -553,7 +573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     traceContainer.innerHTML = `
       <div class="execution-trace-pill">
         <span class="spinner"></span>
-        <span>Thinking locally (gemma2:2b / go1.0)...</span>
+        <span>Thinking locally (Laya System 1 routing)...</span>
       </div>
     `;
 
@@ -593,19 +613,48 @@ document.addEventListener("DOMContentLoaded", () => {
             if (ev.type === "conversation_created") {
               currentConversationId = ev.conversation_id;
               await loadConversations();
+            } else if (ev.type === "intent_detected") {
+              if (layaPillContainer) {
+                if (ev.fast_path) {
+                  layaPillContainer.innerHTML = `
+                    <div class="laya-decision-pill fast-path">
+                      <span class="laya-bolt">⚡</span>
+                      <span>LAYA FAST-PATH:</span>
+                      <strong style="color: #FFF;">${escapeHtml(ev.laya_choice || ev.intent)}</strong>
+                      <span class="laya-divider">•</span>
+                      <span>${Math.round((ev.confidence || 0) * 100)}% conf</span>
+                      <span class="laya-divider">•</span>
+                      <span>${Math.round(ev.latency_ms || 0)}ms</span>
+                      <span class="laya-bypass-tag">OLLAMA BYPASSED</span>
+                    </div>
+                  `;
+                } else {
+                  layaPillContainer.innerHTML = `
+                    <div class="laya-decision-pill standard">
+                      <span>🧠</span>
+                      <span>LAYA ROUTED:</span>
+                      <strong style="color: #FFF;">${escapeHtml(ev.laya_choice || ev.intent)}</strong>
+                      <span class="laya-divider">•</span>
+                      <span>${Math.round((ev.confidence || 0) * 100)}% conf</span>
+                      <span class="laya-divider">•</span>
+                      <span>${Math.round(ev.latency_ms || 0)}ms</span>
+                    </div>
+                  `;
+                }
+              }
             } else if (ev.type === "tool_started") {
               const locality = ev.tool === "web_search" || ev.tool === "weather" ? "NETWORK" : "DEVICE";
               traceContainer.innerHTML = `
-                <div class="execution-trace-pill">
+                <div class="execution-trace-pill ${ev.fast_path ? 'fast-path-pill' : ''}">
                   <span class="spinner"></span>
-                  <span>Executing tool: ${escapeHtml(ev.tool)}...</span>
+                  <span>${ev.fast_path ? '⚡ Executing Fast-Path' : 'Executing tool'}: ${escapeHtml(ev.tool)}...</span>
                 </div>
               `;
             } else if (ev.type === "tool_completed") {
               const locality = ev.tool === "web_search" || ev.tool === "weather" ? "NETWORK" : "DEVICE";
               const dur = Math.round(performance.now() - startTime);
-              recordAction(ev.tool, ev.arguments, locality, dur, "SUCCESS");
-              widgetsContainer.appendChild(renderToolWidget(ev.tool, ev.arguments, ev.result));
+              recordAction(ev.tool, ev.arguments || {}, locality, dur, "SUCCESS");
+              widgetsContainer.appendChild(renderToolWidget(ev.tool, ev.arguments || {}, ev.result));
               traceContainer.innerHTML = "";
             } else if (ev.type === "assistant_token") {
               traceContainer.innerHTML = "";
@@ -645,6 +694,28 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCancelGen) {
     btnCancelGen.addEventListener("click", () => {
       if (currentAbortController) currentAbortController.abort();
+    });
+  }
+
+  // Quick Command Chips Click Handlers
+  document.querySelectorAll(".quick-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const prompt = chip.getAttribute("data-prompt");
+      if (prompt && chatInput) {
+        chatInput.value = prompt;
+        sendMessage(prompt);
+      }
+    });
+  });
+
+  // Chat Composer Mic Button
+  const btnChatMic = document.getElementById("btn-chat-mic");
+  if (btnChatMic) {
+    btnChatMic.addEventListener("click", () => {
+      window.location.hash = "voice";
+      setTimeout(() => {
+        if (btnPushToTalk) btnPushToTalk.click();
+      }, 150);
     });
   }
 
@@ -995,15 +1066,16 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadDashboardData() {
     renderLedger();
     try {
-      const [resHealth, resTools, resMemory] = await Promise.all([
+      const [resHealth, resTools, resMemory, resInfo] = await Promise.all([
         fetch("/api/health"),
         fetch("/api/tools"),
         fetch("/api/memory"),
+        fetch("/api/info"),
       ]);
 
       if (resHealth.ok) {
         const h = await resHealth.json();
-        if (dashLlmStatus) dashLlmStatus.textContent = h.llm_model || "gemma2:2b";
+        if (dashLlmStatus) dashLlmStatus.textContent = h.llm_model || (h.system ? h.system.arch : "gemma2:2b");
       }
       if (resTools.ok) {
         const t = await resTools.json();
@@ -1012,6 +1084,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (resMemory.ok) {
         const m = await resMemory.json();
         if (dashMemoryCount) dashMemoryCount.textContent = (m.memories || []).length;
+      }
+      if (resInfo.ok) {
+        const info = await resInfo.json();
+        const laya = info.decision_model;
+        const layaDeviceEl = document.getElementById("dash-laya-device");
+        const layaLatencyEl = document.getElementById("dash-laya-latency");
+        if (layaDeviceEl && laya) layaDeviceEl.textContent = laya.device || "MPS (Metal)";
+        if (layaLatencyEl && laya) layaLatencyEl.textContent = laya.loaded ? "Active (~180ms)" : "Ready (MPS)";
+        if (dashLlmStatus && info.agent_model) {
+          dashLlmStatus.textContent = info.agent_model.model_name || "gemma2:2b";
+        }
       }
     } catch (e) {
       console.warn("Telemetry refresh warning:", e);

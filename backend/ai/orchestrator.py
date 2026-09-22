@@ -117,7 +117,7 @@ class FridayOrchestrator:
             yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args, "fast_path": True}
 
             tool_output = await self.tools.execute(tool_name, tool_args)
-            yield {"type": "tool_completed", "tool": tool_name, "result": tool_output, "fast_path": True}
+            yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output, "fast_path": True}
 
             response_text = self._format_fast_path_response(tool_name, tool_args, tool_output)
 
@@ -200,7 +200,7 @@ class FridayOrchestrator:
                 # Execute Tool
                 tool_output = await self.tools.execute(tool_name, tool_args)
 
-                yield {"type": "tool_completed", "tool": tool_name, "result": tool_output}
+                yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output}
 
                 # Feed observation back
                 obs_prompt = self.prompt_manager.build_observation_prompt(tool_name, tool_output)

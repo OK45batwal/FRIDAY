@@ -131,6 +131,11 @@
         </div>
 
         <div class="header-right">
+          <span id="laya-header-badge" class="hud-pill laya-active" title="Laya System 1 Decision Model Active on MPS">
+            <span class="pulse-beacon amber"></span>
+            <span>LAYA ROUTER • ACTIVE</span>
+          </span>
+
           <span id="privacy-badge" class="brutal-badge local" title="Requests processed on local device hardware">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             LOCAL ONLY
@@ -153,9 +158,34 @@
         </div>
 
         <div class="chat-composer-dock">
+          <!-- Quick Command Suggestions Bar -->
+          <div class="chat-quick-chips" aria-label="Quick Command Suggestions">
+            <button class="quick-chip" data-prompt="What time is it right now?">
+              <span>🕒</span> Time
+            </button>
+            <button class="quick-chip" data-prompt="Check battery, RAM, and live hardware telemetry">
+              <span>⚡</span> System Stats
+            </button>
+            <button class="quick-chip" data-prompt="Calculate (45 * 100) + (1024 / 4)">
+              <span>🧮</span> Math Calc
+            </button>
+            <button class="quick-chip" data-prompt="Check the current weather and forecast">
+              <span>🌦️</span> Weather
+            </button>
+            <button class="quick-chip" data-prompt="List files in the workspace">
+              <span>📂</span> Files
+            </button>
+            <button class="quick-chip" data-prompt="Remember that I am building FRIDAY assistant">
+              <span>💾</span> Remember
+            </button>
+          </div>
+
           <div class="composer-input-row">
             <textarea id="chat-input" class="brutal-textarea composer-textarea" placeholder="Ask FRIDAY or command local tools (e.g. 'check battery', 'calculate 2^16', 'search files')..." rows="2"></textarea>
-            <button id="btn-send-message" class="btn-brutal btn-brutal-primary" style="height: 52px; padding: 0 22px;">
+            <button id="btn-chat-mic" class="btn-chat-mic" title="Voice Input (Push-to-Talk)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <button id="btn-send-message" class="btn-brutal btn-brutal-primary btn-send-message">
               <span>SEND</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
             </button>
@@ -174,21 +204,27 @@
         <div class="voice-console-wrap">
           <div class="voice-status-banner">
             <span class="voice-state-tag" id="voice-state-label" data-state="READY">READY</span>
-            <span class="brutal-badge local">ON-DEVICE STT & NEURAL TTS</span>
+            <span class="hud-pill laya-active"><span class="pulse-beacon amber"></span> HOLOGRAPHIC AUDIO CORE</span>
+          </div>
+
+          <!-- Holographic Arc Reactor Core -->
+          <div class="arc-reactor-core">
+            <div class="ring-outer"></div>
+            <div class="ring-middle"></div>
+            <div class="ring-inner"></div>
+            <div class="core-glow"></div>
+            <button id="btn-push-to-talk" class="btn-push-to-talk" title="Click or hold to speak">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              <span id="ptt-label">HOLD OR CLICK TO TALK</span>
+            </button>
           </div>
 
           <div class="voice-waveform-box">
-            <canvas id="voice-waveform-canvas" width="600" height="50"></canvas>
+            <canvas id="voice-waveform-canvas" width="500" height="48"></canvas>
           </div>
 
-          <!-- Massive Push-To-Talk Button -->
-          <button id="btn-push-to-talk" class="btn-push-to-talk" title="Click or hold to speak">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            <span id="ptt-label">HOLD OR CLICK TO TALK</span>
-          </button>
-
           <div class="voice-caption-box">
-            <div style="font-size: 11px; font-weight: 800; color: var(--color-ink-muted); margin-bottom: 4px; text-transform: uppercase;">Live Captions / Transcript</div>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 800; color: var(--color-primary-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Live Captions / Transcript</div>
             <div id="voice-live-caption">Ready for vocal prompt. Press and hold to speak.</div>
           </div>
         </div>
@@ -381,6 +417,35 @@
           </div>
         </div>
 
+        <!-- Laya System 1 Neural Router Card -->
+        <div class="laya-dashboard-card">
+          <div class="laya-card-left">
+            <div class="laya-card-icon">⚡</div>
+            <div>
+              <div class="laya-card-title">LAYA SYSTEM 1 DECISION ENGINE</div>
+              <div class="laya-card-sub">Non-Autoregressive Classifier • ModernBERT-Large Backbone</div>
+            </div>
+          </div>
+          <div class="laya-stats-row">
+            <div class="laya-stat-item">
+              <span id="dash-laya-device" class="laya-stat-val">MPS (Metal)</span>
+              <span class="laya-stat-label">Device</span>
+            </div>
+            <div class="laya-stat-item">
+              <span class="laya-stat-val">421M</span>
+              <span class="laya-stat-label">Parameters</span>
+            </div>
+            <div class="laya-stat-item">
+              <span class="laya-stat-val">85%</span>
+              <span class="laya-stat-label">Threshold</span>
+            </div>
+            <div class="laya-stat-item">
+              <span id="dash-laya-latency" class="laya-stat-val">~180ms</span>
+              <span class="laya-stat-label">Routing Latency</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Interactive Recent Action Ledger -->
         <div class="brutal-card">
           <div class="brutal-card-header">
@@ -549,6 +614,6 @@
 
   </div>
 
-  <script src="/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>
