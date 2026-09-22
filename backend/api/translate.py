@@ -9,6 +9,7 @@ Provides specialized endpoints for:
 import json
 import re
 from typing import Optional, List, Dict, Any
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -155,6 +156,12 @@ async def translate_text(req: TranslateRequest):
             word_count=len(trans_text.split()),
         )
 
+    except (httpx.ConnectError, httpx.RequestError) as e:
+        logger.warning(f"Translation engine offline: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Local LLM service (Ollama) is offline or unreachable. Please start Ollama with 'ollama serve' or './run.sh' to use translation.",
+        )
     except Exception as e:
         logger.error(f"Translation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Translation engine error: {str(e)}")
@@ -241,6 +248,12 @@ async def draft_email(req: EmailDraftRequest):
             full_text=full_text,
         )
 
+    except (httpx.ConnectError, httpx.RequestError) as e:
+        logger.warning(f"Email drafting engine offline: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Local LLM service (Ollama) is offline or unreachable. Please start Ollama with 'ollama serve' or './run.sh' to draft emails.",
+        )
     except Exception as e:
         logger.error(f"Email drafting failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Email generation error: {str(e)}")
@@ -299,6 +312,12 @@ async def analyze_text(req: TextAnalysisRequest):
             word_count_result=res_words,
         )
 
+    except (httpx.ConnectError, httpx.RequestError) as e:
+        logger.warning(f"Text analysis engine offline: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Local LLM service (Ollama) is offline or unreachable. Please start Ollama with 'ollama serve' or './run.sh' to analyze text.",
+        )
     except Exception as e:
         logger.error(f"Text analysis failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Text analysis error: {str(e)}")

@@ -82,108 +82,124 @@ class FridayOrchestrator:
         """Complete streaming execution pipeline yielding lifecycle events."""
         t_start = time.time()
 
-        # Ensure active conversation
-        if not conversation_id:
-            conv = await ConversationRepository.create(title=user_text[:30] + "...")
-            conversation_id = conv.id
-            yield {"type": "conversation_created", "conversation_id": conversation_id}
-
-        # 1. Start Event
-        yield {"type": "assistant_started", "conversation_id": conversation_id}
-
-        # 2. Persist User Message
-        await MessageRepository.add(conversation_id=conversation_id, role="user", content=user_text)
-
-        # 3. Laya System 1 Decision & Intent Routing
-        decision: LayaDecision = await self.laya.classify(user_text)
-        intent = decision.intent
-        yield {
-            "type": "intent_detected",
-            "intent": intent,
-            "laya_choice": decision.laya_choice,
-            "confidence": decision.confidence,
-            "complexity": decision.complexity,
-            "needs_llm": decision.needs_llm,
-            "fast_path": decision.can_fast_path,
-            "latency_ms": decision.latency_ms,
-        }
-
-        # 4. FAST PATH: Execute deterministic tool directly without invoking LLM
-        if decision.can_fast_path and decision.suggested_tool:
-            tool_name = decision.suggested_tool
-            tool_args = decision.tool_args or {}
-
-            yield {"type": "assistant_state", "state": "USING_TOOL"}
-            yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args, "fast_path": True}
-
-            tool_output = await self.tools.execute(tool_name, tool_args)
-            yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output, "fast_path": True}
-
-            response_text = self._format_fast_path_response(tool_name, tool_args, tool_output)
-
-            yield {"type": "assistant_state", "state": "SPEAKING"}
-            for i in range(0, len(response_text), 3):
-                chunk = response_text[i:i+3]
-                yield {"type": "assistant_token", "content": chunk}
-                await asyncio.sleep(0.01)
-
-            await MessageRepository.add(conversation_id=conversation_id, role="assistant", content=response_text)
-
-            total_time = round(time.time() - t_start, 2)
-            yield {"type": "assistant_state", "state": "ONLINE"}
-            yield {"type": "assistant_finished", "conversation_id": conversation_id, "duration": total_time, "fast_path": True}
-            return
-
-        # 5. Pre-flight check: ensure Ollama is alive for LLM synthesis
-        if not await self.client.check_health():
-            yield {"type": "assistant_state", "state": "ERROR"}
-            yield {
-                "type": "error",
-                "message": f"Local LLM (Ollama) is offline or unreachable at {self.client.base_url}. Please start Ollama with 'ollama serve' or execute ./run.sh.",
-            }
-            return
-
-        yield {"type": "assistant_state", "state": "THINKING"}
-
-        saved_mem = None
-        if settings.ENABLE_MEMORY:
-            saved_mem = await self.memory.evaluate_and_store(user_text)
-            if saved_mem:
-                yield {"type": "memory_saved", "content": saved_mem.content, "category": saved_mem.category}
-
-        context_data = await self.memory.get_context(conversation_id, user_text)
-        history = context_data.get("conversation_history", [])
-        memories = context_data.get("long_term_memories", [])
-
-        # 4. Construct System & Context Messages
-        if intent == IntentType.MEMORY_SAVE and saved_mem:
-            system_prompt = f"You are FRIDAY. The user just asked you to remember: '{saved_mem.content}'. You have safely recorded this in your long-term memory database. Acknowledge that you have remembered it warmly, concisely, and confirm what was saved. Do NOT invoke any tools."
-        elif intent == IntentType.MEMORY_RECALL and memories:
-            m_list = "\n".join(f"• {m}" for m in memories)
-            system_prompt = f"You are FRIDAY. The user is asking to recall information from memory.\nRELEVANT MEMORIES FROM DATABASE:\n{m_list}\n\nAnswer the user's question directly and concisely using the memories above. Do NOT invoke any tools."
-        else:
-            system_prompt = self.prompt_manager.build_system_prompt(memories=memories)
-
-        llm_messages = [{"role": "system", "content": system_prompt}]
-
-        # Append previous turns within safe context budget (~3200 tokens / 12,000 chars)
-        max_history_chars = 12000
-        current_chars = len(system_prompt) + len(user_text)
-        truncated_history = []
-        for h in reversed(history[:-1]):
-            content_len = len(h.get("content", ""))
-            if current_chars + content_len > max_history_chars:
-                break
-            truncated_history.insert(0, h)
-            current_chars += content_len
-
-        for h in truncated_history:
-            llm_messages.append(h)
-        llm_messages.append({"role": "user", "content": user_text})
-
-        final_response_text = ""
-
         try:
+            # Ensure active and valid conversation in database
+            conv = None
+            if conversation_id:
+                try:
+                    conv = await ConversationRepository.get_by_id(conversation_id)
+                except Exception as e:
+                    logger.warning(f"Error fetching conversation '{conversation_id}': {e}")
+                    conv = None
+
+            if not conv:
+                conv = await ConversationRepository.create(title=user_text[:30] + "...")
+                conversation_id = conv.id
+                yield {"type": "conversation_created", "conversation_id": conversation_id}
+
+            # 1. Start Event
+            yield {"type": "assistant_started", "conversation_id": conversation_id}
+
+            # 2. Persist User Message (safely)
+            try:
+                await MessageRepository.add(conversation_id=conversation_id, role="user", content=user_text)
+            except Exception as e:
+                logger.warning(f"Could not persist user message to database: {e}")
+
+            # 3. Laya System 1 Decision & Intent Routing
+            decision: LayaDecision = await self.laya.classify(user_text)
+            intent = decision.intent
+            yield {
+                "type": "intent_detected",
+                "intent": intent,
+                "laya_choice": decision.laya_choice,
+                "confidence": decision.confidence,
+                "complexity": decision.complexity,
+                "needs_llm": decision.needs_llm,
+                "fast_path": decision.can_fast_path,
+                "latency_ms": decision.latency_ms,
+            }
+
+            # 4. FAST PATH: Execute deterministic tool directly without invoking LLM
+            if decision.can_fast_path and decision.suggested_tool:
+                tool_name = decision.suggested_tool
+                tool_args = decision.tool_args or {}
+
+                yield {"type": "assistant_state", "state": "USING_TOOL"}
+                yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args, "fast_path": True}
+
+                tool_output = await self.tools.execute(tool_name, tool_args)
+                yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output, "fast_path": True}
+
+                response_text = self._format_fast_path_response(tool_name, tool_args, tool_output)
+
+                yield {"type": "assistant_state", "state": "SPEAKING"}
+                for i in range(0, len(response_text), 3):
+                    chunk = response_text[i:i+3]
+                    yield {"type": "assistant_token", "content": chunk}
+                    await asyncio.sleep(0.01)
+
+                try:
+                    await MessageRepository.add(conversation_id=conversation_id, role="assistant", content=response_text)
+                except Exception as e:
+                    logger.warning(f"Could not persist assistant fast-path message: {e}")
+
+                total_time = round(time.time() - t_start, 2)
+                yield {"type": "assistant_state", "state": "ONLINE"}
+                yield {"type": "assistant_finished", "conversation_id": conversation_id, "duration": total_time, "fast_path": True}
+                return
+
+            # 5. Pre-flight check: ensure Ollama is alive for LLM synthesis
+            if not await self.client.check_health():
+                yield {"type": "assistant_state", "state": "ERROR"}
+                yield {
+                    "type": "error",
+                    "message": f"Local LLM (Ollama) is offline or unreachable at {self.client.base_url}. Please start Ollama with 'ollama serve' or execute ./run.sh.",
+                }
+                yield {"type": "assistant_state", "state": "ONLINE"}
+                yield {"type": "assistant_finished", "conversation_id": conversation_id, "duration": round(time.time() - t_start, 2)}
+                return
+
+            yield {"type": "assistant_state", "state": "THINKING"}
+
+            saved_mem = None
+            if settings.ENABLE_MEMORY:
+                saved_mem = await self.memory.evaluate_and_store(user_text)
+                if saved_mem:
+                    yield {"type": "memory_saved", "content": saved_mem.content, "category": saved_mem.category}
+
+            context_data = await self.memory.get_context(conversation_id, user_text)
+            history = context_data.get("conversation_history", [])
+            memories = context_data.get("long_term_memories", [])
+
+            # Construct System & Context Messages
+            if intent == IntentType.MEMORY_SAVE and saved_mem:
+                system_prompt = f"You are FRIDAY. The user just asked you to remember: '{saved_mem.content}'. You have safely recorded this in your long-term memory database. Acknowledge that you have remembered it warmly, concisely, and confirm what was saved. Do NOT invoke any tools."
+            elif intent == IntentType.MEMORY_RECALL and memories:
+                m_list = "\n".join(f"• {m}" for m in memories)
+                system_prompt = f"You are FRIDAY. The user is asking to recall information from memory.\nRELEVANT MEMORIES FROM DATABASE:\n{m_list}\n\nAnswer the user's question directly and concisely using the memories above. Do NOT invoke any tools."
+            else:
+                system_prompt = self.prompt_manager.build_system_prompt(memories=memories)
+
+            llm_messages = [{"role": "system", "content": system_prompt}]
+
+            # Append previous turns within safe context budget (~3200 tokens / 12,000 chars)
+            max_history_chars = 12000
+            current_chars = len(system_prompt) + len(user_text)
+            truncated_history = []
+            for h in reversed(history[:-1]):
+                content_len = len(h.get("content", ""))
+                if current_chars + content_len > max_history_chars:
+                    break
+                truncated_history.insert(0, h)
+                current_chars += content_len
+
+            for h in truncated_history:
+                llm_messages.append(h)
+            llm_messages.append({"role": "user", "content": user_text})
+
+            final_response_text = ""
+
             # Step 5: First pass to detect tool requests
             initial_response = await self.client.chat(llm_messages)
             tool_call = self.parser.parse_tool_call(initial_response)
@@ -237,8 +253,11 @@ class FridayOrchestrator:
             # Clean any leftover markup
             final_clean = self.parser.clean_tool_syntax(final_response_text)
 
-            # Persist Assistant Message
-            await MessageRepository.add(conversation_id=conversation_id, role="assistant", content=final_clean)
+            # Persist Assistant Message safely
+            try:
+                await MessageRepository.add(conversation_id=conversation_id, role="assistant", content=final_clean)
+            except Exception as e:
+                logger.warning(f"Could not persist assistant message: {e}")
 
             total_time = round(time.time() - t_start, 2)
             yield {"type": "assistant_state", "state": "ONLINE"}

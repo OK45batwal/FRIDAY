@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     ENABLE_LAYA: bool = True
     LAYA_CHECKPOINT: str = "convaiinnovations/laya"
     LAYA_PRELOAD: bool = True
-    LAYA_CONFIDENCE_THRESHOLD: float = 0.85
+    LAYA_CONFIDENCE_THRESHOLD: float = 0.75
     LAYA_DEVICE: Optional[str] = None
 
     # Logging

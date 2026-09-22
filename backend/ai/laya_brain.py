@@ -343,8 +343,12 @@ class LayaBrain:
             noul_prob = float(needs_llm_data.get("noul", 0.5))
             needs_llm = noul_prob >= 0.5
 
+            # Calculate effective confidence to handle uncalibrated temperature clamping in Laya checkpoint
+            top_prob = max(probabilities.values()) if probabilities else confidence
+            effective_confidence = max(confidence, top_prob)
+
             # If confidence is very low, treat as open-ended general chat
-            if confidence < 0.45:
+            if effective_confidence < 0.45:
                 choice = "general_chat"
                 mapped_intent = "GENERAL_CHAT"
                 suggested_tool = None
@@ -358,9 +362,9 @@ class LayaBrain:
 
             # Qualify for fast-path:
             # 1. Is a supported tool (time, system_info, calculator)
-            # 2. Confidence is at or above the threshold
+            # 2. Effective confidence is at or above the threshold
             # 3. Not marked as strongly needing LLM synthesis
-            if suggested_tool and confidence >= settings.LAYA_CONFIDENCE_THRESHOLD:
+            if suggested_tool and effective_confidence >= settings.LAYA_CONFIDENCE_THRESHOLD:
                 can_fast_path, tool_args = self._evaluate_fast_path(choice, user_text)
 
             logger.info(

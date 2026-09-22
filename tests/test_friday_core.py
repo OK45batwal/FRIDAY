@@ -199,3 +199,41 @@ def test_voice_service():
     assert any(v["key"] == "aria" for v in voices)
     assert any(v["key"] == "sonia" for v in voices)
 
+
+def test_orchestrator_resilience_to_invalid_conversation_id():
+    """Verify that an invalid or stale conversation ID is automatically recovered without SQLite foreign key crash."""
+    from backend.ai.orchestrator import orchestrator
+
+    async def _test():
+        await init_db()
+        events = []
+        async for event in orchestrator.process_stream("what time is it?", conversation_id="non-existent-guid-999"):
+            events.append(event)
+
+        event_types = [e["type"] for e in events]
+        assert "conversation_created" in event_types
+        assert "assistant_started" in event_types
+        # Verify valid new conversation was assigned
+        created_event = next(e for e in events if e["type"] == "conversation_created")
+        assert created_event["conversation_id"] != "non-existent-guid-999"
+
+    asyncio.run(_test())
+
+
+def test_cors_headers_accept_vite_port():
+    """Verify CORS middleware responds with correct headers for Vite dev port 5173."""
+    from fastapi.testclient import TestClient
+    from backend.main import app
+
+    client = TestClient(app)
+    resp = client.options(
+        "/api/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+

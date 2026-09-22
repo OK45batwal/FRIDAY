@@ -107,3 +107,21 @@ def test_text_analysis_endpoint():
         assert data["action"] == "summarize"
         assert len(data["points"]) == 2
         assert "60 tok/sec" in data["result"]
+
+
+def test_translate_offline_returns_503():
+    import httpx
+    with patch("backend.api.translate.ollama_client.chat", new_callable=AsyncMock) as mock_chat:
+        mock_chat.side_effect = httpx.ConnectError("Connection refused")
+
+        res = client.post(
+            "/api/translate",
+            json={
+                "text": "Hello world",
+                "source_lang": "Auto-Detect",
+                "target_lang": "French",
+            },
+        )
+        assert res.status_code == 503
+        assert "offline" in res.json()["detail"].lower()
+
