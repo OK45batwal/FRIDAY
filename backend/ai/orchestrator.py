@@ -7,6 +7,7 @@ from backend.config.settings import settings
 from backend.ai.prompt_manager import prompt_manager
 from backend.ai.ollama_client import ollama_client
 from backend.ai.response_parser import ResponseParser
+from backend.ai.laya_brain import laya_brain, LayaDecision
 from backend.memory.memory_manager import memory_manager
 from backend.tools.registry import tool_registry
 from backend.database.repositories import ConversationRepository, MessageRepository
@@ -34,6 +35,7 @@ class FridayOrchestrator:
         self.memory = memory_manager
         self.tools = tool_registry
         self.parser = ResponseParser()
+        self.laya = laya_brain
 
     def classify_intent(self, text: str) -> str:
         """Classify user intent into an operational category."""
@@ -55,6 +57,23 @@ class FridayOrchestrator:
             return IntentType.QUESTION
         return IntentType.GENERAL_CHAT
 
+    def _format_fast_path_response(self, tool_name: str, args: Dict[str, Any], output: str) -> str:
+        """Format a natural, conversational response for fast-path tool execution."""
+        if tool_name == "calculator":
+            expr = args.get("expression", "")
+            if "Result:" in output:
+                res_val = output.split("=")[-1].strip()
+                return f"The result is **{res_val}** (`{expr} = {res_val}`)."
+            return output
+
+        if tool_name == "time":
+            return f"Here is the current date and time:\n\n{output}"
+
+        if tool_name == "system_info":
+            return f"Here is your current live system telemetry:\n\n{output}"
+
+        return f"Tool result:\n\n{output}"
+
     async def process_stream(
         self,
         user_text: str,
@@ -72,7 +91,50 @@ class FridayOrchestrator:
         # 1. Start Event
         yield {"type": "assistant_started", "conversation_id": conversation_id}
 
-        # Pre-flight check: ensure Ollama is alive
+        # 2. Persist User Message
+        await MessageRepository.add(conversation_id=conversation_id, role="user", content=user_text)
+
+        # 3. Laya System 1 Decision & Intent Routing
+        decision: LayaDecision = await self.laya.classify(user_text)
+        intent = decision.intent
+        yield {
+            "type": "intent_detected",
+            "intent": intent,
+            "laya_choice": decision.laya_choice,
+            "confidence": decision.confidence,
+            "complexity": decision.complexity,
+            "needs_llm": decision.needs_llm,
+            "fast_path": decision.can_fast_path,
+            "latency_ms": decision.latency_ms,
+        }
+
+        # 4. FAST PATH: Execute deterministic tool directly without invoking LLM
+        if decision.can_fast_path and decision.suggested_tool:
+            tool_name = decision.suggested_tool
+            tool_args = decision.tool_args or {}
+
+            yield {"type": "assistant_state", "state": "USING_TOOL"}
+            yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args, "fast_path": True}
+
+            tool_output = await self.tools.execute(tool_name, tool_args)
+            yield {"type": "tool_completed", "tool": tool_name, "result": tool_output, "fast_path": True}
+
+            response_text = self._format_fast_path_response(tool_name, tool_args, tool_output)
+
+            yield {"type": "assistant_state", "state": "SPEAKING"}
+            for i in range(0, len(response_text), 3):
+                chunk = response_text[i:i+3]
+                yield {"type": "assistant_token", "content": chunk}
+                await asyncio.sleep(0.01)
+
+            await MessageRepository.add(conversation_id=conversation_id, role="assistant", content=response_text)
+
+            total_time = round(time.time() - t_start, 2)
+            yield {"type": "assistant_state", "state": "ONLINE"}
+            yield {"type": "assistant_finished", "conversation_id": conversation_id, "duration": total_time, "fast_path": True}
+            return
+
+        # 5. Pre-flight check: ensure Ollama is alive for LLM synthesis
         if not await self.client.check_health():
             yield {"type": "assistant_state", "state": "ERROR"}
             yield {
@@ -82,13 +144,6 @@ class FridayOrchestrator:
             return
 
         yield {"type": "assistant_state", "state": "THINKING"}
-
-        # 2. Persist User Message
-        await MessageRepository.add(conversation_id=conversation_id, role="user", content=user_text)
-
-        # 3. Memory & Intent Evaluation
-        intent = self.classify_intent(user_text)
-        yield {"type": "intent_detected", "intent": intent}
 
         saved_mem = None
         if settings.ENABLE_MEMORY:

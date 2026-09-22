@@ -43,6 +43,13 @@ class Settings(BaseSettings):
     ENABLE_VOICE: bool = True
     ENABLE_DEMO_MODE: bool = True
 
+    # Laya Fast Decision Router (System 1)
+    ENABLE_LAYA: bool = True
+    LAYA_CHECKPOINT: str = "convaiinnovations/laya"
+    LAYA_PRELOAD: bool = True
+    LAYA_CONFIDENCE_THRESHOLD: float = 0.85
+    LAYA_DEVICE: Optional[str] = None
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

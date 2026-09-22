@@ -2,6 +2,7 @@
 
 import os
 import sys
+import asyncio
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -21,6 +22,7 @@ from backend.api.settings import router as settings_router
 from backend.api.chat import router as chat_router
 from backend.api.voice import router as voice_router
 from backend.api.translate import router as translate_router
+from backend.ai.laya_brain import laya_brain
 from backend.utils.logger import get_logger
 
 # Import PyTorch model runner for legacy/testing tab
@@ -64,6 +66,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}...")
     await init_db()
     init_pytorch_model()
+    if settings.ENABLE_LAYA and settings.LAYA_PRELOAD:
+        # Preload Laya non-autoregressive decision model in background
+        asyncio.create_task(laya_brain.ensure_loaded())
     yield
     logger.info(f"Shutting down {settings.APP_NAME}...")
 
@@ -119,6 +124,16 @@ async def get_model_info():
             "parameters_formatted": "2.6B",
             "engine": "Local Ollama Engine",
             "device_name": "Apple Silicon Metal (MPS)",
+        },
+        "decision_model": {
+            "model_name": "Laya System 1 Router",
+            "checkpoint": settings.LAYA_CHECKPOINT,
+            "parameters_formatted": "421M",
+            "architecture": "ModernBERT-large Non-Autoregressive Classifier",
+            "enabled": settings.ENABLE_LAYA,
+            "loaded": laya_brain.is_loaded,
+            "device": str(laya_brain.agent.device) if laya_brain.agent else (settings.LAYA_DEVICE or "auto"),
+            "confidence_threshold": settings.LAYA_CONFIDENCE_THRESHOLD,
         },
     }
 

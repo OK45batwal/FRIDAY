@@ -9,4 +9,7 @@ edge-tts>=7.0.0
 torch>=2.2.0
 numpy>=1.26.0
 tiktoken>=0.6.0
+laya>=0.3.5
+transformers>=4.40.0
+safetensors>=0.4.0
 pytest>=8.0.0
