@@ -5,6 +5,7 @@ Loads environment variables with robust defaults for local development.
 
 import os
 from typing import Optional
+from pydantic import Field, AliasChoices, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,14 +18,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "FRIDAY"
-    APP_VERSION: str = "2.0.0"
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    APP_NAME: str = Field(default="FRIDAY", validation_alias=AliasChoices("FRIDAY_APP_NAME", "APP_NAME"))
+    APP_VERSION: str = Field(default="2.0.0", validation_alias=AliasChoices("FRIDAY_APP_VERSION", "APP_VERSION"))
+    ENVIRONMENT: str = Field(default="development", validation_alias=AliasChoices("FRIDAY_ENVIRONMENT", "ENVIRONMENT"))
+    DEBUG: bool = Field(default=True, validation_alias="FRIDAY_DEBUG")
 
     # Server Binding
-    HOST: str = "0.0.0.0"
-    PORT: int = 8080
+    HOST: str = Field(default="127.0.0.1", validation_alias=AliasChoices("FRIDAY_HOST", "HOST"))
+    PORT: int = Field(default=8080, validation_alias=AliasChoices("FRIDAY_PORT", "PORT"))
 
     # Local LLM Runtime (Ollama)
     LLM_PROVIDER: str = "ollama"
@@ -35,8 +36,14 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 512
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./friday.db"
-    SQLITE_DB_PATH: str = "friday.db"
+    DATABASE_URL: str = Field(
+        default="sqlite+aiosqlite:///./friday.db",
+        validation_alias=AliasChoices("FRIDAY_DATABASE_URL", "DATABASE_URL"),
+    )
+    SQLITE_DB_PATH: str = Field(
+        default="friday.db",
+        validation_alias=AliasChoices("FRIDAY_SQLITE_DB_PATH", "SQLITE_DB_PATH"),
+    )
 
     # Feature Flags
     ENABLE_MEMORY: bool = True
@@ -58,5 +65,18 @@ class Settings(BaseSettings):
     GITHUB_URL: str = "https://github.com/OK45batwal/FRIDAY"
 
 
-# Global singleton instance
-settings = Settings()
+_settings_load_error: Optional[ValidationError] = None
+
+try:
+    settings = Settings()
+except ValidationError as _exc:
+    _settings_load_error = _exc
+    settings = Settings.model_construct()
+
+
+def validate_settings() -> Settings:
+    """Validate runtime settings and raise clearly if configuration failed to load."""
+    if _settings_load_error is not None:
+        raise _settings_load_error
+    return settings
+

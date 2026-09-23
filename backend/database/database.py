@@ -7,6 +7,11 @@ from backend.utils.logger import get_logger
 
 logger = get_logger("database")
 
+def get_db_path() -> str:
+    """Return the current configured SQLite database path."""
+    return settings.SQLITE_DB_PATH
+
+
 DB_PATH = settings.SQLITE_DB_PATH
 
 INIT_SCHEMA_SQL = """
@@ -68,7 +73,7 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def get_db_connection():
     """Yield an async SQLite connection with Row factory."""
-    async with aiosqlite.connect(DB_PATH) as conn:
+    async with aiosqlite.connect(get_db_path()) as conn:
         conn.row_factory = aiosqlite.Row
         await conn.execute("PRAGMA foreign_keys = ON;")
         yield conn
@@ -76,7 +81,8 @@ async def get_db_connection():
 
 async def init_db():
     """Initialize database tables and set WAL mode."""
-    logger.info(f"Initializing FRIDAY database at {DB_PATH}...")
+    db_path = get_db_path()
+    logger.info(f"Initializing FRIDAY database at {db_path}...")
     async with get_db_connection() as conn:
         await conn.executescript(INIT_SCHEMA_SQL)
         await conn.commit()

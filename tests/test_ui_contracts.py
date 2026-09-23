@@ -6,13 +6,9 @@ return expected schema shapes, and handle edge cases gracefully.
 
 import pytest
 from unittest.mock import AsyncMock, patch
-from fastapi.testclient import TestClient
-from backend.main import app
-
-client = TestClient(app)
 
 
-def test_health_contract():
+def test_health_contract(client):
     """Verify /api/health returns system telemetry required by Dashboard and status badge."""
     res = client.get("/api/health")
     assert res.status_code == 200
@@ -24,7 +20,7 @@ def test_health_contract():
     assert "system" in data
 
 
-def test_tools_list_contract():
+def test_tools_list_contract(client):
     """Verify /api/tools returns registered tools with schema specifications."""
     res = client.get("/api/tools")
     assert res.status_code == 200
@@ -38,7 +34,7 @@ def test_tools_list_contract():
     assert "parameters" in first
 
 
-def test_tool_execute_calculate():
+def test_tool_execute_calculate(client):
     """Verify /api/tools/{name}/execute works synchronously for local tools."""
     res = client.post(
         "/api/tools/calculate/execute",
@@ -50,7 +46,7 @@ def test_tool_execute_calculate():
     assert "148" in str(data["result"])
 
 
-def test_settings_contracts():
+def test_settings_contracts(client):
     """Verify GET and PUT /api/settings conform to Settings view requirements."""
     # GET settings
     get_res = client.get("/api/settings")
@@ -68,7 +64,7 @@ def test_settings_contracts():
     assert put_res.json()["status"] == "updated"
 
 
-def test_conversations_contract():
+def test_conversations_contract(client):
     """Verify /api/conversations list contract used by Chat sidebar."""
     res = client.get("/api/conversations")
     assert res.status_code == 200
@@ -76,7 +72,7 @@ def test_conversations_contract():
     assert isinstance(convs, list)
 
 
-def test_voice_status_contract():
+def test_voice_status_contract(client):
     """Verify /api/voice/status returns voice pipeline readiness for Voice Console."""
     res = client.get("/api/voice/status")
     assert res.status_code == 200
@@ -86,7 +82,7 @@ def test_voice_status_contract():
     assert "stt" in voice_info
 
 
-def test_memory_contract():
+def test_memory_contract(client):
     """Verify /api/memory returns list of stored memories."""
     res = client.get("/api/memory")
     assert res.status_code == 200

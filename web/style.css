@@ -1750,8 +1750,15 @@ code, pre, kbd, .font-mono {
   padding: 20px;
 }
 
-.modal-backdrop.hidden {
-  display: none;
+.hidden {
+  display: none !important;
+}
+
+.modal-backdrop.hidden,
+.command-palette-backdrop.hidden,
+.onboarding-backdrop.hidden,
+.onboarding-step-body.hidden {
+  display: none !important;
 }
 
 .modal-brutal-window {

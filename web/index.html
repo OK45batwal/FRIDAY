@@ -670,12 +670,15 @@
 
         <!-- Step 1 -->
         <div id="onboarding-step-1" class="onboarding-step-body">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="rail-logo-badge" style="width: 40px; height: 40px; font-size: 14px;">F</div>
-            <div>
-              <h2 style="font-size: 18px; font-weight: 700;">Welcome to FRIDAY</h2>
-              <p style="font-size: 12.5px; color: var(--color-ink-muted);">Local Intelligence Console v3.0</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="rail-logo-badge" style="width: 40px; height: 40px; font-size: 14px;">F</div>
+              <div>
+                <h2 style="font-size: 18px; font-weight: 700;">Welcome to FRIDAY</h2>
+                <p style="font-size: 12.5px; color: var(--color-ink-muted);">Local Intelligence Console v3.0</p>
+              </div>
             </div>
+            <button id="btn-close-onboard" style="background: none; border: none; font-size: 18px; color: var(--color-ink-muted); cursor: pointer; padding: 4px;" title="Skip onboarding">✕</button>
           </div>
           <p style="font-size: 13.5px; line-height: 1.5; color: var(--color-ink);">
             FRIDAY runs locally on your Apple Silicon / Device hardware with zero cloud telemetry retention. Fast, deterministic, and completely private.

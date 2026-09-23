@@ -220,12 +220,8 @@ def test_orchestrator_resilience_to_invalid_conversation_id():
     asyncio.run(_test())
 
 
-def test_cors_headers_accept_vite_port():
+def test_cors_headers_accept_vite_port(client):
     """Verify CORS middleware responds with correct headers for Vite dev port 5173."""
-    from fastapi.testclient import TestClient
-    from backend.main import app
-
-    client = TestClient(app)
     resp = client.options(
         "/api/health",
         headers={

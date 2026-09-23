@@ -2,13 +2,9 @@
 
 import pytest
 from unittest.mock import AsyncMock, patch
-from fastapi.testclient import TestClient
-from backend.main import app
-
-client = TestClient(app)
 
 
-def test_translate_endpoint_success():
+def test_translate_endpoint_success(client):
     mock_ollama_resp = (
         '{\n'
         '  "detected_lang": "English",\n'
@@ -39,7 +35,7 @@ def test_translate_endpoint_success():
         assert "Spanish" in data["nuance_notes"]
 
 
-def test_translate_empty_text():
+def test_translate_empty_text(client):
     res = client.post(
         "/api/translate",
         json={
@@ -51,7 +47,7 @@ def test_translate_empty_text():
     assert res.status_code == 400
 
 
-def test_email_draft_endpoint():
+def test_email_draft_endpoint(client):
     mock_email_resp = (
         '{\n'
         '  "subject": "Follow-Up — Demo Meeting",\n'
@@ -82,7 +78,7 @@ def test_email_draft_endpoint():
         assert "Follow-Up — Demo Meeting" in data["full_text"]
 
 
-def test_text_analysis_endpoint():
+def test_text_analysis_endpoint(client):
     mock_analysis_resp = (
         "Executive Summary:\n"
         "- System tested on Apple Silicon with 60 tok/sec throughput.\n"
@@ -109,7 +105,7 @@ def test_text_analysis_endpoint():
         assert "60 tok/sec" in data["result"]
 
 
-def test_translate_offline_returns_503():
+def test_translate_offline_returns_503(client):
     import httpx
     with patch("backend.api.translate.ollama_client.chat", new_callable=AsyncMock) as mock_chat:
         mock_chat.side_effect = httpx.ConnectError("Connection refused")
@@ -124,4 +120,5 @@ def test_translate_offline_returns_503():
         )
         assert res.status_code == 503
         assert "offline" in res.json()["detail"].lower()
+
 

@@ -1513,6 +1513,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") {
       closeCommandPalette();
       closeShortcutsModal();
+      if (modalOnboarding && !modalOnboarding.classList.contains("hidden")) {
+        modalOnboarding.classList.add("hidden");
+        localStorage.setItem("friday_onboarded", "true");
+      }
       return;
     }
 
@@ -1597,6 +1601,22 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("friday_onboarded", "true");
       if (modalOnboarding) modalOnboarding.classList.add("hidden");
       showToast({ message: `Welcome to FRIDAY, ${name}! Your console is ready.`, type: "success" });
+    });
+  }
+
+  const btnCloseOnboard = document.getElementById("btn-close-onboard");
+  if (btnCloseOnboard) {
+    btnCloseOnboard.addEventListener("click", () => {
+      if (modalOnboarding) modalOnboarding.classList.add("hidden");
+      localStorage.setItem("friday_onboarded", "true");
+    });
+  }
+  if (modalOnboarding) {
+    modalOnboarding.addEventListener("click", (e) => {
+      if (e.target === modalOnboarding) {
+        modalOnboarding.classList.add("hidden");
+        localStorage.setItem("friday_onboarded", "true");
+      }
     });
   }
 

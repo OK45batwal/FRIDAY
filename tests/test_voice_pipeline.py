@@ -1,8 +1,6 @@
 """Test Voice Pipeline and Speech Synthesis / Recognition Services."""
 
 import pytest
-from starlette.testclient import TestClient
-from backend.main import app
 from backend.voice.voice_service import voice_service
 from backend.voice.whisper_stt import whisper_stt
 
@@ -31,9 +29,7 @@ def test_whisper_stt_status():
     assert "device" in status
 
 
-def test_voice_api_endpoints():
-    client = TestClient(app)
-
+def test_voice_api_endpoints(client):
     # Status
     res_status = client.get("/api/voice/status")
     assert res_status.status_code == 200
@@ -47,8 +43,7 @@ def test_voice_api_endpoints():
     assert len(res_voices.json()["voices"]) >= 5
 
 
-def test_voice_websocket_handshake():
-    client = TestClient(app)
+def test_voice_websocket_handshake(client):
     with client.websocket_connect("/ws/voice") as ws:
         init_msg = ws.receive_json()
         assert init_msg["type"] == "connected"

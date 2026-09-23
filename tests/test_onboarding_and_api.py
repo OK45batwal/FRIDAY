@@ -1,13 +1,9 @@
 """Tests for onboarding API, conversation rename PATCH, and pagination."""
 
 import pytest
-from fastapi.testclient import TestClient
-from backend.main import app
-
-client = TestClient(app)
 
 
-def test_onboarding_flow():
+def test_onboarding_flow(client):
     """Verify GET /api/onboarding/status and POST /api/onboarding/complete."""
     res = client.get("/api/onboarding/status")
     assert res.status_code == 200
@@ -26,7 +22,7 @@ def test_onboarding_flow():
     assert comp_data["state"]["user_name"] == "Antigravity"
 
 
-def test_conversation_patch_rename():
+def test_conversation_patch_rename(client):
     """Verify PATCH /api/conversations/{id} renames properly."""
     create_res = client.post("/api/conversations", json={"title": "Original Title"})
     assert create_res.status_code == 200
@@ -46,7 +42,7 @@ def test_conversation_patch_rename():
     client.delete(f"/api/conversations/{conv_id}")
 
 
-def test_conversations_pagination():
+def test_conversations_pagination(client):
     """Verify limit and offset query params on /api/conversations."""
     res = client.get("/api/conversations?limit=2&offset=0")
     assert res.status_code == 200

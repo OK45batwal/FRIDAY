@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 # Ensure workspace root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.config.settings import settings
+from backend.config.settings import settings, validate_settings
 from backend.database.database import init_db
 from backend.api.health import router as health_router
 from backend.api.conversations import router as conversations_router
@@ -64,6 +64,7 @@ def init_pytorch_model():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_settings()
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}...")
     await init_db()
     init_pytorch_model()
