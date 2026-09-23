@@ -22,6 +22,7 @@ from backend.api.settings import router as settings_router
 from backend.api.chat import router as chat_router
 from backend.api.voice import router as voice_router
 from backend.api.translate import router as translate_router
+from backend.api.onboarding import router as onboarding_router
 from backend.ai.laya_brain import laya_brain
 from backend.utils.logger import get_logger
 
@@ -108,6 +109,7 @@ app.include_router(settings_router)
 app.include_router(chat_router)
 app.include_router(voice_router)
 app.include_router(translate_router)
+app.include_router(onboarding_router)
 
 
 # PyTorch 17.5M Model API for Neural Lab tab

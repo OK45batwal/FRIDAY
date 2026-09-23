@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api", tags=["translate_and_tasks"])
 # ==============================================================================
 
 class TranslateRequest(BaseModel):
-    text: str = Field(..., min_length=1, description="Source text to translate")
+    text: str = Field(..., min_length=1, max_length=5000, description="Source text to translate")
     source_lang: str = Field(default="Auto-Detect", description="Source language")
     target_lang: str = Field(default="Spanish", description="Target language")
     style: str = Field(default="Natural / Conversational", description="Translation tone/style")
@@ -48,7 +48,7 @@ class EmailDraftRequest(BaseModel):
     purpose: str = Field(default="follow_up", description="Email purpose type")
     recipient: str = Field(default="Colleague", description="Recipient name or role")
     tone: str = Field(default="Professional", description="Tone (Professional, Direct, Casual, Polite)")
-    key_points: str = Field(..., min_length=1, description="Key details or bullet points")
+    key_points: str = Field(..., min_length=1, max_length=5000, description="Key details or bullet points")
 
 
 class EmailDraftResponse(BaseModel):
@@ -61,7 +61,7 @@ class EmailDraftResponse(BaseModel):
 
 
 class TextAnalysisRequest(BaseModel):
-    text: str = Field(..., min_length=1, description="Input text to process")
+    text: str = Field(..., min_length=1, max_length=15000, description="Input text to process")
     action: str = Field(..., description="Action: summarize, grammar_fix, extract_points, tone_shift")
     target_tone: Optional[str] = Field(default="Executive", description="Target tone for tone_shift")
 

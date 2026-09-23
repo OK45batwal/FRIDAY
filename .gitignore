@@ -23,6 +23,8 @@ backend/friday.db
 .gradle/
 build_temp/
 android/**/build/
+android/local.properties
+local.properties
 node_modules/
 
 */node_modules/

@@ -18,9 +18,12 @@ class UpdateConversationRequest(BaseModel):
 
 
 @router.get("")
-async def list_conversations():
-    """List all saved conversations ordered by recency."""
-    return await ConversationRepository.list_all()
+async def list_conversations(limit: Optional[int] = None, offset: int = 0):
+    """List all saved conversations ordered by recency with optional pagination."""
+    all_convs = await ConversationRepository.list_all()
+    if limit is not None:
+        return all_convs[offset : offset + limit]
+    return all_convs
 
 
 @router.post("")
@@ -77,6 +80,7 @@ async def export_conversation(conv_id: str, format: str = "markdown"):
     }
 
 
+@router.patch("/{conv_id}")
 @router.put("/{conv_id}")
 async def update_conversation(conv_id: str, req: UpdateConversationRequest):
     """Rename a conversation."""

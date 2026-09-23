@@ -13,6 +13,20 @@ logger = get_logger("chat_api")
 router = APIRouter(prefix="", tags=["chat"])
 
 
+import time
+
+MAX_PROMPT_LENGTH = 8000
+_rate_limits = {}
+
+def check_rate_limit(key: str, max_requests: int = 120, window_seconds: int = 60) -> bool:
+    now = time.time()
+    history = [t for t in _rate_limits.get(key, []) if now - t < window_seconds]
+    if len(history) >= max_requests:
+        return False
+    history.append(now)
+    _rate_limits[key] = history
+    return True
+
 class ChatRequest(BaseModel):
     prompt: Optional[str] = None
     message: Optional[str] = None
@@ -27,6 +41,14 @@ async def chat_endpoint(req: ChatRequest):
     prompt = raw_prompt.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+    if len(prompt) > MAX_PROMPT_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Prompt exceeds maximum allowed length of {MAX_PROMPT_LENGTH} characters.",
+        )
+    client_key = req.conversation_id or "global"
+    if not check_rate_limit(client_key):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please wait a moment.")
 
     if req.stream is False:
         # Non-streaming JSON response for Android and REST clients
@@ -99,6 +121,13 @@ async def websocket_chat(websocket: WebSocket):
 
             if not user_text:
                 await websocket.send_json({"type": "error", "message": "Message content cannot be empty."})
+                continue
+
+            if len(user_text) > MAX_PROMPT_LENGTH:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Message exceeds maximum allowed length of {MAX_PROMPT_LENGTH} characters."
+                })
                 continue
 
             # Stream orchestrated events to WebSocket client

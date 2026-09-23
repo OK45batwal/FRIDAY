@@ -7,6 +7,18 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#FFE600">
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem("friday_theme");
+        var theme = saved || "dark";
+        if (theme === "system") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -30,66 +42,52 @@
       <nav class="rail-nav">
         <div class="nav-section-label">WORKSPACE</div>
         <a href="#chat" class="rail-btn active" data-view="chat">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="chat" data-icon-size="15"></span>
           <span>Assistant Chat</span>
           <kbd class="nav-kbd">⌘1</kbd>
         </a>
 
         <a href="#voice" class="rail-btn" data-view="voice">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="mic" data-icon-size="15"></span>
           <span>Voice Mode</span>
           <kbd class="nav-kbd">⌘2</kbd>
         </a>
 
         <a href="#translate" class="rail-btn" data-view="translate">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="globe" data-icon-size="15"></span>
           <span>Translator</span>
           <kbd class="nav-kbd">⌘3</kbd>
         </a>
 
         <a href="#tasks" class="rail-btn" data-view="tasks">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="mail" data-icon-size="15"></span>
           <span>Email & Tasks</span>
           <kbd class="nav-kbd">⌘4</kbd>
         </a>
 
         <div class="nav-section-label" style="margin-top: 8px;">CONTROL & TELEMETRY</div>
         <a href="#dashboard" class="rail-btn" data-view="dashboard">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="7" height="9" x="3" y="3"/><rect width="7" height="5" x="14" y="3"/><rect width="7" height="9" x="14" y="12"/><rect width="7" height="5" x="3" y="16"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="dashboard" data-icon-size="15"></span>
           <span>Dashboard</span>
           <kbd class="nav-kbd">⌘5</kbd>
         </a>
 
         <a href="#settings" class="rail-btn" data-view="settings">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="settings" data-icon-size="15"></span>
           <span>Settings</span>
           <kbd class="nav-kbd">⌘6</kbd>
         </a>
 
         <a href="#about" class="rail-btn" data-view="about">
-          <span class="nav-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          </span>
+          <span class="nav-icon" data-icon="info" data-icon-size="15"></span>
           <span>About</span>
         </a>
       </nav>
 
       <!-- Recent Conversations Scroll List -->
       <div class="rail-conv-section">
-        <button id="btn-new-chat" class="btn-new-chat-brutal" title="Create a clean conversation (⌘K)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        <button id="btn-new-chat" class="btn-new-chat-brutal" title="Create a clean conversation (⌘⇧N)">
+          <span data-icon="plus" data-icon-size="13"></span>
           <span>NEW CHAT</span>
         </button>
 
@@ -131,19 +129,26 @@
         </div>
 
         <div class="header-right">
+          <!-- Command Palette Launcher -->
+          <button id="btn-open-palette" class="theme-switch-btn" title="Open Command Palette (⌘K)">
+            <span data-icon="search" data-icon-size="13"></span>
+            <span style="font-size: 11px; margin-left: 2px;">SEARCH</span>
+            <kbd class="nav-kbd" style="margin-left: 4px; padding: 1px 4px; font-size: 10px;">⌘K</kbd>
+          </button>
+
           <span id="laya-header-badge" class="hud-pill laya-active" title="Laya System 1 Decision Model Active on MPS">
             <span class="pulse-beacon amber"></span>
             <span>LAYA ROUTER • ACTIVE</span>
           </span>
 
           <span id="privacy-badge" class="brutal-badge local" title="Requests processed on local device hardware">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span data-icon="lock" data-icon-size="11"></span>
             LOCAL ONLY
           </span>
 
           <!-- Theme Switcher -->
           <button id="btn-toggle-theme" class="theme-switch-btn" title="Toggle Theme (Dark / Light / System)">
-            <svg id="theme-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <span id="theme-icon-wrap" data-icon="sun" data-icon-size="13"></span>
             <span id="theme-mode-label">THEME</span>
           </button>
         </div>
@@ -161,33 +166,33 @@
           <!-- Quick Command Suggestions Bar -->
           <div class="chat-quick-chips" aria-label="Quick Command Suggestions">
             <button class="quick-chip" data-prompt="What time is it right now?">
-              <span>🕒</span> Time
+              <span data-icon="clock" data-icon-size="13"></span> Time
             </button>
             <button class="quick-chip" data-prompt="Check battery, RAM, and live hardware telemetry">
-              <span>⚡</span> System Stats
+              <span data-icon="cpu" data-icon-size="13"></span> System Stats
             </button>
             <button class="quick-chip" data-prompt="Calculate (45 * 100) + (1024 / 4)">
-              <span>🧮</span> Math Calc
+              <span data-icon="calculator" data-icon-size="13"></span> Math Calc
             </button>
             <button class="quick-chip" data-prompt="Check the current weather and forecast">
-              <span>🌦️</span> Weather
+              <span data-icon="cloud" data-icon-size="13"></span> Weather
             </button>
             <button class="quick-chip" data-prompt="List files in the workspace">
-              <span>📂</span> Files
+              <span data-icon="folder" data-icon-size="13"></span> Files
             </button>
             <button class="quick-chip" data-prompt="Remember that I am building FRIDAY assistant">
-              <span>💾</span> Remember
+              <span data-icon="database" data-icon-size="13"></span> Remember
             </button>
           </div>
 
           <div class="composer-input-row">
             <textarea id="chat-input" class="brutal-textarea composer-textarea" placeholder="Ask FRIDAY or command local tools (e.g. 'check battery', 'calculate 2^16', 'search files')..." rows="2"></textarea>
             <button id="btn-chat-mic" class="btn-chat-mic" title="Voice Input (Push-to-Talk)">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              <span data-icon="mic" data-icon-size="18"></span>
             </button>
             <button id="btn-send-message" class="btn-brutal btn-brutal-primary btn-send-message">
               <span>SEND</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              <span data-icon="send" data-icon-size="13"></span>
             </button>
           </div>
           <div class="composer-actions">
@@ -548,51 +553,75 @@
             <span class="brutal-badge local">VISIBLE INTELLIGENCE</span>
           </div>
 
-          <p style="margin-bottom: 12px;">FRIDAY is designed as a **visible, controllable local assistant** rather than an opaque cloud daemon. Every capability has an explicit privacy boundary:</p>
+          <p style="margin-bottom: 12px;">FRIDAY is designed as a <strong>visible, controllable local assistant</strong> rather than an opaque cloud daemon. Every capability has an explicit privacy boundary:</p>
 
-          <div class="about-ascii-box">
-┌────────────────────────────────────────────────────────────────────────┐
-│                   FRIDAY LOCAL INTELLIGENCE ARCHITECTURE               │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. LOCAL FOUNDATION MODEL: Ollama (gemma2:2b / go1.0) on Apple Silicon │
-│ 2. DETERMINISTIC TOOLS: Safe AST Math, Time, System Hardware, Files    │
-│ 3. PRIVACY GUARANTEE: Zero telemetry retention, strictly opt-in memory │
-│ 4. TRUST GATE: Dangerous actions require explicit modal approval       │
-└────────────────────────────────────────────────────────────────────────┘
+          <div class="architecture-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 16px 0;">
+            <div class="brutal-card" style="padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-primary); margin-bottom: 6px;">
+                <span data-icon="cpu" data-icon-size="16"></span>
+                <span>Foundation Engine</span>
+              </div>
+              <div style="font-size: 12px; color: var(--color-ink-muted); line-height: 1.5;">Ollama (gemma2:2b / go1.0) on Apple Silicon Metal acceleration. Zero external telemetry.</div>
+            </div>
+            <div class="brutal-card" style="padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-secondary); margin-bottom: 6px;">
+                <span data-icon="zap" data-icon-size="16"></span>
+                <span>Laya System 1 Router</span>
+              </div>
+              <div style="font-size: 12px; color: var(--color-ink-muted); line-height: 1.5;">ModernBERT non-autoregressive classifier for sub-10ms intent classification and fast dispatch.</div>
+            </div>
+            <div class="brutal-card" style="padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-info); margin-bottom: 6px;">
+                <span data-icon="calculator" data-icon-size="16"></span>
+                <span>Deterministic Tools</span>
+              </div>
+              <div style="font-size: 12px; color: var(--color-ink-muted); line-height: 1.5;">Safe Python AST math, system telemetry, file manager, and structured tasks without LLM hallucinations.</div>
+            </div>
+            <div class="brutal-card" style="padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--color-success); margin-bottom: 6px;">
+                <span data-icon="database" data-icon-size="16"></span>
+                <span>Private Local State</span>
+              </div>
+              <div style="font-size: 12px; color: var(--color-ink-muted); line-height: 1.5;">Local SQLite WAL storage (friday.db) for long-term memory, conversation history, and security logs.</div>
+            </div>
           </div>
 
           <div style="margin-top: 16px; font-size: 13px; line-height: 1.6;">
             <p><strong>• Push-To-Talk:</strong> Voice recognition in browser runs exclusively when you hold or press the talk button. No fake always-on background promises.</p>
             <p><strong>• Safe Tools:</strong> Dangerous destructive operations are blocked or gated by an interactive confirmation prompt before execution.</p>
-            <p><strong>• Memory Inspection:</strong> Memories are stored in local SQLite WAL (`friday.db`). You can review, search, and delete facts anytime.</p>
+            <p><strong>• Memory Inspection:</strong> Memories are stored in local SQLite WAL (<code>friday.db</code>). You can review, search, and delete facts anytime.</p>
           </div>
         </div>
       </section>
 
     </main>
 
-    <!-- MOBILE 5-ITEM BOTTOM NAVIGATION -->
+    <!-- MOBILE BOTTOM NAVIGATION -->
     <div class="mobile-bottom-bar" aria-label="Mobile Navigation">
       <nav>
         <a href="#chat" class="mob-nav-link active" data-view="chat">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span data-icon="chat" data-icon-size="18"></span>
           <span>Chat</span>
         </a>
         <a href="#voice" class="mob-nav-link" data-view="voice">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          <span data-icon="mic" data-icon-size="18"></span>
           <span>Voice</span>
         </a>
         <a href="#translate" class="mob-nav-link" data-view="translate">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span data-icon="globe" data-icon-size="18"></span>
           <span>Trans</span>
         </a>
         <a href="#tasks" class="mob-nav-link" data-view="tasks">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <span data-icon="mail" data-icon-size="18"></span>
           <span>Tasks</span>
         </a>
         <a href="#dashboard" class="mob-nav-link" data-view="dashboard">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="7" height="9" x="3" y="3"/><rect width="7" height="5" x="14" y="3"/><rect width="7" height="9" x="14" y="12"/><rect width="7" height="5" x="3" y="16"/></svg>
+          <span data-icon="dashboard" data-icon-size="18"></span>
           <span>Dash</span>
+        </a>
+        <a href="#settings" class="mob-nav-link" data-view="settings">
+          <span data-icon="settings" data-icon-size="18"></span>
+          <span>Settings</span>
         </a>
       </nav>
     </div>
@@ -611,6 +640,135 @@
         </div>
       </div>
     </div>
+
+    <!-- COMMAND PALETTE MODAL (⌘K) -->
+    <div id="modal-command-palette" class="command-palette-backdrop hidden">
+      <div class="command-palette-window">
+        <div class="command-palette-input-wrap">
+          <span data-icon="search" data-icon-size="16" style="color: var(--color-ink-muted);"></span>
+          <input id="palette-search-input" class="command-palette-input" type="text" placeholder="Type a command, search saved chats, or switch views..." autocomplete="off" spellcheck="false">
+          <kbd class="nav-kbd" style="font-size: 10px;">ESC</kbd>
+        </div>
+        <div id="palette-results-list" class="command-palette-list">
+          <!-- Dynamically populated -->
+        </div>
+        <div class="command-palette-footer">
+          <span>Navigate <kbd>↑</kbd> <kbd>↓</kbd> • Select <kbd>↵</kbd> • Exit <kbd>Esc</kbd></span>
+          <span>FRIDAY Command Palette</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ONBOARDING MODAL -->
+    <div id="modal-onboarding" class="onboarding-backdrop hidden">
+      <div class="onboarding-card">
+        <div class="onboarding-progress-dots">
+          <span class="onboarding-dot active" data-step="1"></span>
+          <span class="onboarding-dot" data-step="2"></span>
+          <span class="onboarding-dot" data-step="3"></span>
+        </div>
+
+        <!-- Step 1 -->
+        <div id="onboarding-step-1" class="onboarding-step-body">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="rail-logo-badge" style="width: 40px; height: 40px; font-size: 14px;">F</div>
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700;">Welcome to FRIDAY</h2>
+              <p style="font-size: 12.5px; color: var(--color-ink-muted);">Local Intelligence Console v3.0</p>
+            </div>
+          </div>
+          <p style="font-size: 13.5px; line-height: 1.5; color: var(--color-ink);">
+            FRIDAY runs locally on your Apple Silicon / Device hardware with zero cloud telemetry retention. Fast, deterministic, and completely private.
+          </p>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--color-ink-muted); display: block; margin-bottom: 6px;">WHAT SHOULD FRIDAY CALL YOU?</label>
+            <input id="onboard-user-name" class="brutal-input" type="text" placeholder="Your name (e.g. Omkar)" style="width: 100%;">
+          </div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+            <button id="btn-onboard-next-1" class="btn-brutal btn-brutal-primary">Next: Local Tools →</button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="onboarding-step-2" class="onboarding-step-body hidden">
+          <h2 style="font-size: 18px; font-weight: 700;">Integrated Deterministic Tools</h2>
+          <p style="font-size: 13px; color: var(--color-ink-muted);">FRIDAY solves problems with precision tools rather than ungrounded LLM guessing:</p>
+          <div class="onboarding-tool-grid">
+            <div class="onboarding-tool-item">
+              <span data-icon="calculator" data-icon-size="18" style="color: var(--color-primary);"></span>
+              <div><strong>Safe AST Math</strong><div style="font-size: 11px; color: var(--color-ink-muted);">Exact computations</div></div>
+            </div>
+            <div class="onboarding-tool-item">
+              <span data-icon="cpu" data-icon-size="18" style="color: var(--color-secondary);"></span>
+              <div><strong>System Telemetry</strong><div style="font-size: 11px; color: var(--color-ink-muted);">Hardware & battery</div></div>
+            </div>
+            <div class="onboarding-tool-item">
+              <span data-icon="cloud" data-icon-size="18" style="color: var(--color-info);"></span>
+              <div><strong>Weather</strong><div style="font-size: 11px; color: var(--color-ink-muted);">Forecasts & atmospheric</div></div>
+            </div>
+            <div class="onboarding-tool-item">
+              <span data-icon="folder" data-icon-size="18" style="color: var(--color-warning);"></span>
+              <div><strong>Workspace Files</strong><div style="font-size: 11px; color: var(--color-ink-muted);">Inspections & search</div></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+            <button id="btn-onboard-prev-2" class="btn-brutal btn-brutal-secondary">← Back</button>
+            <button id="btn-onboard-next-2" class="btn-brutal btn-brutal-primary">Next: Shortcuts →</button>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="onboarding-step-3" class="onboarding-step-body hidden">
+          <h2 style="font-size: 18px; font-weight: 700;">Power User Navigation</h2>
+          <p style="font-size: 13.5px; line-height: 1.5; color: var(--color-ink);">
+            Control your workspace entirely with keyboard shortcuts:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--color-surface); border-radius: var(--radius-xs);">
+              <span>Command Palette (Spotlight / Raycast)</span>
+              <kbd class="nav-kbd">⌘K</kbd>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--color-surface); border-radius: var(--radius-xs);">
+              <span>New Conversation</span>
+              <kbd class="nav-kbd">⌘⇧N</kbd>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--color-surface); border-radius: var(--radius-xs);">
+              <span>Quick View Jump</span>
+              <kbd class="nav-kbd">⌘1 - ⌘6</kbd>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <button id="btn-onboard-prev-3" class="btn-brutal btn-brutal-secondary">← Back</button>
+            <button id="btn-onboard-finish" class="btn-brutal btn-brutal-primary">Launch FRIDAY Console ✨</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS MODAL (⌘/) -->
+    <div id="modal-shortcuts" class="modal-backdrop hidden">
+      <div class="modal-brutal-window" style="max-width: 480px;">
+        <div class="modal-title">Keyboard Shortcuts</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Command Palette</span><kbd class="nav-kbd">⌘K</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>New Chat</span><kbd class="nav-kbd">⌘⇧N</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Chat View</span><kbd class="nav-kbd">⌘1</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Voice Mode</span><kbd class="nav-kbd">⌘2</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Translator</span><kbd class="nav-kbd">⌘3</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Email & Tasks</span><kbd class="nav-kbd">⌘4</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Dashboard</span><kbd class="nav-kbd">⌘5</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Settings</span><kbd class="nav-kbd">⌘6</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Toggle Theme</span><kbd class="nav-kbd">⌘T</kbd></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 8px; background: var(--color-surface); border-radius: var(--radius-xs);"><span>Shortcuts Help</span><kbd class="nav-kbd">⌘/</kbd></div>
+        </div>
+        <div class="modal-actions-row">
+          <button id="btn-close-shortcuts" class="btn-brutal btn-brutal-primary">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   </div>
 

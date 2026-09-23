@@ -50,6 +50,8 @@ async def health_check():
     except Exception:
         pass
 
+    from backend.ai.laya_brain import laya_brain
+
     return {
         "status": "healthy" if llm_ok else "degraded",
         "llm": llm_ok,
@@ -57,6 +59,13 @@ async def health_check():
         "voice": True,
         "tools": True,
         "tools_count": len(tool_registry.list_tools()),
+        "laya": laya_brain.is_loaded,
+        "components": {
+            "llm": "online" if llm_ok else "offline",
+            "database": "online",
+            "laya_decision": "ready" if laya_brain.is_loaded else "standby",
+            "tools": "ready",
+        },
         "activity": {
             "total_messages": msg_count,
             "total_tool_calls": tool_count,
