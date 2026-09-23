@@ -512,6 +512,14 @@
                 <option value="guy">Technical Specialist (Guy)</option>
               </select>
             </div>
+          <div class="settings-section-title">SECURITY & ACCESS CONTROL</div>
+          <div style="margin-bottom: 20px;">
+            <label style="font-size: 11px; font-weight: 800; text-transform: uppercase;">FRIDAY API Key</label>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <input type="password" id="settings-api-key" class="brutal-input" placeholder="Leave blank in dev, or enter FRIDAY_API_KEY" style="flex: 1; padding: 8px 12px; font-family: monospace; font-size: 12px;">
+              <button id="btn-save-api-key" class="btn-brutal btn-brutal-primary" style="padding: 6px 16px; font-size: 11px;">SAVE KEY</button>
+            </div>
+            <p id="api-key-status" style="font-size: 11px; margin-top: 6px; color: var(--text-muted);"></p>
           </div>
 
           <div class="settings-section-title">PERMISSION CENTER</div>

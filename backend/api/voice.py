@@ -101,7 +101,24 @@ async def transcribe_audio(request: Request):
     return res
 
 
+from backend.api.auth import verify_ws_origin, verify_ws_auth
+from backend.utils.logger import get_logger
+
+logger = get_logger("voice_api")
+
+
 @router.websocket("/ws/voice")
 async def voice_websocket_endpoint(websocket: WebSocket):
     """Full-duplex WebSocket endpoint for continuous voice conversation."""
+    origin = websocket.headers.get("origin")
+    if not verify_ws_origin(origin):
+        logger.warning(f"Rejected WS voice connection from unauthorized origin: {origin}")
+        await websocket.close(code=4403, reason="Forbidden origin")
+        return
+
+    if not verify_ws_auth(websocket):
+        logger.warning("Rejected unauthenticated WS voice connection")
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
     await handle_voice_websocket(websocket)

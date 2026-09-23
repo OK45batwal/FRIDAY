@@ -5,7 +5,7 @@ import sys
 import asyncio
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.config.settings import settings, validate_settings
 from backend.database.database import init_db
+from backend.api.auth import require_api_key, ALLOWED_ORIGINS
 from backend.api.health import router as health_router
 from backend.api.conversations import router as conversations_router
 from backend.api.memory import router as memory_router
@@ -82,39 +83,29 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: Allow all local development interfaces and common web ports
+# CORS: Explicit allowed local origins only, no broad regex (CR-01, 0A.5)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:8080",
-        "http://localhost:8080",
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-        "http://127.0.0.1:4173",
-        "http://localhost:4173",
-    ],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:[0-9]+)?",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=sorted(list(ALLOWED_ORIGINS)),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
-# Include API Routers
+# Include API Routers (health is public; other routers require API key when set)
 app.include_router(health_router)
-app.include_router(conversations_router)
-app.include_router(memory_router)
-app.include_router(tools_router)
-app.include_router(settings_router)
-app.include_router(chat_router)
-app.include_router(voice_router)
-app.include_router(translate_router)
-app.include_router(onboarding_router)
+app.include_router(conversations_router, dependencies=[Depends(require_api_key)])
+app.include_router(memory_router, dependencies=[Depends(require_api_key)])
+app.include_router(tools_router, dependencies=[Depends(require_api_key)])
+app.include_router(settings_router, dependencies=[Depends(require_api_key)])
+app.include_router(chat_router, dependencies=[Depends(require_api_key)])
+app.include_router(voice_router, dependencies=[Depends(require_api_key)])
+app.include_router(translate_router, dependencies=[Depends(require_api_key)])
+app.include_router(onboarding_router, dependencies=[Depends(require_api_key)])
 
 
 # PyTorch 17.5M Model API for Neural Lab tab
-@app.get("/api/info")
+@app.get("/api/info", dependencies=[Depends(require_api_key)])
 async def get_model_info():
     return {
         "scratch_model": {

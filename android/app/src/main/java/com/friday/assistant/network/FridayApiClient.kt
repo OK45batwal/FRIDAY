@@ -40,18 +40,45 @@ data class GrammarResult(
 )
 
 class FridayApiClient(
-    var baseUrl: String = "http://10.0.2.2:8080"
+    var baseUrl: String = "http://10.0.2.2:8080",
+    var apiKey: String? = null
 ) {
+    companion object {
+        fun isValidBaseUrl(url: String): Boolean {
+            return try {
+                val parsed = URL(url)
+                val scheme = parsed.protocol.lowercase()
+                val host = parsed.host.lowercase()
+                if (scheme == "https") {
+                    true
+                } else if (scheme == "http") {
+                    host == "10.0.2.2" || host == "127.0.0.1" || host == "localhost"
+                } else {
+                    false
+                }
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+    private fun openConnection(endpoint: String, method: String, connectTimeout: Int = 8000, readTimeout: Int = 15000): HttpURLConnection {
+        val url = URL("$baseUrl$endpoint")
+        return (url.openConnection() as HttpURLConnection).apply {
+            this.connectTimeout = connectTimeout
+            this.readTimeout = readTimeout
+            this.requestMethod = method
+            val key = apiKey
+            if (!key.isNullOrBlank()) {
+                setRequestProperty("X-API-Key", key)
+            }
+        }
+    }
 
     suspend fun pingLatency(): Long = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         try {
-            val url = URL("$baseUrl/api/health")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 2000
-                readTimeout = 2000
-                requestMethod = "GET"
-            }
+            val conn = openConnection("/api/health", "GET", 2000, 2000)
             conn.responseCode
             System.currentTimeMillis() - start
         } catch (e: Exception) {
@@ -61,12 +88,7 @@ class FridayApiClient(
 
     suspend fun checkHealth(): BackendHealth = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$baseUrl/api/health")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 3000
-                readTimeout = 3000
-                requestMethod = "GET"
-            }
+            val conn = openConnection("/api/health", "GET", 3000, 3000)
 
             if (conn.responseCode == 200) {
                 val response = readStream(conn)
@@ -98,11 +120,7 @@ class FridayApiClient(
 
     suspend fun sendChat(prompt: String): ChatResult = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$baseUrl/api/chat")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 12000
-                readTimeout = 25000
-                requestMethod = "POST"
+            val conn = openConnection("/api/chat", "POST", 12000, 25000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -135,11 +153,7 @@ class FridayApiClient(
     suspend fun executeCalculate(expr: String): ToolResult = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         try {
-            val url = URL("$baseUrl/api/tools/calculate/execute")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 4000
-                readTimeout = 4000
-                requestMethod = "POST"
+            val conn = openConnection("/api/tools/calculate/execute", "POST", 4000, 4000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -165,11 +179,7 @@ class FridayApiClient(
 
     suspend fun draftEmail(purpose: String, recipient: String, keyPoints: String): String = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$baseUrl/api/tasks/email")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 10000
-                readTimeout = 15000
-                requestMethod = "POST"
+            val conn = openConnection("/api/tasks/email", "POST", 10000, 15000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -197,11 +207,7 @@ class FridayApiClient(
     suspend fun searchWeb(query: String): ToolResult = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         try {
-            val url = URL("$baseUrl/api/tools/web_search/execute")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 10000
-                requestMethod = "POST"
+            val conn = openConnection("/api/tools/web_search/execute", "POST", 8000, 10000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -228,11 +234,7 @@ class FridayApiClient(
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return@withContext GrammarResult(text, text, "Text was empty", true)
         try {
-            val url = URL("$baseUrl/api/translate")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 15000
-                requestMethod = "POST"
+            val conn = openConnection("/api/translate", "POST", 8000, 15000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -259,11 +261,7 @@ class FridayApiClient(
             return@withContext GrammarResult(text, text, "Text was empty", true)
         }
         try {
-            val url = URL("$baseUrl/api/tasks/analyze")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 15000
-                requestMethod = "POST"
+            val conn = openConnection("/api/tasks/analyze", "POST", 8000, 15000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }
@@ -293,11 +291,7 @@ class FridayApiClient(
     suspend fun rewriteTone(text: String, tone: String): GrammarResult = withContext(Dispatchers.IO) {
         val trimmed = text.trim()
         try {
-            val url = URL("$baseUrl/api/tasks/analyze")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 15000
-                requestMethod = "POST"
+            val conn = openConnection("/api/tasks/analyze", "POST", 8000, 15000).apply {
                 setRequestProperty("Content-Type", "application/json")
                 doOutput = true
             }

@@ -1,31 +1,21 @@
 """Chat API Endpoints supporting both SSE streaming and WebSocket communication."""
 
 import json
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 from backend.ai.orchestrator import orchestrator
 from backend.utils.logger import get_logger
+from backend.utils.ratelimit import check_rate_limit
+from backend.api.auth import verify_ws_origin, verify_ws_auth
 
 logger = get_logger("chat_api")
 
 router = APIRouter(prefix="", tags=["chat"])
 
-
-import time
-
 MAX_PROMPT_LENGTH = 8000
-_rate_limits = {}
 
-def check_rate_limit(key: str, max_requests: int = 120, window_seconds: int = 60) -> bool:
-    now = time.time()
-    history = [t for t in _rate_limits.get(key, []) if now - t < window_seconds]
-    if len(history) >= max_requests:
-        return False
-    history.append(now)
-    _rate_limits[key] = history
-    return True
 
 class ChatRequest(BaseModel):
     prompt: Optional[str] = None
@@ -35,7 +25,7 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, request: Request):
     """Chat endpoint supporting both Server-Sent Events (SSE) streaming and direct JSON responses."""
     raw_prompt = req.prompt or req.message or ""
     prompt = raw_prompt.strip()
@@ -46,8 +36,9 @@ async def chat_endpoint(req: ChatRequest):
             status_code=400,
             detail=f"Prompt exceeds maximum allowed length of {MAX_PROMPT_LENGTH} characters.",
         )
-    client_key = req.conversation_id or "global"
-    if not check_rate_limit(client_key):
+    client_ip = request.client.host if request.client else "unknown"
+    rate_key = f"http:{client_ip}:{req.conversation_id or 'global'}"
+    if not check_rate_limit(rate_key):
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Please wait a moment.")
 
     if req.stream is False:
@@ -97,7 +88,6 @@ async def chat_endpoint(req: ChatRequest):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
         },
     )
 
@@ -105,12 +95,29 @@ async def chat_endpoint(req: ChatRequest):
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
     """Real-time bidirectional WebSocket endpoint."""
+    origin = websocket.headers.get("origin")
+    if not verify_ws_origin(origin):
+        logger.warning(f"Rejected WS chat connection from unauthorized origin: {origin}")
+        await websocket.close(code=4403, reason="Forbidden origin")
+        return
+
+    if not verify_ws_auth(websocket):
+        logger.warning("Rejected unauthenticated WS chat connection")
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
     await websocket.accept()
     logger.info("WebSocket client connected.")
+
+    client_ip = websocket.client.host if websocket.client else "unknown"
 
     try:
         while True:
             raw_data = await websocket.receive_text()
+            if not check_rate_limit(f"ws:{client_ip}"):
+                await websocket.send_json({"type": "error", "message": "Rate limit exceeded. Please wait a moment."})
+                continue
+
             try:
                 data = json.loads(raw_data)
             except Exception:

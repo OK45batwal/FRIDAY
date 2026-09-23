@@ -49,6 +49,7 @@ data class FridayUiState(
     val volumePercent: Int = 50,
     val pingMs: Long = -1L,
     val customServerUrl: String = "http://10.0.2.2:8080",
+    val apiKey: String = "",
 )
 
 class FridayViewModel(application: Application) : AndroidViewModel(application), VoiceEventListener {
@@ -109,11 +110,18 @@ class FridayViewModel(application: Application) : AndroidViewModel(application),
 
     fun setCustomServerUrl(url: String) {
         val clean = url.trim()
-        if (clean.isNotEmpty()) {
+        if (clean.isNotEmpty() && FridayApiClient.isValidBaseUrl(clean)) {
             apiClient.baseUrl = clean
             state = state.copy(customServerUrl = clean)
             refreshHealth()
         }
+    }
+
+    fun setApiKey(key: String) {
+        val clean = key.trim()
+        apiClient.apiKey = if (clean.isEmpty()) null else clean
+        state = state.copy(apiKey = clean)
+        refreshHealth()
     }
 
     fun refreshHealth() {

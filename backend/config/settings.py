@@ -57,6 +57,16 @@ class Settings(BaseSettings):
     LAYA_CONFIDENCE_THRESHOLD: float = 0.75
     LAYA_DEVICE: Optional[str] = None
 
+    # Security & Trust Boundary (P0-A)
+    FRIDAY_ALLOW_REMOTE: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("FRIDAY_ALLOW_REMOTE", "ALLOW_REMOTE"),
+    )
+    FRIDAY_API_KEY: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("FRIDAY_API_KEY", "API_KEY"),
+    )
+
     # Logging
     LOG_LEVEL: str = "INFO"
 
@@ -78,5 +88,15 @@ def validate_settings() -> Settings:
     """Validate runtime settings and raise clearly if configuration failed to load."""
     if _settings_load_error is not None:
         raise _settings_load_error
+
+    # CR-01 / 0A.1: Fail startup if binding non-loopback unless ENVIRONMENT=production and FRIDAY_ALLOW_REMOTE=true
+    loopback_hosts = {"127.0.0.1", "localhost", "::1"}
+    if settings.HOST not in loopback_hosts:
+        if not (settings.ENVIRONMENT == "production" and settings.FRIDAY_ALLOW_REMOTE):
+            raise RuntimeError(
+                f"Refusing to bind to non-loopback host '{settings.HOST}'. "
+                "Non-loopback binding requires ENVIRONMENT=production and FRIDAY_ALLOW_REMOTE=true."
+            )
+
     return settings
 

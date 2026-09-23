@@ -3,6 +3,28 @@ import { ICONS, renderIcon, hydrateIcons } from "./icons.js";
 document.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
+  // Automatically inject X-API-Key from localStorage if set (P0-A / 0A.7)
+  const originalFetch = window.fetch;
+  window.fetch = function (url, options = {}) {
+    const apiKey = localStorage.getItem("friday_api_key");
+    if (apiKey) {
+      options = options || {};
+      options.headers = options.headers || {};
+      if (options.headers instanceof Headers) {
+        if (!options.headers.has("X-API-Key")) {
+          options.headers.set("X-API-Key", apiKey);
+        }
+      } else if (Array.isArray(options.headers)) {
+        options.headers.push(["X-API-Key", apiKey]);
+      } else {
+        if (!options.headers["X-API-Key"]) {
+          options.headers["X-API-Key"] = apiKey;
+        }
+      }
+    }
+    return originalFetch.call(this, url, options);
+  };
+
   // ==========================================================================
   // 1. Core State & Element Selectors
   // ==========================================================================
@@ -981,8 +1003,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let voiceReconnectDelay = 1000;
   function initVoiceWebSocket() {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const apiKey = localStorage.getItem("friday_api_key");
+    const wsUrl = `${proto}//${window.location.host}/ws/voice${apiKey ? `?api_key=${encodeURIComponent(apiKey)}` : ""}`;
     try {
-      voiceWs = new WebSocket(`${proto}//${window.location.host}/ws/voice`);
+      if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+        voiceWs.close();
+      }
+      voiceWs = new WebSocket(wsUrl);
       voiceWs.onopen = () => {
         voiceReconnectDelay = 1000;
       };
@@ -1334,6 +1361,30 @@ document.addEventListener("DOMContentLoaded", () => {
         if (settingsModel && s.llm_model) settingsModel.value = s.llm_model;
       }
     } catch (e) {}
+
+    const settingsApiKey = document.getElementById("settings-api-key");
+    const btnSaveApiKey = document.getElementById("btn-save-api-key");
+    const apiKeyStatus = document.getElementById("api-key-status");
+
+    if (settingsApiKey) {
+      settingsApiKey.value = localStorage.getItem("friday_api_key") || "";
+    }
+
+    if (btnSaveApiKey && !btnSaveApiKey.dataset.bound) {
+      btnSaveApiKey.dataset.bound = "true";
+      btnSaveApiKey.addEventListener("click", () => {
+        const val = settingsApiKey ? settingsApiKey.value.trim() : "";
+        if (val) {
+          localStorage.setItem("friday_api_key", val);
+          if (apiKeyStatus) apiKeyStatus.textContent = "API key saved. Requests and WebSocket now authenticated.";
+        } else {
+          localStorage.removeItem("friday_api_key");
+          if (apiKeyStatus) apiKeyStatus.textContent = "API key removed. Running in dev-anonymous mode.";
+        }
+        setTimeout(() => { if (apiKeyStatus) apiKeyStatus.textContent = ""; }, 4000);
+        initVoiceWebSocket();
+      });
+    }
   }
 
   if (settingsModel) {
