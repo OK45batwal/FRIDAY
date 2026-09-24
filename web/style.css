@@ -2442,3 +2442,812 @@ code, pre, kbd, .font-mono {
   }
 }
 
+/* ==========================================================================
+   FRIDAY UNIFIED ECOSYSTEM DESIGN SYSTEM & PRODUCT SURFACES
+   Landing Showcase • Memory Hub • Device Continuity • Android Companion • Orb
+   ========================================================================== */
+
+/* --- Ecosystem Modality Switcher in Header --- */
+.ecosystem-modality-bar {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 2px 4px;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.modality-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: all 180ms var(--ease-smooth);
+}
+
+.modality-btn:hover {
+  color: var(--color-ink);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modality-btn.active {
+  background: var(--color-surface-elevated);
+  color: var(--color-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 10px var(--color-primary-glow);
+}
+
+/* --- THE FRIDAY CORE ORB COMPONENT --- */
+.friday-orb-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.friday-orb {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 300ms var(--ease-spring);
+}
+
+.friday-orb:hover {
+  transform: scale(1.04);
+}
+
+.friday-orb-small {
+  width: 90px;
+  height: 90px;
+}
+
+.friday-orb-large {
+  width: 180px;
+  height: 180px;
+}
+
+/* Orb Layered Rings */
+.orb-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(6, 182, 212, 0.35);
+  animation: orb-spin-slow 24s linear infinite;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.15);
+}
+
+.orb-ring-mid {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  animation: orb-spin-reverse 16s linear infinite;
+}
+
+.orb-ring-inner {
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(6, 182, 212, 0.5);
+  box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.25);
+}
+
+.orb-nucleus {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FDE68A 0%, #F59E0B 55%, #B45309 100%);
+  box-shadow: 0 0 25px #F59E0B, 0 0 50px rgba(245, 158, 11, 0.4);
+  transition: all 400ms var(--ease-smooth);
+}
+
+.orb-state-caption {
+  margin-top: 14px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Orb States */
+/* 1. IDLE */
+.friday-orb.state-idle .orb-nucleus {
+  animation: orb-breathe 4s ease-in-out infinite;
+}
+
+/* 2. LISTENING */
+.friday-orb.state-listening .orb-ring-outer {
+  border-color: rgba(6, 182, 212, 0.85);
+  animation: orb-pulse-rings 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.5);
+}
+.friday-orb.state-listening .orb-nucleus {
+  background: radial-gradient(circle, #A5F3FC 0%, #06B6D4 60%, #0E7490 100%);
+  box-shadow: 0 0 35px #06B6D4, 0 0 70px rgba(6, 182, 212, 0.6);
+  transform: scale(1.18);
+}
+
+/* 3. THINKING */
+.friday-orb.state-thinking .orb-ring-outer {
+  border-color: rgba(167, 139, 250, 0.8);
+  animation: orb-spin-slow 2s linear infinite;
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.4);
+}
+.friday-orb.state-thinking .orb-ring-mid {
+  border-color: rgba(245, 158, 11, 0.8);
+  animation: orb-spin-reverse 1.2s linear infinite;
+}
+.friday-orb.state-thinking .orb-nucleus {
+  background: radial-gradient(circle, #DDD6FE 0%, #8B5CF6 60%, #5B21B6 100%);
+  box-shadow: 0 0 35px #8B5CF6, 0 0 70px rgba(139, 92, 246, 0.5);
+  animation: orb-jitter 1.5s ease-in-out infinite alternate;
+}
+
+/* 4. SPEAKING */
+.friday-orb.state-speaking .orb-ring-inner {
+  border-color: #F59E0B;
+  animation: orb-waveform 800ms ease-in-out infinite alternate;
+}
+.friday-orb.state-speaking .orb-nucleus {
+  animation: orb-speaking-pulse 600ms ease-in-out infinite alternate;
+}
+
+@keyframes orb-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orb-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(0.96); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes orb-pulse-rings {
+  0% { transform: scale(0.95); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.9; }
+}
+
+@keyframes orb-jitter {
+  0% { transform: scale(0.98) rotate(0deg); }
+  100% { transform: scale(1.12) rotate(180deg); }
+}
+
+@keyframes orb-waveform {
+  0% { transform: scale(0.9); }
+  100% { transform: scale(1.2); }
+}
+
+@keyframes orb-speaking-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 25px #F59E0B; }
+  100% { transform: scale(1.25); box-shadow: 0 0 45px #F59E0B, 0 0 90px rgba(245, 158, 11, 0.6); }
+}
+
+/* ==========================================================================
+   VIEW 0: SHOWCASE LANDING PAGE (#landing)
+   ========================================================================== */
+.landing-page-wrap {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 80px 20px;
+}
+
+.landing-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--backdrop-blur);
+  margin-bottom: 36px;
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-ink);
+}
+
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.landing-nav-links a:hover {
+  color: var(--color-ink);
+}
+
+/* Landing Hero */
+.landing-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px 60px 20px;
+}
+
+.hero-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-full);
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--color-primary);
+  margin-bottom: 28px;
+}
+
+.landing-hero-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(38px, 6vw, 64px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin-bottom: 20px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-hero-subtitle {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--color-ink-muted);
+  max-width: 620px;
+  line-height: 1.5;
+  margin-bottom: 36px;
+}
+
+.landing-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.btn-hero-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px var(--color-primary-glow);
+  transition: all 200ms var(--ease-spring);
+}
+
+.btn-hero-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.45);
+}
+
+.btn-hero-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-hero-secondary:hover {
+  background: var(--color-surface-elevated);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Voice Demo Box */
+.landing-voice-demo-card {
+  width: 100%;
+  max-width: 580px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: var(--backdrop-blur);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.demo-quote-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-ink);
+  font-style: italic;
+}
+
+/* Capabilities Grid */
+.landing-section-header {
+  text-align: center;
+  margin: 60px 0 32px 0;
+}
+
+.landing-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.capability-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  transition: all 240ms var(--ease-smooth);
+}
+
+.capability-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.capability-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  margin-bottom: 16px;
+}
+
+.capability-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.capability-desc {
+  font-size: 13.5px;
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+/* Multi-Device Ecosystem Visual */
+.ecosystem-diagram-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 36px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  margin: 40px 0;
+}
+
+.ecosystem-flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 32px 0 16px 0;
+}
+
+.ecosystem-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-width: 170px;
+}
+
+.ecosystem-node.active-hub {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px var(--color-primary-glow);
+}
+
+.ecosystem-node-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.ecosystem-connector-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  color: var(--color-primary);
+}
+
+/* Download Cards Grid */
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.download-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   VIEW: DEDICATED NEURAL MEMORY UI (#memory)
+   ========================================================================== */
+.memory-board-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.memory-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
+
+.memory-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  min-width: 260px;
+}
+
+.memory-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--color-ink);
+  width: 100%;
+}
+
+.memory-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.memory-tab-pill {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.memory-tab-pill.active,
+.memory-tab-pill:hover {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.memory-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.memory-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 180ms ease;
+}
+
+.memory-card:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.memory-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memory-category-tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--color-secondary);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.memory-card-content {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.memory-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-ink-faint);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 10px;
+}
+
+.btn-delete-memory {
+  background: transparent;
+  border: none;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-xs);
+  transition: color 150ms ease;
+}
+
+.btn-delete-memory:hover {
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   VIEW: DEVICE CONTINUITY & UNIVERSAL CLIPBOARD (#devices)
+   ========================================================================== */
+.devices-board-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.device-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 200ms ease;
+}
+
+.device-card.online {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.device-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.device-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success);
+}
+
+.device-status-dot.offline {
+  background: var(--color-ink-faint);
+  box-shadow: none;
+}
+
+.clipboard-console-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.clipboard-live-preview {
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--color-ink);
+  min-height: 80px;
+  margin: 14px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ==========================================================================
+   ANDROIDS COMPANION SIMULATION MODAL
+   ========================================================================== */
+.android-sim-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.android-phone-frame {
+  width: 340px;
+  height: 680px;
+  background: #090A0F;
+  border: 8px solid #202433;
+  border-radius: 44px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(6, 182, 212, 0.2);
+}
+
+.android-notch {
+  width: 120px;
+  height: 20px;
+  background: #202433;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  margin: 0 auto;
+}
+
+.android-screen-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+
+/* ==========================================================================
+   TOOL ACTIVITY STEPPER & CONFIRMATION
+   ========================================================================== */
+.tool-stepper-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--color-ink-muted);
+}
+
+.tool-step-item.done {
+  color: var(--color-success);
+}
+
+.tool-step-item.pending {
+  color: var(--color-primary);
+}
+
+.tool-approval-box {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+

@@ -181,8 +181,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Hash Router Engine (#chat, #voice, #translate, #tasks, #dashboard, #settings, #about)
   // ==========================================================================
   const VIEW_TITLES = {
+    landing: "SHOWCASE LANDING",
     chat: "ASSISTANT CHAT",
     voice: "VOICE MODE",
+    memory: "NEURAL MEMORY HUB",
+    devices: "DEVICE CONTINUITY HUB",
     translate: "LIVE TRANSLATOR",
     tasks: "EMAIL & TASKS",
     dashboard: "INTELLIGENCE DASHBOARD",
@@ -237,6 +240,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // Refresh view-specific dynamic data
     if (targetView === "dashboard") loadDashboardData();
     if (targetView === "settings") loadSettingsData();
+    if (targetView === "memory") loadMemories();
+    if (targetView === "devices") loadDevices();
+
+    // Modality bar button syncing
+    const btnModeConsole = document.getElementById("btn-mode-console");
+    const btnModeLanding = document.getElementById("btn-mode-landing");
+    if (btnModeConsole && btnModeLanding) {
+      btnModeConsole.classList.toggle("active", targetView !== "landing");
+      btnModeLanding.classList.toggle("active", targetView === "landing");
+    }
 
     restoreDrafts();
   }
@@ -1404,21 +1417,33 @@ document.addEventListener("DOMContentLoaded", () => {
   let paletteItems = [];
 
   const COMMAND_REGISTRY = [
+    { id: "view-landing", title: "Showcase Landing", category: "Navigation", icon: "sparkle", action: () => { routeToView("landing"); window.location.hash = "landing"; } },
     { id: "view-chat", title: "Assistant Chat", category: "Navigation", icon: "chat", shortcut: "⌘1", action: () => { routeToView("chat"); window.location.hash = "chat"; } },
     { id: "view-voice", title: "Voice Mode", category: "Navigation", icon: "mic", shortcut: "⌘2", action: () => { routeToView("voice"); window.location.hash = "voice"; } },
-    { id: "view-trans", title: "Translator", category: "Navigation", icon: "globe", shortcut: "⌘3", action: () => { routeToView("translate"); window.location.hash = "translate"; } },
-    { id: "view-tasks", title: "Email & Tasks", category: "Navigation", icon: "mail", shortcut: "⌘4", action: () => { routeToView("tasks"); window.location.hash = "tasks"; } },
+    { id: "view-memory", title: "Neural Memory Hub", category: "Navigation", icon: "database", shortcut: "⌘3", action: () => { routeToView("memory"); window.location.hash = "memory"; } },
+    { id: "view-devices", title: "Device Continuity Hub", category: "Navigation", icon: "share", shortcut: "⌘4", action: () => { routeToView("devices"); window.location.hash = "devices"; } },
+    { id: "view-trans", title: "Translator", category: "Navigation", icon: "globe", action: () => { routeToView("translate"); window.location.hash = "translate"; } },
+    { id: "view-tasks", title: "Email & Tasks", category: "Navigation", icon: "mail", action: () => { routeToView("tasks"); window.location.hash = "tasks"; } },
     { id: "view-dash", title: "Intelligence Dashboard", category: "Navigation", icon: "dashboard", shortcut: "⌘5", action: () => { routeToView("dashboard"); window.location.hash = "dashboard"; } },
     { id: "view-settings", title: "Settings & Permissions", category: "Navigation", icon: "settings", shortcut: "⌘6", action: () => { routeToView("settings"); window.location.hash = "settings"; } },
     { id: "view-about", title: "About Architecture", category: "Navigation", icon: "info", action: () => { routeToView("about"); window.location.hash = "about"; } },
     { id: "act-new-chat", title: "New Conversation", category: "Actions", icon: "plus", shortcut: "⌘⇧N", action: () => createNewConversation() },
     { id: "act-theme", title: "Toggle Theme (Dark / Light / System)", category: "Actions", icon: "sun", shortcut: "⌘T", action: () => toggleTheme() },
+    { id: "act-android-sim", title: "Open Android Companion Simulator", category: "Actions", icon: "smartphone", action: () => openAndroidSimulator() },
     { id: "act-shortcuts", title: "Keyboard Shortcuts", category: "Actions", icon: "command", shortcut: "⌘/", action: () => openShortcutsModal() },
     { id: "act-export", title: "Export Active Chat to Markdown", category: "Actions", icon: "download", action: () => exportCurrentChat() },
-    { id: "tool-calc", title: "AST Calculator: Evaluate Expression", category: "Tools", icon: "calculator", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Calculate "; chatInput.focus(); } },
-    { id: "tool-stats", title: "System Telemetry: Hardware & Battery", category: "Tools", icon: "cpu", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("Check battery, RAM, and live hardware telemetry"); } },
-    { id: "tool-weather", title: "Live Weather: Local Conditions", category: "Tools", icon: "cloud", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("Check current weather and forecast"); } },
-    { id: "tool-files", title: "Workspace Files: List & Search", category: "Tools", icon: "folder", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("List files in the workspace"); } },
+    
+    // Core 10 Tools
+    { id: "tool-search", title: "Web Search: Live DuckDuckGo Query", category: "Core 10 Tools", icon: "search", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Search web for "; chatInput.focus(); } },
+    { id: "tool-open-web", title: "Open Website: Browser Navigation", category: "Core 10 Tools", icon: "globe", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Open website https://"; chatInput.focus(); } },
+    { id: "tool-open-app", title: "Open Application: Launch Desktop App", category: "Core 10 Tools", icon: "laptop", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Open application "; chatInput.focus(); } },
+    { id: "tool-files", title: "File Manager: Workspace Files", category: "Core 10 Tools", icon: "folder", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("List files in the workspace"); } },
+    { id: "tool-term", title: "Terminal: Run Safe Shell Command", category: "Core 10 Tools", icon: "command", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Run terminal command: git status"; chatInput.focus(); } },
+    { id: "tool-calc", title: "Calculator: Safe AST Math Evaluation", category: "Core 10 Tools", icon: "calculator", action: () => { routeToView("chat"); window.location.hash = "chat"; chatInput.value = "Calculate "; chatInput.focus(); } },
+    { id: "tool-weather", title: "Weather: Forecast & Atmospherics", category: "Core 10 Tools", icon: "cloud", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("Check current weather and forecast"); } },
+    { id: "tool-screen", title: "Screenshot: Capture Screen Image", category: "Core 10 Tools", icon: "laptop", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("Take a screenshot"); } },
+    { id: "tool-notes", title: "Notes / Memory: Persistent Storage", category: "Core 10 Tools", icon: "database", action: () => { routeToView("memory"); window.location.hash = "memory"; } },
+    { id: "tool-stats", title: "System Info: Hardware & Battery Telemetry", category: "Core 10 Tools", icon: "cpu", action: () => { routeToView("chat"); window.location.hash = "chat"; sendMessage("Check battery, RAM, and live hardware telemetry"); } },
   ];
 
   function openCommandPalette() {
@@ -1575,7 +1600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isCmd = isMac ? e.metaKey : e.ctrlKey;
 
     if (isCmd) {
-      if (e.key.toLowerCase() === "k") {
+      if (e.key.toLowerCase() === "k" || e.code === "Space") {
         e.preventDefault();
         openCommandPalette();
         return;
@@ -1830,7 +1855,557 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ==========================================================================
+  // 19. Modality Bar & Ecosystem Navigation
+  // ==========================================================================
+  const btnModeConsole = document.getElementById("btn-mode-console");
+  const btnModeLanding = document.getElementById("btn-mode-landing");
+  const btnModeAndroid = document.getElementById("btn-mode-android");
+
+  if (btnModeConsole) {
+    btnModeConsole.addEventListener("click", () => {
+      window.location.hash = "chat";
+      routeToView("chat");
+    });
+  }
+  if (btnModeLanding) {
+    btnModeLanding.addEventListener("click", () => {
+      window.location.hash = "landing";
+      routeToView("landing");
+    });
+  }
+  if (btnModeAndroid) {
+    btnModeAndroid.addEventListener("click", () => {
+      openAndroidSimulator();
+    });
+  }
+
+  // ==========================================================================
+  // 20. Landing Showcase & FRIDAY Orb Controller
+  // ==========================================================================
+  const landingOrb = document.getElementById("landing-friday-orb");
+  const landingOrbStatusText = document.getElementById("landing-orb-status-text");
+  const landingDemoQuote = document.getElementById("landing-demo-quote");
+  const btnLandingStartTalk = document.getElementById("btn-landing-start-talk");
+  const btnLandingOpenConsole = document.getElementById("btn-landing-open-console");
+  const btnLandingLaunchConsole = document.getElementById("btn-landing-launch-console");
+  const btnLandingOpenAndroid = document.getElementById("btn-landing-open-android");
+
+  const ORB_STATES = [
+    { state: "state-idle", label: "FRIDAY CORE • IDLE", quote: '"Good evening, Omkar. All systems nominal. What would you like to build today?"' },
+    { state: "state-listening", label: "FRIDAY CORE • LISTENING...", quote: '"Listening intently... Ready for your next vocal command."' },
+    { state: "state-thinking", label: "FRIDAY CORE • THINKING...", quote: '"Synthesizing request, evaluating neural tool sequences across ecosystem..."' },
+    { state: "state-speaking", label: "FRIDAY CORE • SPEAKING", quote: '"Task dispatched. Beamed instructions to MacBook Pro and synced Universal Clipboard."' }
+  ];
+  let currentOrbStateIdx = 0;
+
+  function cycleLandingOrb() {
+    if (!landingOrb) return;
+    currentOrbStateIdx = (currentOrbStateIdx + 1) % ORB_STATES.length;
+    const current = ORB_STATES[currentOrbStateIdx];
+
+    ORB_STATES.forEach(s => landingOrb.classList.remove(s.state));
+    landingOrb.classList.add(current.state);
+
+    if (landingOrbStatusText) landingOrbStatusText.textContent = current.label;
+    if (landingDemoQuote) landingDemoQuote.textContent = current.quote;
+  }
+
+  function initLandingPage() {
+    if (landingOrb) {
+      landingOrb.addEventListener("click", cycleLandingOrb);
+    }
+    if (btnLandingStartTalk) {
+      btnLandingStartTalk.addEventListener("click", () => {
+        window.location.hash = "voice";
+        routeToView("voice");
+      });
+    }
+    if (btnLandingOpenConsole) {
+      btnLandingOpenConsole.addEventListener("click", () => {
+        window.location.hash = "chat";
+        routeToView("chat");
+      });
+    }
+    if (btnLandingLaunchConsole) {
+      btnLandingLaunchConsole.addEventListener("click", () => {
+        window.location.hash = "chat";
+        routeToView("chat");
+      });
+    }
+    if (btnLandingOpenAndroid) {
+      btnLandingOpenAndroid.addEventListener("click", () => {
+        openAndroidSimulator();
+      });
+    }
+
+    // Quick prompt chips on landing page
+    document.querySelectorAll(".landing-prompt-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const text = chip.textContent.trim().replace(/^"|"$/g, "");
+        window.location.hash = "chat";
+        routeToView("chat");
+        if (chatInput) {
+          chatInput.value = text;
+          sendMessage(text);
+        }
+      });
+    });
+  }
+
+  // ==========================================================================
+  // 21. Neural Memory Hub Controller (CRUD, Search & Category Filters)
+  // ==========================================================================
+  let cachedMemories = [];
+  let activeMemoryCategory = "all";
+
+  const memoryContainer = document.getElementById("memory-cards-container");
+  const memorySearchInput = document.getElementById("memory-search-input");
+  const btnOpenAddMemory = document.getElementById("btn-open-add-memory");
+  const modalAddMemory = document.getElementById("modal-add-memory");
+  const btnCancelAddMem = document.getElementById("btn-cancel-add-mem");
+  const btnCloseAddMem = document.getElementById("btn-close-add-mem");
+  const btnSaveNewMem = document.getElementById("btn-save-new-mem");
+  const addMemCategory = document.getElementById("add-mem-category");
+  const addMemContent = document.getElementById("add-mem-content");
+  const addMemImportance = document.getElementById("add-mem-importance");
+  const addMemImportanceVal = document.getElementById("add-mem-importance-val");
+
+  async function loadMemories() {
+    try {
+      const res = await fetch("/api/memory");
+      if (res.ok) {
+        cachedMemories = await res.json();
+        updateMemoryCounts();
+        renderMemories();
+      }
+    } catch (e) {
+      console.warn("Could not fetch memories:", e);
+    }
+  }
+
+  function updateMemoryCounts() {
+    const counts = { all: cachedMemories.length, preference: 0, project: 0, note: 0, general: 0 };
+    cachedMemories.forEach(m => {
+      const cat = (m.category || "general").toLowerCase();
+      if (counts[cat] !== undefined) counts[cat]++;
+      else counts.general++;
+    });
+
+    const elAll = document.getElementById("mem-count-all");
+    const elPref = document.getElementById("mem-count-pref");
+    const elProj = document.getElementById("mem-count-proj");
+    const elNote = document.getElementById("mem-count-note");
+    const elGen = document.getElementById("mem-count-gen");
+
+    if (elAll) elAll.textContent = counts.all;
+    if (elPref) elPref.textContent = counts.preference;
+    if (elProj) elProj.textContent = counts.project;
+    if (elNote) elNote.textContent = counts.note;
+    if (elGen) elGen.textContent = counts.general;
+  }
+
+  function renderMemories() {
+    if (!memoryContainer) return;
+    const query = (memorySearchInput ? memorySearchInput.value : "").toLowerCase().trim();
+
+    const filtered = cachedMemories.filter(m => {
+      const cat = (m.category || "general").toLowerCase();
+      const matchCat = activeMemoryCategory === "all" || cat === activeMemoryCategory;
+      const matchQuery = !query || (m.content || "").toLowerCase().includes(query) || cat.includes(query);
+      return matchCat && matchQuery;
+    });
+
+    if (filtered.length === 0) {
+      memoryContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface);">
+          <div style="font-size: 28px; margin-bottom: 8px;">🧠</div>
+          <div style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: var(--color-ink);">No memories found</div>
+          <div style="font-size: 12px; color: var(--color-ink-muted); margin-top: 4px;">Click "+ Add Memory" above or store facts naturally via chat or voice.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const catBadges = {
+      preference: { label: "👤 PREFERENCE", color: "var(--color-primary)" },
+      project: { label: "🚀 PROJECT", color: "var(--color-secondary)" },
+      note: { label: "📝 NOTE", color: "#10b981" },
+      general: { label: "🌐 GENERAL", color: "var(--color-ink-muted)" },
+    };
+
+    memoryContainer.innerHTML = filtered.map(m => {
+      const catKey = (m.category || "general").toLowerCase();
+      const badge = catBadges[catKey] || catBadges.general;
+      const importancePct = Math.round(((m.importance !== undefined ? m.importance : 1.0) * 100));
+      const dateStr = m.created_at ? new Date(m.created_at).toLocaleDateString() : "Active";
+
+      return `
+        <div class="memory-card">
+          <div class="memory-card-header">
+            <span class="memory-category-tag" style="color: ${badge.color}; border-color: ${badge.color};">
+              ${escapeHtml(badge.label)}
+            </span>
+            <button class="btn-del-memory" data-id="${m.id}" title="Delete memory">
+              ✕
+            </button>
+          </div>
+          <div class="memory-card-content">
+            ${escapeHtml(m.content)}
+          </div>
+          <div class="memory-card-footer">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>Score: ${m.importance !== undefined ? m.importance : 1.0}</span>
+              <div class="memory-importance-bar">
+                <div class="memory-importance-fill" style="width: ${importancePct}%;"></div>
+              </div>
+            </div>
+            <span>${escapeHtml(dateStr)}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Wire delete buttons
+    memoryContainer.querySelectorAll(".btn-del-memory").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-id");
+        if (!id) return;
+        try {
+          const res = await fetch(`/api/memory/${id}`, { method: "DELETE" });
+          if (res.ok) {
+            showToast({ message: "Memory removed from long-term storage.", type: "success" });
+            loadMemories();
+          } else {
+            showToast({ message: "Failed to delete memory.", type: "error" });
+          }
+        } catch (err) {
+          showToast({ message: "Network error deleting memory.", type: "error" });
+        }
+      });
+    });
+  }
+
+  function initMemoryHub() {
+    // Category tabs filter
+    document.querySelectorAll(".memory-tab-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".memory-tab-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        activeMemoryCategory = pill.getAttribute("data-category") || "all";
+        renderMemories();
+      });
+    });
+
+    if (memorySearchInput) {
+      memorySearchInput.addEventListener("input", () => {
+        renderMemories();
+      });
+    }
+
+    if (btnOpenAddMemory && modalAddMemory) {
+      btnOpenAddMemory.addEventListener("click", () => {
+        modalAddMemory.classList.remove("hidden");
+        if (addMemContent) {
+          addMemContent.value = "";
+          addMemContent.focus();
+        }
+      });
+    }
+
+    const closeAddMemModal = () => {
+      if (modalAddMemory) modalAddMemory.classList.add("hidden");
+    };
+
+    if (btnCancelAddMem) btnCancelAddMem.addEventListener("click", closeAddMemModal);
+    if (btnCloseAddMem) btnCloseAddMem.addEventListener("click", closeAddMemModal);
+    if (modalAddMemory) {
+      modalAddMemory.addEventListener("click", (e) => {
+        if (e.target === modalAddMemory) closeAddMemModal();
+      });
+    }
+
+    if (addMemImportance && addMemImportanceVal) {
+      addMemImportance.addEventListener("input", (e) => {
+        addMemImportanceVal.textContent = parseFloat(e.target.value).toFixed(1);
+      });
+    }
+
+    if (btnSaveNewMem) {
+      btnSaveNewMem.addEventListener("click", async () => {
+        const content = addMemContent ? addMemContent.value.trim() : "";
+        if (!content) {
+          showToast({ message: "Please enter memory content.", type: "warning" });
+          return;
+        }
+        const category = addMemCategory ? addMemCategory.value : "general";
+        const importance = addMemImportance ? parseFloat(addMemImportance.value) : 1.0;
+
+        try {
+          const res = await fetch("/api/memory", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content, category, importance }),
+          });
+
+          if (res.ok) {
+            showToast({ message: "Memory saved to long-term storage!", type: "success" });
+            closeAddMemModal();
+            loadMemories();
+          } else {
+            showToast({ message: "Error saving memory to database.", type: "error" });
+          }
+        } catch (err) {
+          showToast({ message: "Failed to connect to memory service.", type: "error" });
+        }
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 22. Device Continuity & Universal Clipboard Controller
+  // ==========================================================================
+  const clipboardLivePreview = document.getElementById("clipboard-live-preview");
+  const clipboardSourceTag = document.getElementById("clipboard-source-tag");
+  const btnCopyClipboard = document.getElementById("btn-copy-clipboard");
+  const btnSyncToMac = document.getElementById("btn-sync-to-mac");
+  const btnSyncToAndroid = document.getElementById("btn-sync-to-android");
+  const clipboardBroadcastInput = document.getElementById("clipboard-broadcast-input");
+  const btnBroadcastClipboard = document.getElementById("btn-broadcast-clipboard");
+  const btnRefreshDevices = document.getElementById("btn-refresh-devices");
+  const btnDevicesOpenAndroid = document.getElementById("btn-devices-open-android");
+
+  async function loadDevices() {
+    try {
+      const [devRes, clipRes] = await Promise.all([
+        fetch("/api/devices"),
+        fetch("/api/devices/clipboard")
+      ]);
+
+      if (clipRes.ok) {
+        const clipData = await clipRes.json();
+        if (clipboardLivePreview && clipData.content) {
+          clipboardLivePreview.textContent = clipData.content;
+        }
+        if (clipboardSourceTag && clipData.source_device) {
+          clipboardSourceTag.textContent = `Source: ${clipData.source_device}`;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load continuity status:", e);
+    }
+  }
+
+  function initDeviceContinuity() {
+    if (btnRefreshDevices) {
+      btnRefreshDevices.addEventListener("click", () => {
+        loadDevices();
+        showToast({ message: "Continuity ecosystem refreshed.", type: "info" });
+      });
+    }
+
+    if (btnCopyClipboard && clipboardLivePreview) {
+      btnCopyClipboard.addEventListener("click", () => {
+        const text = clipboardLivePreview.textContent.trim();
+        navigator.clipboard.writeText(text);
+        showToast({ message: "Universal clipboard copied to local clipboard!", type: "success" });
+      });
+    }
+
+    if (btnBroadcastClipboard && clipboardBroadcastInput) {
+      btnBroadcastClipboard.addEventListener("click", async () => {
+        const text = clipboardBroadcastInput.value.trim();
+        if (!text) {
+          showToast({ message: "Type text to broadcast to ecosystem.", type: "warning" });
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/devices/clipboard", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: text, source_device: "Web Console" }),
+          });
+
+          if (res.ok) {
+            showToast({ message: "Broadcasted to all connected devices!", type: "success" });
+            if (clipboardLivePreview) clipboardLivePreview.textContent = text;
+            if (clipboardSourceTag) clipboardSourceTag.textContent = "Source: Web Console";
+            clipboardBroadcastInput.value = "";
+          }
+        } catch (e) {
+          showToast({ message: "Failed to broadcast clipboard text.", type: "error" });
+        }
+      });
+    }
+
+    if (btnSyncToMac) {
+      btnSyncToMac.addEventListener("click", async () => {
+        const text = clipboardLivePreview ? clipboardLivePreview.textContent.trim() : "";
+        try {
+          const res = await fetch("/api/devices/handover", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              target_device: "mac",
+              action: "paste_clipboard",
+              payload: { content: text }
+            }),
+          });
+          if (res.ok) {
+            showToast({ message: "Beamed clipboard directly to MacBook Pro!", type: "success" });
+          }
+        } catch (e) {
+          showToast({ message: "Could not beam to MacBook Pro.", type: "error" });
+        }
+      });
+    }
+
+    if (btnSyncToAndroid) {
+      btnSyncToAndroid.addEventListener("click", async () => {
+        const text = clipboardLivePreview ? clipboardLivePreview.textContent.trim() : "";
+        try {
+          const res = await fetch("/api/devices/handover", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              target_device: "android",
+              action: "paste_clipboard",
+              payload: { content: text }
+            }),
+          });
+          if (res.ok) {
+            showToast({ message: "Beamed clipboard directly to Android Companion!", type: "success" });
+          }
+        } catch (e) {
+          showToast({ message: "Could not beam to Android.", type: "error" });
+        }
+      });
+    }
+
+    if (btnDevicesOpenAndroid) {
+      btnDevicesOpenAndroid.addEventListener("click", openAndroidSimulator);
+    }
+  }
+
+  // ==========================================================================
+  // 23. Android Companion Simulator Controller
+  // ==========================================================================
+  const modalAndroidSim = document.getElementById("modal-android-companion");
+  const btnCloseAndroidSim = document.getElementById("btn-close-android-sim");
+  const btnOpenAndroidPreview = document.getElementById("btn-open-android-preview");
+  const androidOrb = document.getElementById("android-orb");
+  const androidOrbCaption = document.getElementById("android-orb-caption");
+  const androidSimOutput = document.getElementById("android-sim-output");
+  const btnAndroidMic = document.getElementById("btn-android-mic");
+
+  function openAndroidSimulator() {
+    if (modalAndroidSim) modalAndroidSim.classList.remove("hidden");
+  }
+
+  function closeAndroidSimulator() {
+    if (modalAndroidSim) modalAndroidSim.classList.add("hidden");
+  }
+
+  let androidTorchOn = false;
+
+  function initAndroidSimulator() {
+    if (btnOpenAndroidPreview) btnOpenAndroidPreview.addEventListener("click", openAndroidSimulator);
+    if (btnCloseAndroidSim) btnCloseAndroidSim.addEventListener("click", closeAndroidSimulator);
+    if (modalAndroidSim) {
+      modalAndroidSim.addEventListener("click", (e) => {
+        if (e.target === modalAndroidSim) closeAndroidSimulator();
+      });
+    }
+
+    // Android orb state cycle on tap
+    if (androidOrb) {
+      androidOrb.addEventListener("click", () => {
+        if (androidOrb.classList.contains("state-idle")) {
+          androidOrb.className = "friday-orb friday-orb-small state-listening";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon cyan" style="width: 5px; height: 5px;"></span><span>LISTENING...</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = "Listening on Android...";
+        } else if (androidOrb.classList.contains("state-listening")) {
+          androidOrb.className = "friday-orb friday-orb-small state-thinking";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon amber" style="width: 5px; height: 5px;"></span><span>THINKING...</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = "Evaluating command with Laya Router...";
+        } else if (androidOrb.classList.contains("state-thinking")) {
+          androidOrb.className = "friday-orb friday-orb-small state-speaking";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon green" style="width: 5px; height: 5px;"></span><span>SPEAKING</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = '"Actions completed. All devices synchronized."';
+        } else {
+          androidOrb.className = "friday-orb friday-orb-small state-idle";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon cyan" style="width: 5px; height: 5px;"></span><span>ANDROID READY</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = "Tap mic below to speak to FRIDAY...";
+        }
+      });
+    }
+
+    // Android quick action tool chips
+    document.querySelectorAll(".android-tool-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const tool = chip.getAttribute("data-tool");
+        if (tool === "torch") {
+          androidTorchOn = !androidTorchOn;
+          chip.textContent = androidTorchOn ? "💡 Torch: ON" : "💡 Toggle Torch";
+          if (androidSimOutput) {
+            androidSimOutput.textContent = androidTorchOn
+              ? "🔦 Hardware Action: Rear Flashlight turned ON."
+              : "🔦 Hardware Action: Rear Flashlight turned OFF.";
+          }
+          showToast({ message: `Android Flashlight ${androidTorchOn ? "Enabled" : "Disabled"}`, type: "info" });
+        } else if (tool === "weather") {
+          if (androidSimOutput) {
+            androidSimOutput.textContent = "⛅ Local Weather: 24°C, Clear skies in Mumbai, Winds 12 km/h.";
+          }
+        } else if (tool === "notes") {
+          if (androidSimOutput) {
+            androidSimOutput.textContent = "📝 Quick Note created and synced to FRIDAY Neural Memory.";
+          }
+          showToast({ message: "Note synced to Mac & Web", type: "success" });
+        } else if (tool === "telemetry") {
+          if (androidSimOutput) {
+            androidSimOutput.textContent = "📊 Battery: 92% • RAM: 4.8GB / 8GB • Network: 5G Ultra • Latency: 14ms";
+          }
+        }
+      });
+    });
+
+    // Android Mic Tap-to-Talk Simulation
+    if (btnAndroidMic) {
+      btnAndroidMic.addEventListener("click", () => {
+        if (!androidOrb) return;
+        androidOrb.className = "friday-orb friday-orb-small state-listening";
+        if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon cyan" style="width: 5px; height: 5px;"></span><span>LISTENING...</span>`;
+        if (androidSimOutput) androidSimOutput.textContent = "Listening to vocal prompt...";
+
+        setTimeout(() => {
+          androidOrb.className = "friday-orb friday-orb-small state-thinking";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon amber" style="width: 5px; height: 5px;"></span><span>THINKING...</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = "Recognized: 'Send note to my Mac' — Routing to macOS...";
+        }, 1200);
+
+        setTimeout(() => {
+          androidOrb.className = "friday-orb friday-orb-small state-speaking";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon green" style="width: 5px; height: 5px;"></span><span>SPEAKING</span>`;
+          if (androidSimOutput) androidSimOutput.textContent = '"Note beamed to MacBook Pro via Universal Continuity!"';
+          showToast({ message: "Handover dispatched to Mac!", type: "success" });
+        }, 2500);
+
+        setTimeout(() => {
+          androidOrb.className = "friday-orb friday-orb-small state-idle";
+          if (androidOrbCaption) androidOrbCaption.innerHTML = `<span class="pulse-beacon cyan" style="width: 5px; height: 5px;"></span><span>ANDROID READY</span>`;
+        }, 5000);
+      });
+    }
+  }
+
   // Initial Route & Load
+  initLandingPage();
+  initMemoryHub();
+  initDeviceContinuity();
+  initAndroidSimulator();
   hydrateIcons();
   routeToView(window.location.hash || "chat");
   loadConversations();
