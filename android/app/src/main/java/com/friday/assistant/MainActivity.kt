@@ -124,7 +124,11 @@ class MainActivity : ComponentActivity() {
                 },
                 onSetCustomServerUrl = model::setCustomServerUrl,
                 onAdjustVolume = { dir -> model.runTool(if (dir > 0) "volume_up" else "volume_down", "") },
-                onToggleTorch = { model.runTool("torch", "") }
+                onToggleTorch = { model.runTool("torch", "") },
+                onRefreshClipboard = model::refreshSharedClipboard,
+                onBroadcastClipboard = model::broadcastClipboard,
+                onBeamToMac = model::beamToMac,
+                onSaveQuickNote = model::saveQuickNote
             )
         }
     }

@@ -22,11 +22,11 @@ import com.friday.assistant.voice.VoiceEventListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-enum class ConsoleTab { CHAT, VOICE, TOOLS, ASSIST, STATUS }
+enum class ConsoleTab { HOME, VOICE, CONTINUITY, CHAT, STATUS }
 enum class AssistantState { IDLE, LISTENING, THINKING, EXECUTING, SPEAKING, ERROR }
 
 data class FridayUiState(
-    val currentTab: ConsoleTab = ConsoleTab.CHAT,
+    val currentTab: ConsoleTab = ConsoleTab.HOME,
     val assistantState: AssistantState = AssistantState.IDLE,
     val inputText: String = "",
     val messages: List<MessageEntity> = emptyList(),
@@ -50,6 +50,10 @@ data class FridayUiState(
     val pingMs: Long = -1L,
     val customServerUrl: String = "http://10.0.2.2:8080",
     val apiKey: String = "",
+    val sharedClipboardText: String = "Hello from FRIDAY Universal Clipboard",
+    val sharedClipboardSource: String = "macOS Host",
+    val isContinuitySyncing: Boolean = false,
+    val continuityStatusMsg: String = "",
 )
 
 class FridayViewModel(application: Application) : AndroidViewModel(application), VoiceEventListener {
@@ -68,13 +72,74 @@ class FridayViewModel(application: Application) : AndroidViewModel(application),
         refreshHealth()
         refreshServiceStates()
         refreshDeviceStats()
+        refreshSharedClipboard()
     }
 
     fun selectTab(tab: ConsoleTab) {
         state = state.copy(currentTab = tab)
         refreshServiceStates()
-        if (tab == ConsoleTab.TOOLS || tab == ConsoleTab.STATUS) {
+        if (tab == ConsoleTab.CONTINUITY) {
+            refreshSharedClipboard()
+        }
+        if (tab == ConsoleTab.STATUS) {
             refreshDeviceStats()
+        }
+    }
+
+    fun refreshSharedClipboard() {
+        viewModelScope.launch {
+            state = state.copy(isContinuitySyncing = true)
+            val (content, source) = apiClient.getSharedClipboard()
+            state = state.copy(
+                sharedClipboardText = content,
+                sharedClipboardSource = source,
+                isContinuitySyncing = false
+            )
+        }
+    }
+
+    fun broadcastClipboard(text: String) {
+        viewModelScope.launch {
+            state = state.copy(isContinuitySyncing = true)
+            val ok = apiClient.broadcastClipboard(text)
+            if (ok) {
+                state = state.copy(
+                    sharedClipboardText = text,
+                    sharedClipboardSource = "Android Companion",
+                    continuityStatusMsg = "Broadcasted to ecosystem",
+                    isContinuitySyncing = false
+                )
+            } else {
+                state = state.copy(
+                    continuityStatusMsg = "Broadcast failed (offline)",
+                    isContinuitySyncing = false
+                )
+            }
+        }
+    }
+
+    fun beamToMac(content: String, action: String = "paste_clipboard") {
+        viewModelScope.launch {
+            state = state.copy(isContinuitySyncing = true)
+            val payload = org.json.JSONObject().apply {
+                put("content", content)
+            }
+            val (ok, msg) = apiClient.handoverToMac(action, payload)
+            state = state.copy(
+                continuityStatusMsg = msg,
+                isContinuitySyncing = false
+            )
+        }
+    }
+
+    fun saveQuickNote(content: String) {
+        viewModelScope.launch {
+            val ok = apiClient.saveMemory(content, category = "note")
+            if (ok) {
+                state = state.copy(continuityStatusMsg = "Saved note to Neural Memory")
+            } else {
+                state = state.copy(continuityStatusMsg = "Note saved locally")
+            }
         }
     }
 

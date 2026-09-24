@@ -93,17 +93,18 @@ class FridayFloatingService : Service() {
         val pill = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             val bg = GradientDrawable().apply {
-                setColor(Color.parseColor("#FFE600"))
-                setStroke(3, Color.BLACK)
+                setColor(Color.parseColor("#07080A"))
+                setStroke(2, Color.parseColor("#00F2FE"))
+                cornerRadius = 32f
             }
             background = bg
-            setPadding(24, 16, 24, 16)
+            setPadding(28, 16, 28, 16)
             elevation = 16f
         }
 
         val pillText = TextView(this).apply {
-            text = "⚡ FRIDAY"
-            setTextColor(Color.BLACK)
+            text = "◉ FRIDAY"
+            setTextColor(Color.parseColor("#00F2FE"))
             textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -116,8 +117,9 @@ class FridayFloatingService : Service() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val bg = GradientDrawable().apply {
-                setColor(Color.parseColor("#0E0E0C"))
-                setStroke(4, Color.parseColor("#FFE600"))
+                setColor(Color.parseColor("#0F1218"))
+                setStroke(2, Color.parseColor("#00F2FE"))
+                cornerRadius = 24f
             }
             background = bg
             setPadding(24, 20, 24, 20)
@@ -130,8 +132,8 @@ class FridayFloatingService : Service() {
             gravity = Gravity.CENTER_VERTICAL
         }
         val headerTitle = TextView(this).apply {
-            text = "⚡ FRIDAY ASSISTANT"
-            setTextColor(Color.parseColor("#FFE600"))
+            text = "◉ FRIDAY ASSISTANT"
+            setTextColor(Color.parseColor("#00F2FE"))
             textSize = 13f
             typeface = Typeface.MONOSPACE
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)

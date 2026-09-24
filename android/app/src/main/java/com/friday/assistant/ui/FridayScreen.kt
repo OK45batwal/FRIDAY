@@ -76,24 +76,26 @@ import androidx.compose.ui.unit.sp
 import com.friday.assistant.data.MessageEntity
 import com.friday.assistant.network.ToolResult
 
-// Tactical Yellow Brutalism Color Palette
-private val CanvasDark = Color(0xFF0A0A08)
-private val SurfaceDark = Color(0xFF141310)
-private val SurfaceElevated = Color(0xFF1F1E19)
-private val AccentYellow = Color(0xFFFFE600)
-private val AccentAmber = Color(0xFFFF9500)
-private val BorderDark = Color(0xFF333128)
-private val BorderHighlight = Color(0xFFFFE600)
-private val TextWhite = Color(0xFFF7F7F2)
-private val TextMuted = Color(0xFFA6A498)
-private val SuccessGreen = Color(0xFF00E599)
-private val DangerRed = Color(0xFFFF3B30)
+// Modern Minimal + Futuristic Dark Ecosystem Palette
+private val CanvasDark = Color(0xFF07080A)
+private val SurfaceDark = Color(0xFF0F1218)
+private val SurfaceElevated = Color(0xFF151A24)
+private val AccentCyan = Color(0xFF00F2FE)
+private val AccentBlue = Color(0xFF4FACFE)
+private val AccentYellow = Color(0xFFFFD600)
+private val AccentAmber = Color(0xFFF59E0B)
+private val BorderDark = Color(0xFF1F2736)
+private val BorderHighlight = Color(0xFF00F2FE)
+private val TextWhite = Color(0xFFF8FAFC)
+private val TextMuted = Color(0xFF94A3B8)
+private val SuccessGreen = Color(0xFF10B981)
+private val DangerRed = Color(0xFFEF4444)
 
 // -----------------------------------------------------------------------------
 // Modern Vector Icon System
 // -----------------------------------------------------------------------------
 enum class ModernIconType {
-    CHAT, VOICE, TOOLS, ASSIST, STATUS, SEND, COPY, CHECK, SPEAKER, TRASH, REFRESH, SPARKLE, CLOUD, CPU, CALC, FOLDER, TORCH, SEARCH
+    HOME, DEVICES, CHAT, VOICE, TOOLS, ASSIST, STATUS, SEND, COPY, CHECK, SPEAKER, TRASH, REFRESH, SPARKLE, CLOUD, CPU, CALC, FOLDER, TORCH, SEARCH
 }
 
 @Composable
@@ -108,6 +110,28 @@ fun ModernIcon(
         val sw = (w * 0.10f).coerceAtLeast(1.5f)
 
         when (type) {
+            ModernIconType.HOME -> {
+                val path = Path().apply {
+                    moveTo(w * 0.5f, h * 0.16f)
+                    lineTo(w * 0.84f, h * 0.44f)
+                    lineTo(w * 0.84f, h * 0.84f)
+                    lineTo(w * 0.16f, h * 0.84f)
+                    lineTo(w * 0.16f, h * 0.44f)
+                    close()
+                }
+                drawPath(path, color = tint, style = Stroke(width = sw, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                drawLine(color = tint, start = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.55f), end = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.84f), strokeWidth = sw, cap = StrokeCap.Round)
+            }
+            ModernIconType.DEVICES -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.14f, h * 0.22f),
+                    size = androidx.compose.ui.geometry.Size(w * 0.72f, h * 0.50f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.08f),
+                    style = Stroke(width = sw)
+                )
+                drawLine(color = tint, start = androidx.compose.ui.geometry.Offset(w * 0.08f, h * 0.78f), end = androidx.compose.ui.geometry.Offset(w * 0.92f, h * 0.78f), strokeWidth = sw * 1.3f, cap = StrokeCap.Round)
+            }
             ModernIconType.CHAT -> {
                 val path = Path().apply {
                     moveTo(w * 0.15f, h * 0.20f)
@@ -294,6 +318,109 @@ fun ModernIcon(
 }
 
 @Composable
+fun FridayCoreOrb(
+    assistantState: AssistantState,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "orb_anim")
+    val pulse by infiniteTransition.animateFloat(
+        initialValue = 0.88f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = when (assistantState) {
+                    AssistantState.LISTENING -> 800
+                    AssistantState.THINKING -> 600
+                    AssistantState.SPEAKING -> 500
+                    else -> 2200
+                },
+                easing = FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    val primaryColor = when (assistantState) {
+        AssistantState.LISTENING -> Color(0xFF00F2FE)
+        AssistantState.THINKING -> Color(0xFFF59E0B)
+        AssistantState.SPEAKING -> Color(0xFF00E599)
+        AssistantState.ERROR -> Color(0xFFEF4444)
+        else -> Color(0xFF00F2FE)
+    }
+
+    val secondaryColor = when (assistantState) {
+        AssistantState.LISTENING -> Color(0xFF4FACFE)
+        AssistantState.THINKING -> Color(0xFFFF416C)
+        AssistantState.SPEAKING -> Color(0xFF10B981)
+        AssistantState.ERROR -> Color(0xFFFF9500)
+        else -> Color(0xFF4FACFE)
+    }
+
+    Box(
+        modifier = modifier
+            .size(150.dp)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+            val baseRadius = (size.minDimension / 2f) * 0.75f
+
+            // Outer soft atmospheric glow
+            drawCircle(
+                color = primaryColor.copy(alpha = 0.10f * pulse),
+                radius = baseRadius * 1.25f,
+                center = center
+            )
+
+            // Outer Ring
+            drawCircle(
+                color = primaryColor.copy(alpha = 0.30f),
+                radius = baseRadius * pulse,
+                center = center,
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Middle Ring
+            drawCircle(
+                color = secondaryColor.copy(alpha = 0.40f),
+                radius = baseRadius * 0.72f,
+                center = center,
+                style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Inner Ring
+            drawCircle(
+                color = primaryColor.copy(alpha = 0.50f),
+                radius = baseRadius * 0.46f,
+                center = center,
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+
+            // Nucleus Radial Core
+            val nucleusRadius = baseRadius * 0.28f * pulse
+            val nucleusBrush = Brush.radialGradient(
+                colors = listOf(
+                    Color.White,
+                    primaryColor,
+                    secondaryColor.copy(alpha = 0.5f),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = nucleusRadius * 1.4f
+            )
+            drawCircle(
+                brush = nucleusBrush,
+                radius = nucleusRadius,
+                center = center
+            )
+        }
+    }
+}
+
+@Composable
 fun FridayScreen(
     state: FridayUiState,
     onTabSelect: (ConsoleTab) -> Unit,
@@ -315,6 +442,10 @@ fun FridayScreen(
     onSetCustomServerUrl: (String) -> Unit = {},
     onAdjustVolume: (Int) -> Unit = {},
     onToggleTorch: () -> Unit = {},
+    onRefreshClipboard: () -> Unit = {},
+    onBroadcastClipboard: (String) -> Unit = {},
+    onBeamToMac: (String) -> Unit = {},
+    onSaveQuickNote: (String) -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -340,15 +471,16 @@ fun FridayScreen(
                     .background(CanvasDark)
             ) {
                 when (state.currentTab) {
-                    ConsoleTab.CHAT -> ChatView(
-                        messages = state.messages,
-                        inputText = state.inputText,
-                        isSending = state.isSending,
-                        onInputChange = onInputChange,
-                        onSend = { onSendMessage(null) },
+                    ConsoleTab.HOME -> HomeView(
+                        state = state,
+                        onTapOrb = onToggleVoice,
+                        onToggleVoice = onToggleVoice,
                         onQuickPrompt = { onSendMessage(it) },
-                        onSpeak = onSpeakMessage,
-                        onClearChat = onClearChat
+                        onToggleTorch = onToggleTorch,
+                        onBeamToMac = { onBeamToMac(state.sharedClipboardText) },
+                        onSaveQuickNote = onSaveQuickNote,
+                        onToggleFloatingService = onToggleFloatingService,
+                        onNavigateTab = onTabSelect
                     )
                     ConsoleTab.VOICE -> VoiceView(
                         assistantState = state.assistantState,
@@ -358,20 +490,21 @@ fun FridayScreen(
                         onStopVoice = onStopVoice,
                         onQuickPrompt = { onSendMessage(it) }
                     )
-                    ConsoleTab.TOOLS -> ToolsView(
+                    ConsoleTab.CONTINUITY -> ContinuityView(
                         state = state,
-                        onRunTool = onRunTool,
-                        onToggleTorch = onToggleTorch,
-                        onAdjustVolume = onAdjustVolume
+                        onRefreshClipboard = onRefreshClipboard,
+                        onBroadcastClipboard = onBroadcastClipboard,
+                        onBeamToMac = onBeamToMac
                     )
-                    ConsoleTab.ASSIST -> AssistView(
-                        state = state,
-                        onSandboxInputChange = onSandboxInputChange,
-                        onSetWritingMode = onSetWritingMode,
-                        onSetTargetLanguage = onSetTargetLanguage,
-                        onRunTransform = onRunWritingTransform,
-                        onToggleFloatingService = onToggleFloatingService,
-                        onOpenAccessibilitySettings = onOpenAccessibilitySettings
+                    ConsoleTab.CHAT -> ChatView(
+                        messages = state.messages,
+                        inputText = state.inputText,
+                        isSending = state.isSending,
+                        onInputChange = onInputChange,
+                        onSend = { onSendMessage(null) },
+                        onQuickPrompt = { onSendMessage(it) },
+                        onSpeak = onSpeakMessage,
+                        onClearChat = onClearChat
                     )
                     ConsoleTab.STATUS -> StatusView(
                         state = state,
@@ -416,31 +549,31 @@ private fun TopConsoleBar(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(AccentYellow)
+                    .background(AccentCyan)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "FRIDAY",
                     color = Color.Black,
                     fontWeight = FontWeight.Black,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
-                    letterSpacing = 0.8.sp
+                    letterSpacing = 1.sp
                 )
             }
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(
-                    text = "INTELLIGENCE CORE",
+                    text = "ANDROID COMPANION",
                     color = TextWhite,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 0.3.sp
+                    fontSize = 11.5.sp,
+                    letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = "v3.0 • ON-DEVICE METAL",
+                    text = "v3.0 • CONTINUITY LINK",
                     color = TextMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace
                 )
             }
@@ -450,10 +583,10 @@ private fun TopConsoleBar(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (isOnline) Color(0xFF0A2918) else Color(0xFF2E2600))
+                    .background(if (isOnline) Color(0xFF071F14) else Color(0xFF1C1A0E))
                     .border(
                         1.dp,
-                        if (isOnline) SuccessGreen.copy(alpha = 0.8f) else AccentYellow.copy(alpha = 0.8f),
+                        if (isOnline) SuccessGreen.copy(alpha = 0.8f) else AccentAmber.copy(alpha = 0.8f),
                         RoundedCornerShape(16.dp)
                     )
                     .clickable { onRefresh() }
@@ -463,16 +596,16 @@ private fun TopConsoleBar(
                     Box(
                         modifier = Modifier
                             .size(7.dp)
-                            .background(if (isOnline) SuccessGreen else AccentYellow, CircleShape)
+                            .background(if (isOnline) SuccessGreen else AccentAmber, CircleShape)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = if (isOnline) {
-                            if (pingMs > 0) "ONLINE • ${pingMs}ms" else "ONLINE"
+                            if (pingMs > 0) "MAC LINK • ${pingMs}ms" else "MAC LINKED"
                         } else {
-                            "LOCAL ONLY"
+                            "LOCAL"
                         },
-                        color = if (isOnline) SuccessGreen else AccentYellow,
+                        color = if (isOnline) SuccessGreen else AccentAmber,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace
@@ -480,7 +613,7 @@ private fun TopConsoleBar(
                     Spacer(Modifier.width(4.dp))
                     ModernIcon(
                         type = ModernIconType.REFRESH,
-                        tint = if (isOnline) SuccessGreen else AccentYellow,
+                        tint = if (isOnline) SuccessGreen else AccentAmber,
                         modifier = Modifier.size(10.dp)
                     )
                 }
@@ -515,15 +648,15 @@ private fun BottomConsoleNav(
             verticalAlignment = Alignment.CenterVertically
         ) {
             listOf(
-                Triple(ConsoleTab.CHAT, "CHAT", ModernIconType.CHAT),
+                Triple(ConsoleTab.HOME, "HOME", ModernIconType.HOME),
                 Triple(ConsoleTab.VOICE, "VOICE", ModernIconType.VOICE),
-                Triple(ConsoleTab.TOOLS, "TOOLS", ModernIconType.TOOLS),
-                Triple(ConsoleTab.ASSIST, "ASSIST", ModernIconType.ASSIST),
+                Triple(ConsoleTab.CONTINUITY, "SYNC", ModernIconType.DEVICES),
+                Triple(ConsoleTab.CHAT, "CHAT", ModernIconType.CHAT),
                 Triple(ConsoleTab.STATUS, "STATUS", ModernIconType.STATUS)
             ).forEach { (tab, label, iconType) ->
                 val isSelected = currentTab == tab
                 val animBg by animateColorAsState(
-                    targetValue = if (isSelected) AccentYellow else Color.Transparent,
+                    targetValue = if (isSelected) AccentCyan else Color.Transparent,
                     animationSpec = tween(180),
                     label = "tab_bg"
                 )
@@ -560,6 +693,653 @@ private fun BottomConsoleNav(
                             fontFamily = FontFamily.Monospace,
                             maxLines = 1
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 0. HOME VIEW (Voice-First Experience + FRIDAY Core Orb + Quick Actions)
+// -----------------------------------------------------------------------------
+@Composable
+private fun HomeView(
+    state: FridayUiState,
+    onTapOrb: () -> Unit,
+    onToggleVoice: () -> Unit,
+    onQuickPrompt: (String) -> Unit,
+    onToggleTorch: () -> Unit,
+    onBeamToMac: () -> Unit,
+    onSaveQuickNote: (String) -> Unit,
+    onToggleFloatingService: () -> Unit,
+    onNavigateTab: (ConsoleTab) -> Unit,
+) {
+    val context = LocalContext.current
+    val greeting = remember {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        when (hour) {
+            in 5..11 -> "Good morning"
+            in 12..16 -> "Good afternoon"
+            else -> "Good evening"
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Hero Section: FRIDAY Title, Greeting & Animated Core Orb
+        item {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                Text(
+                    text = "FRIDAY",
+                    color = AccentCyan,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 2.sp
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // The Animated FRIDAY Core Orb
+                FridayCoreOrb(
+                    assistantState = state.assistantState,
+                    onClick = onTapOrb
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Orb State Caption
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SurfaceElevated)
+                        .border(1.dp, BorderDark, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = when (state.assistantState) {
+                            AssistantState.LISTENING -> "◉ LISTENING TO VOICE..."
+                            AssistantState.THINKING -> "◌ EVALUATING INTENT..."
+                            AssistantState.SPEAKING -> "◉ SPEAKING RESPONSE"
+                            else -> "◉ FRIDAY CORE • READY"
+                        },
+                        color = when (state.assistantState) {
+                            AssistantState.LISTENING -> AccentCyan
+                            AssistantState.THINKING -> AccentAmber
+                            AssistantState.SPEAKING -> SuccessGreen
+                            else -> TextMuted
+                        },
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                Text(
+                    text = "$greeting, Omkar",
+                    color = TextWhite,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "How can I help you right now?",
+                    color = TextMuted,
+                    fontSize = 13.5.sp
+                )
+            }
+        }
+
+        // Tap To Talk Hero Button
+        item {
+            Button(
+                onClick = onToggleVoice,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = when (state.assistantState) {
+                        AssistantState.LISTENING -> DangerRed
+                        AssistantState.SPEAKING -> SuccessGreen
+                        else -> AccentCyan
+                    },
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModernIcon(
+                        type = ModernIconType.VOICE,
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = when (state.assistantState) {
+                            AssistantState.LISTENING -> "TAP TO STOP LISTENING"
+                            AssistantState.SPEAKING -> "TAP TO STOP SPEAKING"
+                            else -> "TAP TO TALK"
+                        },
+                        fontWeight = FontWeight.Black,
+                        fontSize = 13.5.sp,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+        }
+
+        // Quick Actions Row (Weather, Notes, Torch, Continuity)
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "QUICK ACTIONS",
+                    color = TextMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 0.8.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Weather
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
+                            .clickable { onQuickPrompt("What is the current weather and forecast?") }
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ModernIcon(type = ModernIconType.CLOUD, tint = AccentCyan, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.height(5.dp))
+                            Text("Weather", color = TextWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        }
+                    }
+
+                    // Quick Note
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
+                            .clickable {
+                                onSaveQuickNote("Note from Android Companion: All systems nominal.")
+                                Toast.makeText(context, "Note saved to FRIDAY Neural Memory", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ModernIcon(type = ModernIconType.ASSIST, tint = AccentAmber, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.height(5.dp))
+                            Text("Notes", color = TextWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        }
+                    }
+
+                    // Torch
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (state.isTorchOn) Color(0xFF1E2838) else SurfaceDark)
+                            .border(1.dp, if (state.isTorchOn) AccentCyan else BorderDark, RoundedCornerShape(14.dp))
+                            .clickable { onToggleTorch() }
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ModernIcon(type = ModernIconType.TORCH, tint = if (state.isTorchOn) AccentCyan else TextMuted, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.height(5.dp))
+                            Text(if (state.isTorchOn) "Torch ON" else "Torch", color = TextWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        }
+                    }
+
+                    // Beam to Mac
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
+                            .clickable {
+                                onBeamToMac()
+                                Toast.makeText(context, "Beaming task to MacBook Pro...", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ModernIcon(type = ModernIconType.DEVICES, tint = SuccessGreen, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.height(5.dp))
+                            Text("Beam", color = TextWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Recent Ecosystem Activity Feed
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "RECENT ACTIVITY",
+                            color = TextMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = "ECOSYSTEM SYNC",
+                            color = SuccessGreen,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✓", color = SuccessGreen, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Universal Clipboard synced", color = TextWhite, fontSize = 12.5.sp)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✓", color = SuccessGreen, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            Spacer(Modifier.width(8.dp))
+                            Text("MacBook Pro (Host) connected", color = TextWhite, fontSize = 12.5.sp)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✓", color = SuccessGreen, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Laya System 1 Router active", color = TextWhite, fontSize = 12.5.sp)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Floating FRIDAY Orb Overlay Toggle Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceElevated)
+                    .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Floating FRIDAY Orb",
+                            color = TextWhite,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "Float FRIDAY over WhatsApp, Chrome, or any app",
+                            color = TextMuted,
+                            fontSize = 11.5.sp
+                        )
+                    }
+
+                    Switch(
+                        checked = state.isFloatingRunning,
+                        onCheckedChange = { onToggleFloatingService() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Black,
+                            checkedTrackColor = AccentCyan,
+                            uncheckedThumbColor = TextMuted,
+                            uncheckedTrackColor = SurfaceDark
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 0.5 CONTINUITY VIEW (Universal Clipboard & Cross-Device Handover)
+// -----------------------------------------------------------------------------
+@Composable
+private fun ContinuityView(
+    state: FridayUiState,
+    onRefreshClipboard: () -> Unit,
+    onBroadcastClipboard: (String) -> Unit,
+    onBeamToMac: (String) -> Unit,
+) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    var broadcastInput by remember { mutableStateOf("") }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Continuity Header
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ModernIcon(type = ModernIconType.DEVICES, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "DEVICE CONTINUITY",
+                                color = AccentCyan,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF0A2918))
+                                .border(0.5.dp, SuccessGreen, RoundedCornerShape(10.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "LINK ACTIVE",
+                                color = SuccessGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Universal clipboard synchronization and task handover across Mac, Android, and Web.",
+                        color = TextMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp
+                    )
+                }
+            }
+        }
+
+        // Connected Ecosystem Nodes Card
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "CONNECTED ECOSYSTEM NODES",
+                    color = TextMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+
+                // Mac Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(SurfaceElevated)
+                        .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("MacBook Pro (Host)", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Apple Silicon Metal • Ollama LLM • Router", color = TextMuted, fontSize = 11.sp)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF0A2918))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("ONLINE", color = SuccessGreen, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                }
+
+                // Android Companion Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(SurfaceElevated)
+                        .border(1.dp, BorderHighlight.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Android Companion (This Device)", color = TextWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Voice Assistant • Camera/Torch • Accessibility", color = TextMuted, fontSize = 11.sp)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF06283D))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("ACTIVE", color = AccentCyan, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Universal Shared Clipboard Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ModernIcon(type = ModernIconType.COPY, tint = AccentCyan, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "UNIVERSAL SHARED CLIPBOARD",
+                                color = AccentCyan,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.5.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Text(
+                            text = "Source: ${state.sharedClipboardSource}",
+                            color = TextMuted,
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceElevated)
+                            .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = state.sharedClipboardText,
+                            color = TextWhite,
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 18.sp
+                        )
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                clipboard.setText(AnnotatedString(state.sharedClipboardText))
+                                Toast.makeText(context, "Copied to Android Clipboard!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = Color.Black),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f).height(40.dp)
+                        ) {
+                            Text("Copy Local", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                onBeamToMac(state.sharedClipboardText)
+                                Toast.makeText(context, "Beamed to Mac!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = TextWhite),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f).height(40.dp)
+                        ) {
+                            Text("Beam to Mac", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = onRefreshClipboard,
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated, contentColor = TextWhite),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            ModernIcon(type = ModernIconType.REFRESH, tint = TextWhite, modifier = Modifier.size(13.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Broadcast to Ecosystem Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "BROADCAST NEW TEXT TO ALL DEVICES",
+                        color = TextMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = broadcastInput,
+                        onValueChange = { broadcastInput = it },
+                        placeholder = { Text("Type text or URL to beam to Mac & Web...", color = TextMuted, fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = SurfaceElevated,
+                            unfocusedContainerColor = SurfaceElevated,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = BorderDark,
+                            focusedTextColor = TextWhite,
+                            unfocusedTextColor = TextWhite
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Button(
+                        onClick = {
+                            if (broadcastInput.isNotBlank()) {
+                                onBroadcastClipboard(broadcastInput.trim())
+                                Toast.makeText(context, "Broadcasted across ecosystem!", Toast.LENGTH_SHORT).show()
+                                broadcastInput = ""
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = Color.Black),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                    ) {
+                        Text("BROADCAST TO MAC & WEB", fontSize = 12.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace)
                     }
                 }
             }

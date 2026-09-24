@@ -230,6 +230,81 @@ class FridayApiClient(
         }
     }
 
+    suspend fun getSharedClipboard(): Pair<String, String> = withContext(Dispatchers.IO) {
+        try {
+            val conn = openConnection("/api/devices/clipboard", "GET", 4000, 4000)
+            if (conn.responseCode == 200) {
+                val json = JSONObject(readStream(conn))
+                val content = json.optString("content", "Universal clipboard empty")
+                val source = json.optString("source_device", "macOS Host")
+                Pair(content, source)
+            } else {
+                Pair("Hello from FRIDAY Universal Clipboard", "Local Android")
+            }
+        } catch (e: Exception) {
+            Pair("Hello from FRIDAY Universal Clipboard", "Offline")
+        }
+    }
+
+    suspend fun broadcastClipboard(text: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val conn = openConnection("/api/devices/clipboard", "POST", 4000, 4000).apply {
+                setRequestProperty("Content-Type", "application/json")
+                doOutput = true
+            }
+            val payload = JSONObject().apply {
+                put("content", text)
+                put("source_device", "Android Companion")
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(payload.toString()) }
+            conn.responseCode == 200
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun handoverToMac(action: String, payload: JSONObject = JSONObject()): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        try {
+            val conn = openConnection("/api/devices/handover", "POST", 5000, 6000).apply {
+                setRequestProperty("Content-Type", "application/json")
+                doOutput = true
+            }
+            val body = JSONObject().apply {
+                put("target_device", "mac")
+                put("action", action)
+                put("payload", payload)
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            if (conn.responseCode == 200) {
+                val res = JSONObject(readStream(conn))
+                val msg = res.optString("message", "Task beamed to Mac!")
+                Pair(true, msg)
+            } else {
+                Pair(false, "Could not reach Mac host")
+            }
+        } catch (e: Exception) {
+            Pair(false, "Network error beaming to Mac")
+        }
+    }
+
+    suspend fun saveMemory(content: String, category: String = "general"): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val conn = openConnection("/api/memory", "POST", 4000, 5000).apply {
+                setRequestProperty("Content-Type", "application/json")
+                doOutput = true
+            }
+            val body = JSONObject().apply {
+                put("content", content)
+                put("category", category)
+                put("importance", 1.0)
+            }
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            conn.responseCode == 200
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun translateText(text: String, targetLang: String): GrammarResult = withContext(Dispatchers.IO) {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return@withContext GrammarResult(text, text, "Text was empty", true)
