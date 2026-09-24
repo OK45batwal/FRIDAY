@@ -2157,6 +2157,7 @@ code, pre, kbd, .font-mono {
   margin-bottom: 8px;
   background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-ink-muted) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2730,6 +2731,7 @@ code, pre, kbd, .font-mono {
   margin-bottom: 20px;
   background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
