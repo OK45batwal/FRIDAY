@@ -28,40 +28,9 @@ from backend.api.devices import router as devices_router
 from backend.ai.laya_brain import laya_brain
 from backend.utils.logger import get_logger
 
-# Import PyTorch model runner for legacy/testing tab
-from model.generate import generate_stream
-from tokenizer.tokenizer import Tokenizer
-from train.checkpoint import load_checkpoint
-import torch
-
 logger = get_logger("main")
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-
-PYTORCH_MODEL = None
-PYTORCH_TOKENIZER = None
-DEVICE = None
-
-
-def init_pytorch_model():
-    """Optionally load the 17.5M PyTorch transformer for the research lab tab."""
-    global PYTORCH_MODEL, PYTORCH_TOKENIZER, DEVICE
-    if torch.backends.mps.is_available():
-        DEVICE = torch.device("mps")
-    elif torch.cuda.is_available():
-        DEVICE = torch.device("cuda")
-    else:
-        DEVICE = torch.device("cpu")
-
-    ckpt_path = "checkpoints/best_model.pt"
-    if os.path.exists(ckpt_path):
-        try:
-            PYTORCH_MODEL, _ = load_checkpoint(ckpt_path, DEVICE)
-            PYTORCH_MODEL.eval()
-            PYTORCH_TOKENIZER = Tokenizer("gpt2")
-            logger.info(f"Loaded PyTorch 17.5M model on {DEVICE}")
-        except Exception as e:
-            logger.warning(f"Could not load PyTorch checkpoint: {e}")
 
 
 @asynccontextmanager
@@ -80,7 +49,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to load persisted settings on startup: {e}")
 
-    init_pytorch_model()
     if settings.ENABLE_LAYA and settings.LAYA_PRELOAD:
         # Preload Laya non-autoregressive decision model in background
         asyncio.create_task(laya_brain.ensure_loaded())
@@ -124,7 +92,7 @@ async def get_model_info():
         "scratch_model": {
             "model_name": "FRIDAY-Tiny",
             "parameters_formatted": "17.59M",
-            "device_name": f"Apple Silicon Metal ({DEVICE})" if DEVICE else "CPU",
+            "device_name": "Apple Silicon Metal (MPS)" if sys.platform == "darwin" else "CPU",
             "dim": 256,
             "n_layers": 6,
             "n_heads": 8,

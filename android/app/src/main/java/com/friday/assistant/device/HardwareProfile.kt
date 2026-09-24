@@ -3,8 +3,6 @@ package com.friday.assistant.device
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
-import com.friday.assistant.ai.ModelProfile
-
 data class HardwareProfile(val availableRamMb: Long, val supportedAbis: List<String>, val storageAvailableMb: Long)
 
 class HardwareProfiler(private val context: Context) {
@@ -15,8 +13,3 @@ class HardwareProfiler(private val context: Context) {
     }
 }
 
-object AdaptiveModelSelector {
-    fun choose(profile: HardwareProfile, models: List<ModelProfile>): ModelProfile? =
-        models.sortedBy { it.ramMb }.lastOrNull { it.ramMb <= profile.availableRamMb / 2 }
-            ?: models.minByOrNull { it.ramMb }
-}

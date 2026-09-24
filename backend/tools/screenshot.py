@@ -57,17 +57,6 @@ class ScreenshotTool(BaseTool):
                 await proc.communicate()
                 if proc.returncode == 0 and os.path.exists(target_path):
                     return f"Screenshot captured successfully: screenshots/{safe_name}"
-            
-            # Fallback using PIL if screencapture failed or on Linux/Windows
-            try:
-                from PIL import ImageGrab
-                loop = asyncio.get_event_loop()
-                img = await loop.run_in_executor(None, ImageGrab.grab)
-                if img:
-                    await loop.run_in_executor(None, img.save, target_path)
-                    return f"Screenshot captured successfully: screenshots/{safe_name}"
-            except Exception as pil_err:
-                logger.debug(f"PIL ImageGrab not available or failed: {pil_err}")
 
             if os.path.exists(target_path):
                 return f"Screenshot captured successfully: screenshots/{safe_name}"

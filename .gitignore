@@ -72,4 +72,5 @@ services/core/learning_data/
 *.tar.gz
 *.tgz
 *.app/
+*.apk
 .pytest_cache/

@@ -18,11 +18,3 @@ class Router {
     }
 }
 
-class ToolRegistry(private val batteryPercent: () -> Int?) {
-    fun execute(route: Route.Tool): String = when (route.name) {
-        "battery" -> batteryPercent()?.let { "Battery is at $it%." } ?: "Battery status is unavailable."
-        "time" -> "It is ${ZonedDateTime.now().toLocalTime().withNano(0)}."
-        "calculator" -> "Calculator execution is available after an expression validator is configured."
-        else -> "That tool is not available."
-    }
-}
