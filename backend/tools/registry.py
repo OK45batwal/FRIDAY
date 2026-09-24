@@ -83,13 +83,30 @@ class ToolRegistry:
         """List metadata for all active tools."""
         return [tool.to_schema() for tool in self._tools.values()]
 
-    async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> str:
+    async def execute(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        approval_token: Optional[str] = None,
+    ) -> str:
         """Execute a tool with safety checks, error capture, and database logging."""
         tool = self.get(tool_name)
         if not tool:
             err_msg = f"Error: Tool '{tool_name}' not found. Available tools: {list(self._tools.keys())}"
             await ToolLogRepository.log(tool_name, arguments, err_msg, status="error")
             return err_msg
+
+        # Capability Policy: Confirmation required check (CR-03, 0B.1)
+        if tool.requires_confirmation:
+            from backend.tools.approval import verify_and_consume_token
+            if not verify_and_consume_token(tool.name, approval_token, arguments):
+                err_msg = (
+                    f"Access Denied: Tool '{tool.name}' requires explicit user confirmation with an approval token. "
+                    f"Please obtain an approval token via POST /api/tools/{tool.name}/approve first."
+                )
+                logger.warning(f"Unauthorized execution attempt of confirmation-required tool '{tool.name}'")
+                await ToolLogRepository.log(tool_name, arguments, err_msg, status="error")
+                raise PermissionError(err_msg)
 
         logger.info(f"Executing tool '{tool_name}' with args: {arguments}")
         try:

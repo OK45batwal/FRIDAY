@@ -67,6 +67,30 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("FRIDAY_API_KEY", "API_KEY"),
     )
 
+    # Tools & Workspace Sandbox (P0-B)
+    WORKSPACE_ROOT: str = Field(
+        default=".",
+        validation_alias=AliasChoices("FRIDAY_WORKSPACE_ROOT", "WORKSPACE_ROOT"),
+    )
+
+    # Voice Pipeline & TTS Policy (P0-B)
+    TTS_ALLOW_CLOUD: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("FRIDAY_TTS_ALLOW_CLOUD", "TTS_ALLOW_CLOUD"),
+    )
+    TTS_MODE: str = Field(
+        default="local",
+        validation_alias=AliasChoices("FRIDAY_TTS_MODE", "TTS_MODE"),
+    )
+    MAX_VOICE_PAYLOAD_BYTES: int = Field(
+        default=10 * 1024 * 1024,  # 10 MB
+        validation_alias=AliasChoices("FRIDAY_MAX_VOICE_PAYLOAD_BYTES", "MAX_VOICE_PAYLOAD_BYTES"),
+    )
+    MAX_TTS_TEXT_LENGTH: int = Field(
+        default=4000,
+        validation_alias=AliasChoices("FRIDAY_MAX_TTS_TEXT_LENGTH", "MAX_TTS_TEXT_LENGTH"),
+    )
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

@@ -209,25 +209,48 @@ class FridayOrchestrator:
                 tool_name = tool_instance.name
                 tool_args = tool_call.get("arguments", {})
 
-                # Notify tool started
-                yield {"type": "assistant_state", "state": "USING_TOOL"}
-                yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args}
+                if tool_instance.requires_confirmation:
+                    # Model output alone never authorizes sensitive tools (CR-03 / 0B.1)
+                    yield {"type": "assistant_state", "state": "CONFIRMATION_REQUIRED"}
+                    yield {
+                        "type": "confirmation_required",
+                        "tool": tool_name,
+                        "arguments": tool_args,
+                        "approval_endpoint": f"/api/tools/{tool_name}/approve",
+                        "message": f"Tool '{tool_name}' requires explicit user confirmation before executing.",
+                    }
+                    tool_output = (
+                        f"Authorization Blocked: Tool '{tool_name}' requires explicit human approval token. "
+                        f"Execution aborted until user confirms."
+                    )
+                    obs_prompt = self.prompt_manager.build_observation_prompt(tool_name, tool_output)
+                    llm_messages.append({"role": "assistant", "content": initial_response})
+                    llm_messages.append({"role": "user", "content": obs_prompt})
 
-                # Execute Tool
-                tool_output = await self.tools.execute(tool_name, tool_args)
+                    yield {"type": "assistant_state", "state": "SPEAKING"}
+                    async for token in self.client.chat_stream(llm_messages):
+                        final_response_text += token
+                        yield {"type": "assistant_token", "content": token}
+                else:
+                    # Notify tool started
+                    yield {"type": "assistant_state", "state": "USING_TOOL"}
+                    yield {"type": "tool_started", "tool": tool_name, "arguments": tool_args}
 
-                yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output}
+                    # Execute Tool
+                    tool_output = await self.tools.execute(tool_name, tool_args)
 
-                # Feed observation back
-                obs_prompt = self.prompt_manager.build_observation_prompt(tool_name, tool_output)
-                llm_messages.append({"role": "assistant", "content": initial_response})
-                llm_messages.append({"role": "user", "content": obs_prompt})
+                    yield {"type": "tool_completed", "tool": tool_name, "arguments": tool_args, "result": tool_output}
 
-                # Stream final synthesized response
-                yield {"type": "assistant_state", "state": "SPEAKING"}
-                async for token in self.client.chat_stream(llm_messages):
-                    final_response_text += token
-                    yield {"type": "assistant_token", "content": token}
+                    # Feed observation back
+                    obs_prompt = self.prompt_manager.build_observation_prompt(tool_name, tool_output)
+                    llm_messages.append({"role": "assistant", "content": initial_response})
+                    llm_messages.append({"role": "user", "content": obs_prompt})
+
+                    # Stream final synthesized response
+                    yield {"type": "assistant_state", "state": "SPEAKING"}
+                    async for token in self.client.chat_stream(llm_messages):
+                        final_response_text += token
+                        yield {"type": "assistant_token", "content": token}
 
             else:
                 # Direct conversational response

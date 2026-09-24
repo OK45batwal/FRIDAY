@@ -158,8 +158,27 @@ class VoicePipelineSession:
 
     async def process_audio_chunk(self, audio_b64: str, conversation_id: Optional[str] = None, voice: str = "aria"):
         """Decode base64 audio and run speech-to-text, then trigger speech response."""
+        from backend.config.settings import settings
+
+        # Check raw base64 string size before decode (0B.3)
+        max_b64_len = int(settings.MAX_VOICE_PAYLOAD_BYTES * 4 / 3) + 4096
+        if len(audio_b64) > max_b64_len:
+            logger.warning("Rejected oversized audio chunk in WebSocket session")
+            await self.send_json({
+                "type": "error",
+                "message": f"Audio chunk exceeds maximum allowed size of {settings.MAX_VOICE_PAYLOAD_BYTES} bytes.",
+            })
+            return
+
         try:
-            audio_bytes = base64.b64decode(audio_b64)
+            audio_bytes = base64.b64decode(audio_b64, validate=True)
+            if len(audio_bytes) > settings.MAX_VOICE_PAYLOAD_BYTES:
+                await self.send_json({
+                    "type": "error",
+                    "message": f"Audio chunk exceeds maximum allowed size of {settings.MAX_VOICE_PAYLOAD_BYTES} bytes.",
+                })
+                return
+
             stt_result = await whisper_stt.transcribe(audio_bytes)
             transcript = stt_result.get("text", "").strip()
 
@@ -178,6 +197,8 @@ class VoicePipelineSession:
 
 async def handle_voice_websocket(websocket: WebSocket):
     """Main WebSocket handler for /ws/voice."""
+    from backend.config.settings import settings
+
     await websocket.accept()
     session = VoicePipelineSession(websocket)
     logger.info("Voice WebSocket client connected.")
@@ -194,6 +215,14 @@ async def handle_voice_websocket(websocket: WebSocket):
     try:
         while True:
             raw = await websocket.receive_text()
+            if len(raw) > settings.MAX_VOICE_PAYLOAD_BYTES:
+                logger.warning(f"Voice WebSocket frame exceeded maximum size ({len(raw)} bytes)")
+                await session.send_json({
+                    "type": "error",
+                    "message": f"WebSocket frame exceeds maximum allowed size of {settings.MAX_VOICE_PAYLOAD_BYTES} bytes.",
+                })
+                continue
+
             try:
                 msg = json.loads(raw)
             except Exception:
