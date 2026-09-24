@@ -1,6 +1,7 @@
 package com.friday.assistant.device
 
 import android.app.ActivityManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -127,57 +128,53 @@ class DeviceActionManager(private val context: Context) {
         return if (max > 0) (current * 100 / max) else 50
     }
 
+    private fun safelyStartActivity(intent: Intent, successMsg: String): Pair<Boolean, String> {
+        return try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            true to successMsg
+        } catch (e: ActivityNotFoundException) {
+            false to "App is not installed or cannot handle this action."
+        } catch (e: SecurityException) {
+            false to "Permission denied to launch app: ${e.message}"
+        } catch (e: Exception) {
+            false to "Failed to open app: ${e.message}"
+        }
+    }
+
     fun launchApp(target: String): Pair<Boolean, String> {
         val pm = context.packageManager
         return when (target.lowercase()) {
             "whatsapp" -> {
                 val intent = pm.getLaunchIntentForPackage("com.whatsapp")
                     ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://web.whatsapp.com"))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-                true to "Launching WhatsApp"
+                safelyStartActivity(intent, "Launching WhatsApp")
             }
             "gmail" -> {
                 val intent = pm.getLaunchIntentForPackage("com.google.android.gm")
                     ?: Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_APP_EMAIL) }
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-                true to "Launching Gmail"
+                safelyStartActivity(intent, "Launching Gmail")
             }
             "chrome", "browser" -> {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://google.com")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                true to "Launching Google Chrome"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://google.com"))
+                safelyStartActivity(intent, "Launching Google Chrome")
             }
             "youtube" -> {
                 val intent = pm.getLaunchIntentForPackage("com.google.android.youtube")
                     ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://youtube.com"))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-                true to "Launching YouTube"
+                safelyStartActivity(intent, "Launching YouTube")
             }
             "maps" -> {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=nearby")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                true to "Launching Maps"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=nearby"))
+                safelyStartActivity(intent, "Launching Maps")
             }
             "camera" -> {
-                val intent = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                true to "Launching Camera"
+                val intent = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                safelyStartActivity(intent, "Launching Camera")
             }
             "settings" -> {
-                val intent = Intent(Settings.ACTION_SETTINGS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                true to "Launching System Settings"
+                val intent = Intent(Settings.ACTION_SETTINGS)
+                safelyStartActivity(intent, "Launching System Settings")
             }
             else -> {
                 false to "Unknown app target: $target"

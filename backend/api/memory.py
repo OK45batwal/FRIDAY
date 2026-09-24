@@ -1,17 +1,17 @@
 """Memory API Endpoints for inspecting and managing persistent memories."""
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from typing import List, Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from backend.database.repositories import MemoryRepository
 
 router = APIRouter(prefix="/api/memory", tags=["memory"])
 
 
 class AddMemoryRequest(BaseModel):
-    content: str
-    category: Optional[str] = "general"
-    importance: Optional[float] = 1.0
+    content: str = Field(..., min_length=1, max_length=5000, description="Memory content")
+    category: Optional[str] = Field("general", max_length=100, description="Memory category")
+    importance: Optional[float] = Field(default=1.0, ge=0.0, le=1.0, description="Importance score [0.0 - 1.0]")
 
 
 @router.get("")
@@ -22,13 +22,18 @@ async def list_memories():
 
 @router.post("")
 async def add_memory(req: AddMemoryRequest):
-    """Manually add a memory item."""
-    if not req.content.strip():
+    """Manually add a memory item with validated bounds."""
+    content_clean = req.content.strip()
+    if not content_clean:
         raise HTTPException(status_code=400, detail="Memory content cannot be empty")
+
+    # WR-02: Explicit None check so importance=0.0 is preserved and not coerced to 1.0
+    final_importance = 1.0 if req.importance is None else req.importance
+
     return await MemoryRepository.add(
-        content=req.content.strip(),
-        category=req.category or "general",
-        importance=req.importance or 1.0,
+        content=content_clean,
+        category=(req.category or "general").strip(),
+        importance=final_importance,
     )
 
 

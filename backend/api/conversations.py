@@ -1,8 +1,8 @@
 """Conversations API Endpoints."""
 
 import re
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from backend.database.repositories import ConversationRepository, MessageRepository
 
@@ -10,20 +10,23 @@ router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
 
 class CreateConversationRequest(BaseModel):
-    title: Optional[str] = "New Conversation"
+    title: Optional[str] = Field("New Conversation", max_length=200)
 
 
 class UpdateConversationRequest(BaseModel):
-    title: str
+    title: str = Field(..., min_length=1, max_length=200)
 
 
 @router.get("")
-async def list_conversations(limit: Optional[int] = None, offset: int = 0):
-    """List all saved conversations ordered by recency with optional pagination."""
+async def list_conversations(
+    limit: Optional[int] = Query(None, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """List all saved conversations ordered by recency with bounded pagination."""
     all_convs = await ConversationRepository.list_all()
     if limit is not None:
         return all_convs[offset : offset + limit]
-    return all_convs
+    return all_convs[offset:]
 
 
 @router.post("")
@@ -46,7 +49,10 @@ async def get_conversation(conv_id: str):
 
 
 @router.get("/{conv_id}/export")
-async def export_conversation(conv_id: str, format: str = "markdown"):
+async def export_conversation(
+    conv_id: str,
+    format: str = Query("markdown", pattern="^(markdown|json)$"),
+):
     """Export conversation history as Markdown or JSON."""
     conv = await ConversationRepository.get_by_id(conv_id)
     if not conv:

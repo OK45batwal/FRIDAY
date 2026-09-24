@@ -8,6 +8,11 @@ from backend.tools.search import SearchTool
 from backend.tools.weather import WeatherTool
 from backend.tools.system_info import SystemInfoTool
 from backend.tools.file_manager import FileManagerTool
+from backend.tools.open_website import OpenWebsiteTool
+from backend.tools.open_application import OpenApplicationTool
+from backend.tools.terminal import TerminalTool
+from backend.tools.screenshot import ScreenshotTool
+from backend.tools.notes import NotesTool
 from backend.database.repositories import ToolLogRepository
 from backend.utils.logger import get_logger
 
@@ -22,13 +27,18 @@ class ToolRegistry:
         self._register_default_tools()
 
     def _register_default_tools(self):
-        """Register the standard suite of tools."""
+        """Register the standard suite of tools (Core 10 Tools)."""
         self.register(CalculatorTool())
         self.register(TimeTool())
         self.register(SearchTool())
         self.register(WeatherTool())
         self.register(SystemInfoTool())
         self.register(FileManagerTool())
+        self.register(OpenWebsiteTool())
+        self.register(OpenApplicationTool())
+        self.register(TerminalTool())
+        self.register(ScreenshotTool())
+        self.register(NotesTool())
 
     def register(self, tool: BaseTool):
         """Register a new tool instance."""
@@ -51,6 +61,7 @@ class ToolRegistry:
         "sys_info": "system_info",
         "hardware": "system_info",
         "battery": "system_info",
+        "system_info": "system_info",
         "search": "web_search",
         "google_search": "web_search",
         "search_web": "web_search",
@@ -63,6 +74,30 @@ class ToolRegistry:
         "files": "file_manager",
         "file_search": "file_manager",
         "file_manager": "file_manager",
+        "website": "open_website",
+        "open_website": "open_website",
+        "browse": "open_website",
+        "open_url": "open_website",
+        "url": "open_website",
+        "open_app": "open_application",
+        "open_application": "open_application",
+        "launch_app": "open_application",
+        "app": "open_application",
+        "terminal": "terminal",
+        "run_terminal": "terminal",
+        "bash": "terminal",
+        "shell": "terminal",
+        "exec_command": "terminal",
+        "cmd": "terminal",
+        "screenshot": "screenshot",
+        "take_screenshot": "screenshot",
+        "screen_capture": "screenshot",
+        "capture_screen": "screenshot",
+        "notes": "notes",
+        "note": "notes",
+        "notebook": "notes",
+        "memo": "notes",
+        "memory_note": "notes",
     }
 
     def get(self, name: str) -> Optional[BaseTool]:

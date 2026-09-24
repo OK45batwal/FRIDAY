@@ -68,6 +68,17 @@ async def lifespan(app: FastAPI):
     validate_settings()
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}...")
     await init_db()
+    # Batch P1.1: Load and apply persisted settings before routers consume them
+    try:
+        from backend.database.repositories import SettingsRepository
+        from backend.api.settings import apply_saved_settings
+        saved_settings = await SettingsRepository.get_all()
+        if saved_settings:
+            apply_saved_settings(saved_settings)
+            logger.info(f"Loaded {len(saved_settings)} persisted setting(s) on startup.")
+    except Exception as e:
+        logger.warning(f"Failed to load persisted settings on startup: {e}")
+
     init_pytorch_model()
     if settings.ENABLE_LAYA and settings.LAYA_PRELOAD:
         # Preload Laya non-autoregressive decision model in background

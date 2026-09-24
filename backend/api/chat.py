@@ -3,7 +3,7 @@
 import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from backend.ai.orchestrator import orchestrator
 from backend.utils.logger import get_logger
@@ -18,9 +18,9 @@ MAX_PROMPT_LENGTH = 8000
 
 
 class ChatRequest(BaseModel):
-    prompt: Optional[str] = None
-    message: Optional[str] = None
-    conversation_id: Optional[str] = None
+    prompt: Optional[str] = Field(None, max_length=MAX_PROMPT_LENGTH)
+    message: Optional[str] = Field(None, max_length=MAX_PROMPT_LENGTH)
+    conversation_id: Optional[str] = Field(None, max_length=100)
     stream: Optional[bool] = True
 
 
@@ -45,6 +45,8 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         # Non-streaming JSON response for Android and REST clients
         content_parts = []
         conversation_id = req.conversation_id
+        has_error = False
+        error_msg_captured = None
         try:
             async for event in orchestrator.process_stream(prompt, conversation_id=req.conversation_id):
                 event_type = event.get("type")
@@ -57,21 +59,25 @@ async def chat_endpoint(req: ChatRequest, request: Request):
                     if tool_result:
                         content_parts.append(f"\n[Tool Result]: {tool_result}\n")
                 elif event_type == "error":
-                    error_msg = event.get("message", "An error occurred.")
-                    content_parts.append(f"\n[Error]: {error_msg}")
+                    has_error = True
+                    error_msg_captured = event.get("message", "An error occurred.")
+                    content_parts.append(f"\n[Error]: {error_msg_captured}")
         except Exception as e:
             logger.error(f"Chat processing error: {e}", exc_info=True)
-            content_parts.append(f"Command processed: {str(e)}")
+            has_error = True
+            error_msg_captured = "An internal error occurred while processing the request."
+            content_parts.append(f"\n[Error]: {error_msg_captured}")
 
         full_reply = "".join(content_parts).strip()
         if not full_reply:
-            full_reply = "Command executed successfully."
+            full_reply = "An error occurred during processing." if has_error else "Command executed successfully."
 
         return {
             "reply": full_reply,
             "response": full_reply,
             "conversation_id": conversation_id,
-            "success": True,
+            "success": not has_error,
+            "error": error_msg_captured if has_error else None,
         }
 
     async def event_generator():
@@ -80,7 +86,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as e:
             logger.error(f"SSE stream error: {e}", exc_info=True)
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'An internal error occurred during generation.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

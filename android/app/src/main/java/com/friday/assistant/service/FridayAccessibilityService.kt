@@ -9,6 +9,7 @@ import com.friday.assistant.network.FridayApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class FridayAccessibilityService : AccessibilityService() {
@@ -38,8 +39,13 @@ class FridayAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                 val source = event.source
-                if (source != null && source.isEditable) {
-                    lastFocusedNode = source
+                if (source != null) {
+                    if (source.isEditable) {
+                        lastFocusedNode?.recycle()
+                        lastFocusedNode = source
+                    } else {
+                        source.recycle()
+                    }
                 }
             }
         }
@@ -53,11 +59,14 @@ class FridayAccessibilityService : AccessibilityService() {
         super.onDestroy()
         isRunning = false
         instance = null
+        lastFocusedNode?.recycle()
+        lastFocusedNode = null
+        serviceScope.cancel()
     }
 
     fun fixCurrentInputField() {
         val node = lastFocusedNode
-        if (node == null || !node.isEditable) {
+        if (node == null || !node.refresh() || !node.isEditable) {
             Toast.makeText(this, "No active text field detected", Toast.LENGTH_SHORT).show()
             return
         }
@@ -71,18 +80,22 @@ class FridayAccessibilityService : AccessibilityService() {
         Toast.makeText(this, "FRIDAY: Polishing text...", Toast.LENGTH_SHORT).show()
 
         serviceScope.launch {
-            val result = apiClient.fixGrammar(originalText)
-            val arguments = Bundle().apply {
-                putCharSequence(
-                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                    result.correctedText
-                )
-            }
-            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
-            if (success) {
-                Toast.makeText(this@FridayAccessibilityService, "FRIDAY: Grammar fixed!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this@FridayAccessibilityService, "Could not replace text in target app", Toast.LENGTH_SHORT).show()
+            try {
+                val result = apiClient.fixGrammar(originalText)
+                val arguments = Bundle().apply {
+                    putCharSequence(
+                        AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                        result.correctedText
+                    )
+                }
+                val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+                if (success) {
+                    Toast.makeText(this@FridayAccessibilityService, "FRIDAY: Grammar fixed!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@FridayAccessibilityService, "Could not replace text in target app", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@FridayAccessibilityService, "Polishing failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

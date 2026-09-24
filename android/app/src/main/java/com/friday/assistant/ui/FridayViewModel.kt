@@ -162,28 +162,35 @@ class FridayViewModel(application: Application) : AndroidViewModel(application),
         state = state.copy(inputText = "", isSending = true, assistantState = AssistantState.THINKING)
 
         viewModelScope.launch {
-            val userMsg = MessageEntity(role = "user", text = textToSend)
-            messageDao.insert(userMsg)
-            state = state.copy(messages = state.messages + userMsg)
+            try {
+                val userMsg = MessageEntity(role = "user", text = textToSend)
+                messageDao.insert(userMsg)
+                state = state.copy(messages = state.messages + userMsg)
 
-            // Check if user is asking for device action (torch, time, battery)
-            val replyText = handlePotentialDeviceCommand(textToSend) ?: run {
-                val result = apiClient.sendChat(textToSend)
-                state = state.copy(backendHealth = state.backendHealth.copy(isOnline = result.isOnline))
-                result.reply
-            }
+                // Check if user is asking for device action (torch, time, battery)
+                val replyText = handlePotentialDeviceCommand(textToSend) ?: run {
+                    val result = apiClient.sendChat(textToSend)
+                    state = state.copy(backendHealth = state.backendHealth.copy(isOnline = result.isOnline))
+                    result.reply
+                }
 
-            val replyMsg = MessageEntity(role = "assistant", text = replyText)
-            messageDao.insert(replyMsg)
+                val replyMsg = MessageEntity(role = "assistant", text = replyText)
+                messageDao.insert(replyMsg)
 
-            state = state.copy(
-                messages = state.messages + replyMsg,
-                isSending = false,
-                assistantState = AssistantState.IDLE
-            )
+                state = state.copy(messages = state.messages + replyMsg)
 
-            if (speakOutput) {
-                voiceManager.speak(replyText)
+                if (speakOutput) {
+                    voiceManager.speak(replyText)
+                }
+            } catch (e: Exception) {
+                val errMsg = MessageEntity(role = "assistant", text = "Error sending message: ${e.message ?: "Unknown error"}")
+                messageDao.insert(errMsg)
+                state = state.copy(messages = state.messages + errMsg)
+            } finally {
+                state = state.copy(
+                    isSending = false,
+                    assistantState = AssistantState.IDLE
+                )
             }
         }
     }
