@@ -23,6 +23,7 @@ data class ChatResult(
     val reply: String,
     val isOnline: Boolean,
     val toolUsed: String? = null,
+    val isError: Boolean = false,
 )
 
 data class ToolResult(
@@ -52,7 +53,8 @@ class FridayApiClient(
                 if (scheme == "https") {
                     true
                 } else if (scheme == "http") {
-                    host == "10.0.2.2" || host == "127.0.0.1" || host == "localhost"
+                    host == "10.0.2.2" || host == "127.0.0.1" || host == "localhost" ||
+                        host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.")
                 } else {
                     false
                 }
@@ -141,12 +143,20 @@ class FridayApiClient(
                 } catch (e: Exception) {
                     raw
                 }
-                ChatResult(reply = reply, isOnline = true)
+                ChatResult(reply = reply, isOnline = true, isError = false)
             } else {
-                fallbackLocalReply(prompt)
+                ChatResult(
+                    reply = "Backend error (HTTP ${conn.responseCode}) from $baseUrl. Ensure FRIDAY daemon is active.",
+                    isOnline = false,
+                    isError = true
+                )
             }
         } catch (e: Exception) {
-            fallbackLocalReply(prompt)
+            ChatResult(
+                reply = "Cannot reach FRIDAY backend at $baseUrl (${e.message ?: "Connection refused"}). Check host IP in Status settings.",
+                isOnline = false,
+                isError = true
+            )
         }
     }
 
@@ -222,11 +232,11 @@ class FridayApiClient(
                 val res = json.optString("result", "Search complete")
                 ToolResult("web_search", res, true, duration)
             } else {
-                ToolResult("web_search", "Results for: \"$query\"\n• 1. Official Documentation & Overview\n• 2. Community Wiki & Release Notes\n• 3. Developer Implementation Guides", true, duration)
+                ToolResult("web_search", "Web search failed: Backend returned HTTP ${conn.responseCode}.", false, duration)
             }
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - start
-            ToolResult("web_search", "Search offline cache for: \"$query\"\n• Knowledge Base match verified\n• System indexed references available", false, duration)
+            ToolResult("web_search", "Web search offline: Cannot reach $baseUrl.", false, duration)
         }
     }
 

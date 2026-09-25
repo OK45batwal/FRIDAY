@@ -42,13 +42,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.friday.assistant.FridayClientHolder
 import com.friday.assistant.network.FridayApiClient
 import com.friday.assistant.network.GrammarResult
 import kotlinx.coroutines.launch
 
 class ProcessTextActivity : ComponentActivity() {
 
-    private val apiClient = FridayApiClient()
+    private val apiClient get() = FridayClientHolder.getClient(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

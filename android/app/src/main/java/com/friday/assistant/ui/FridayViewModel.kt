@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.friday.assistant.FridayClientHolder
 import com.friday.assistant.data.FridayDatabase
 import com.friday.assistant.data.MessageEntity
 import com.friday.assistant.device.DeviceActionManager
@@ -61,13 +62,15 @@ class FridayViewModel(application: Application) : AndroidViewModel(application),
     var state by mutableStateOf(FridayUiState())
         private set
 
-    val apiClient = FridayApiClient()
+    val apiClient get() = FridayClientHolder.getClient(getApplication())
     val deviceManager = DeviceActionManager(application)
     private val voiceManager = VoiceAssistantManager(application, this)
     private val db = FridayDatabase.getInstance(application)
     private val messageDao = db.messageDao()
 
     init {
+        val initialUrl = FridayClientHolder.getBaseUrl(application)
+        state = state.copy(customServerUrl = initialUrl)
         loadMessages()
         refreshHealth()
         refreshServiceStates()
@@ -176,9 +179,11 @@ class FridayViewModel(application: Application) : AndroidViewModel(application),
     fun setCustomServerUrl(url: String) {
         val clean = url.trim()
         if (clean.isNotEmpty() && FridayApiClient.isValidBaseUrl(clean)) {
-            apiClient.baseUrl = clean
-            state = state.copy(customServerUrl = clean)
-            refreshHealth()
+            val ok = FridayClientHolder.setBaseUrl(getApplication(), clean)
+            if (ok) {
+                state = state.copy(customServerUrl = clean)
+                refreshHealth()
+            }
         }
     }
 

@@ -33,6 +33,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.friday.assistant.FridayClientHolder
+
 class FridayFloatingService : Service() {
 
     private var windowManager: WindowManager? = null
@@ -42,7 +44,7 @@ class FridayFloatingService : Service() {
     private var isExpanded = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var deviceManager: DeviceActionManager
-    private val apiClient = FridayApiClient()
+    private val apiClient get() = FridayClientHolder.getClient(this)
 
     companion object {
         var isRunning: Boolean = false

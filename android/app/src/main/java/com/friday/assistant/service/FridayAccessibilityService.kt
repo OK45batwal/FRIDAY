@@ -6,6 +6,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import com.friday.assistant.network.FridayApiClient
+import com.friday.assistant.FridayClientHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 class FridayAccessibilityService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val apiClient = FridayApiClient()
+    private val apiClient get() = FridayClientHolder.getClient(this)
     private var lastFocusedNode: AccessibilityNodeInfo? = null
 
     companion object {

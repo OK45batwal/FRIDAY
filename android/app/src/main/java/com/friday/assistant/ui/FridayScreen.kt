@@ -2792,6 +2792,9 @@ private fun StatusView(
     onOpenAccessibility: () -> Unit
 ) {
     var serverUrlInput by remember { mutableStateOf(state.customServerUrl) }
+    LaunchedEffect(state.customServerUrl) {
+        serverUrlInput = state.customServerUrl
+    }
     val context = LocalContext.current
 
     LazyColumn(
